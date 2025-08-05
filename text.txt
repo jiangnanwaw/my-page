@@ -1,6 +1,7 @@
 ﻿my-website/
 ├── index.html          # 首页
-├── data-2025-07.html   # 7月数据页面
-├── data-2025-08.html   # 8月数据页面
+├── 202507.html   # 7月数据页面
+├── 202508.html   # 8月数据页面
 └── js/
+
     └── script.js       # JavaScript文件
