@@ -298,6 +298,7 @@
         .layout {
             display: flex;
             flex: 1;
+            min-height: calc(100vh - 70px);
         }
         
         /* 左侧菜单 */
@@ -307,6 +308,7 @@
             padding: 25px 0;
             box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
             overflow-y: auto;
+            height: 100%;
         }
         
         .menu-item {
@@ -411,42 +413,47 @@
             color: var(--primary);
         }
         
-        /* 数据查询区域 */
+        /* 数据查询区域 - 修改部分 */
         .query-section {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
+            padding: 10px 15px; /* 减少内边距 */
+            margin-bottom: 20px; /* 减少下边距 */
             box-shadow: var(--shadow);
+            width: 100%; /* 宽度铺满 */
+            height: auto; /* 高度自适应 */
         }
         
         .query-form {
             display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
+            flex-wrap: nowrap; /* 防止换行 */
+            gap: 12px; /* 减少间距 */
             align-items: center;
         }
         
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px; /* 减少间距 */
             flex: 1;
-            min-width: 200px;
+            min-width: 120px; /* 减小最小宽度 */
         }
         
         .form-group label {
             font-weight: 500;
             color: #555;
+            font-size: 14px; /* 减小字体 */
         }
         
         .form-group input, .form-group select {
-            padding: 12px 15px;
+            padding: 8px 10px; /* 减小内边距 */
             border: 1px solid var(--gray);
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px; /* 减小字体 */
             background: white;
             transition: all 0.3s;
+            height: 36px; /* 固定高度 */
+            width: 100%; /* 宽度100% */
         }
         
         .form-group input:focus, .form-group select:focus {
@@ -457,18 +464,19 @@
         
         .btn-group {
             display: flex;
-            gap: 15px;
+            gap: 12px; /* 减小间距 */
             align-items: center;
-            margin-top: 20px;
+            margin-left: auto; /* 推到右侧 */
+            margin-top: 0; /* 移除上边距 */
         }
         
         .query-btn, .export-btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 30px;
+            padding: 8px 15px; /* 减小内边距 */
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px; /* 减小字体 */
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
@@ -476,7 +484,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px; /* 减小间距 */
+            height: 36px; /* 固定高度 */
+            white-space: nowrap; /* 防止文本换行 */
         }
         
         .export-btn {
@@ -525,10 +535,10 @@
         }
         
         .query-info {
-            margin-top: 15px;
+            margin-top: 10px; /* 减小上边距 */
             color: #666;
-            font-size: 14px;
-            padding: 10px;
+            font-size: 13px; /* 减小字体 */
+            padding: 6px; /* 减小内边距 */
             border-radius: 8px;
             background-color: rgba(0, 0, 0, 0.03);
             border-left: 4px solid var(--accent);
@@ -924,6 +934,138 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(26, 115, 232, 0.3);
         }
+
+        /* 新增样式 */
+        #metrics-container {
+            padding: 30px;
+            background: #f0f5ff;
+        }
+
+        .metrics-section {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .metrics-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .metric-card-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .metric-card-title i {
+            color: var(--primary);
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        /* 综合收入数据显示在一行 */
+        .income-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .metric-item {
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(26, 115, 232, 0.05);
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .metric-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-title i {
+            color: var(--primary);
+        }
+
+        .chart-wrapper {
+            height: 300px;
+            position: relative;
+        }
+
+        .chart-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .chart-action-btn {
+            padding: 8px 15px;
+            background: #f0f5ff;
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .chart-action-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        #report-section {
+            padding-top: 50px;
+        }
     </style>
 </head>
 <body>
@@ -1142,7 +1284,7 @@
             
             <!-- 主内容区 -->
             <div class="main-content">
-                <!-- 数据查询区域 -->
+                <!-- 查询板块 -->
                 <div class="query-section">
                     <h2 class="section-title"><i class="fas fa-search"></i> 数据查询</h2>
                     <div class="query-form">
@@ -1191,6 +1333,7 @@
                                 <option value="comprehensive">综合数据</option>
                             </select>
                         </div>
+                        
                         <div class="btn-group">
                             <button class="query-btn" id="query-btn">
                                 <span class="spinner"></span>
@@ -1209,8 +1352,145 @@
                     </div>
                 </div>
                 
+                <!-- 充电数据指标板块 -->
+                <div class="metrics-section">
+                    <div class="metrics-row">
+                        <div class="metric-card">
+                            <div class="metric-card-title">
+                                <i class="fas fa-calendar-check"></i>
+                                本月充电数据
+                            </div>
+                            <div class="metric-grid">
+                                <div class="metric-item">
+                                    <div class="metric-value" id="month-charge">190,495.49 kWh</div>
+                                    <div class="metric-label">总充电量</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="month-electricity">¥164,203.51</div>
+                                    <div class="metric-label">总充电收入</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="month-service">¥59,931.09</div>
+                                    <div class="metric-label">总服务费收入</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="month-orders">7,591</div>
+                                    <div class="metric-label">总订单数量</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-card-title">
+                                <i class="fas fa-calendar-alt"></i>
+                                本年度充电数据
+                            </div>
+                            <div class="metric-grid">
+                                <div class="metric-item">
+                                    <div class="metric-value" id="year-charge">3,586,124.06 kWh</div>
+                                    <div class="metric-label">总充电量</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="year-electricity">¥3,042,918.17</div>
+                                    <div class="metric-label">总充电收入</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="year-service">¥1,023,573.65</div>
+                                    <div class="metric-label">总服务费收入</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="year-orders">138,279</div>
+                                    <div class="metric-label">总订单数量</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-card-title">
+                                <i class="fas fa-chart-line"></i>
+                                累计充电数据
+                            </div>
+                            <div class="metric-grid">
+                                <div class="metric-item">
+                                    <div class="metric-value" id="total-charge">32,051,447.86 kWh</div>
+                                    <div class="metric-label">总充电量</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="total-electricity">¥30,318,139.69</div>
+                                    <div class="metric-label">总充电收入</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="total-service">¥11,305,282.54</div>
+                                    <div class="metric-label">总服务费收入</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="total-orders">1,235,906</div>
+                                    <div class="metric-label">总订单数量</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 充电数据图表 -->
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-bar"></i>
+                            充电数据趋势 (2025年)
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="charging-chart"></canvas>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action-btn"><i class="fas fa-download"></i> 导出图表</button>
+                            <button class="chart-action-btn"><i class="fas fa-sync-alt"></i> 刷新数据</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 综合数据板块 -->
+                <div class="metrics-section">
+                    <div class="metrics-row">
+                        <div class="metric-card">
+                            <div class="metric-card-title">
+                                <i class="fas fa-money-bill-wave"></i>
+                                综合收入数据
+                            </div>
+                            <!-- 修改为三列布局 -->
+                            <div class="income-grid">
+                                <div class="metric-item">
+                                    <div class="metric-value" id="month-income">¥43,435.85</div>
+                                    <div class="metric-label">本月总收入</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="year-income">¥375,153.84</div>
+                                    <div class="metric-label">本年度总收入</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value" id="total-income">¥2,564,822.21</div>
+                                    <div class="metric-label">累计总收入</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 综合数据图表 -->
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-line"></i>
+                            综合收入趋势 (2025年)
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="income-chart"></canvas>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action-btn"><i class="fas fa-download"></i> 导出图表</button>
+                            <button class="chart-action-btn"><i class="fas fa-sync-alt"></i> 刷新数据</button>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Excel 表格区域 -->
-                <div class="excel-section">
+                <div class="excel-section" id="report-section">
                     <div class="excel-header">
                         <h3 class="metric-section-title"><i class="fas fa-table"></i> 充电数据报表</h3>
                         <div id="file-info">当前显示: 2025年07月数据</div>
@@ -1758,6 +2038,13 @@
                     } else {
                         defaultComprehensiveData = data;
                     }
+
+                    // 只有在用户查询时才滚动到报表区域
+                    if (isUserQuery) {
+                        document.getElementById('report-section').scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
                 })
                 .catch(error => {
                     console.error('加载Excel文件失败:', error);
@@ -2095,6 +2382,9 @@
                 
                 // 显示用户手机号（脱敏）
                 userDisplay.textContent = maskPhone(phone);
+
+                // 初始化图表
+                initCharts();
             } else {
                 // 登录失败
                 loginAttempts++;
@@ -2200,6 +2490,112 @@
         
         setInterval(updateTime, 1000);
         updateTime();
+
+        // 初始化图表
+        function initCharts() {
+            // 充电数据图表
+            const chargingCtx = document.getElementById('charging-chart').getContext('2d');
+            const chargingChart = new Chart(chargingCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                    datasets: [
+                        {
+                            label: '充电量 (kWh)',
+                            data: [479733.16, 464263.68, 512991.91, 457884.94, 470890.75, 461424.8, 548439.35],
+                            backgroundColor: 'rgba(26, 115, 232, 0.7)',
+                            borderColor: 'rgba(26, 115, 232, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '服务费收入 (元)',
+                            data: [135946.9, 129429.97, 142060.47, 125140.44, 134990.15, 136456.45, 159618.18],
+                            type: 'line',
+                            borderColor: 'rgba(0, 200, 83, 1)',
+                            backgroundColor: 'rgba(0, 200, 83, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '充电量 (kWh)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '服务费收入 (元)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+
+            // 收入数据图表
+            const incomeCtx = document.getElementById('income-chart').getContext('2d');
+            const incomeChart = new Chart(incomeCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                    datasets: [
+                        {
+                            label: '综合收入 (元)',
+                            data: [45013.18, 39691.03, 39095.14, 52606.46, 44061.75, 38928.35, 43435.85],
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: '综合收入 (元)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 图表按钮事件
+            document.querySelectorAll('.chart-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (this.textContent.includes('导出')) {
+                        const canvas = this.closest('.chart-container').querySelector('canvas');
+                        const link = document.createElement('a');
+                        link.download = '图表导出.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    } else {
+                        alert('数据已刷新！');
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>
