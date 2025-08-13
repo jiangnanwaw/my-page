@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -2470,6 +2470,37 @@
                 document.getElementById('login-password').disabled = true;
                 loginBtn.disabled = true;
             }
+            
+            // 新增事件绑定：忘记密码、注册、返回登录、关闭模态框
+            const showReset = document.getElementById('show-reset');
+            const showRegister = document.getElementById('show-register');
+            const backToLogin = document.getElementById('back-to-login');
+            const closeModal = document.getElementById('close-modal');
+            const resetModal = document.getElementById('reset-modal');
+
+            showReset.addEventListener('click', function() {
+                resetModal.style.display = 'flex';
+            });
+
+            showRegister.addEventListener('click', function() {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            });
+
+            backToLogin.addEventListener('click', function() {
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+            });
+
+            closeModal.addEventListener('click', function() {
+                resetModal.style.display = 'none';
+            });
+
+            resetModal.addEventListener('click', function(e) {
+                if (e.target === resetModal) {
+                    resetModal.style.display = 'none';
+                }
+            });
         });
         
         // 时间显示更新
