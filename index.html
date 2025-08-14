@@ -1066,6 +1066,20 @@
         #report-section {
             padding-top: 50px;
         }
+        
+        /* 数据加载动画 */
+        .data-loading-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: var(--primary);
+        }
+        
+        .data-loading-indicator i {
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -1706,6 +1720,13 @@
         
         // 用户账户存储
         let userAccounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+        
+        // 图表实例
+        let chargingChart = null;
+        let incomeChart = null;
+        
+        // GitHub数据文件URL
+        const metricsDataUrl = 'https://www.csfhcdz.cn/data/homepage.xlsx';
         
         // 显示功能提示弹窗
         function showFeaturePopup(message) {
@@ -2385,6 +2406,9 @@
 
                 // 初始化图表
                 initCharts();
+                
+                // 加载指标数据
+                loadMetricsData();
             } else {
                 // 登录失败
                 loginAttempts++;
@@ -2522,11 +2546,22 @@
         setInterval(updateTime, 1000);
         updateTime();
 
+        // 格式化数字显示（解决科学计数法问题）
+        function formatNumber(value) {
+            if (typeof value === 'number' && (Math.abs(value) > 1e6 || Math.abs(value) < 1e-6)) {
+                return value.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+            return value.toLocaleString();
+        }
+
         // 初始化图表
         function initCharts() {
             // 充电数据图表
             const chargingCtx = document.getElementById('charging-chart').getContext('2d');
-            const chargingChart = new Chart(chargingCtx, {
+            chargingChart = new Chart(chargingCtx, {
                 type: 'bar',
                 data: {
                     labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
@@ -2582,7 +2617,7 @@
 
             // 收入数据图表
             const incomeCtx = document.getElementById('income-chart').getContext('2d');
-            const incomeChart = new Chart(incomeCtx, {
+            incomeChart = new Chart(incomeCtx, {
                 type: 'line',
                 data: {
                     labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
@@ -2622,10 +2657,113 @@
                         link.href = canvas.toDataURL('image/png');
                         link.click();
                     } else {
+                        // 刷新数据
+                        loadMetricsData();
                         alert('数据已刷新！');
                     }
                 });
             });
+        }
+        
+        // 从GitHub加载指标数据
+        function loadMetricsData() {
+            // 显示加载状态
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'data-loading-indicator';
+            loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在加载指标数据...';
+            document.querySelector('.metrics-section').prepend(loadingIndicator);
+            
+            fetch(metricsDataUrl)
+                .then(response => response.arrayBuffer())
+                .then(arrayBuffer => {
+                    const data = new Uint8Array(arrayBuffer);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 处理指标数据（Metrics工作表）
+                    const metricsSheet = workbook.Sheets['Metrics'];
+                    const metricsJson = XLSX.utils.sheet_to_json(metricsSheet, { header: 1 });
+                    
+                    // 更新指标数据 - 修正索引位置
+                    document.getElementById('month-charge').textContent = formatNumber(metricsJson[1][1]) + ' kWh';
+                    document.getElementById('month-electricity').textContent = '¥' + formatNumber(metricsJson[2][1]);
+                    document.getElementById('month-service').textContent = '¥' + formatNumber(metricsJson[3][1]);
+                    document.getElementById('month-orders').textContent = formatNumber(metricsJson[4][1]);
+                    
+                    document.getElementById('year-charge').textContent = formatNumber(metricsJson[5][1]) + ' kWh';
+                    document.getElementById('year-electricity').textContent = '¥' + formatNumber(metricsJson[6][1]);
+                    document.getElementById('year-service').textContent = '¥' + formatNumber(metricsJson[7][1]);
+                    document.getElementById('year-orders').textContent = formatNumber(metricsJson[8][1]);
+                    
+                    document.getElementById('total-charge').textContent = formatNumber(metricsJson[9][1]) + ' kWh';
+                    document.getElementById('total-electricity').textContent = '¥' + formatNumber(metricsJson[10][1]);
+                    document.getElementById('total-service').textContent = '¥' + formatNumber(metricsJson[11][1]);
+                    document.getElementById('total-orders').textContent = formatNumber(metricsJson[12][1]);
+                    
+                    document.getElementById('month-income').textContent = '¥' + formatNumber(metricsJson[13][1]);
+                    document.getElementById('year-income').textContent = '¥' + formatNumber(metricsJson[14][1]);
+                    document.getElementById('total-income').textContent = '¥' + formatNumber(metricsJson[15][1]);
+                    
+                    // 处理充电图表数据（ChargingChart工作表）
+                    const chargingChartSheet = workbook.Sheets['ChargingChart'];
+                    const chargingChartJson = XLSX.utils.sheet_to_json(chargingChartSheet, { header: 1 });
+                    
+                    // 提取数据
+                    const labels = [];
+                    const chargingData = [];
+                    const serviceIncomeData = [];
+                    
+                    for (let i = 1; i < chargingChartJson.length; i++) {
+                        const row = chargingChartJson[i];
+                        if (row && row.length >= 3) {
+                            labels.push(row[0]);
+                            chargingData.push(row[1]);
+                            serviceIncomeData.push(row[2]);
+                        }
+                    }
+                    
+                    // 更新充电图表
+                    if (chargingChart) {
+                        chargingChart.data.labels = labels;
+                        chargingChart.data.datasets[0].data = chargingData;
+                        chargingChart.data.datasets[1].data = serviceIncomeData;
+                        chargingChart.update();
+                    }
+                    
+                    // 处理综合收入图表数据（IncomeChart工作表）
+                    const incomeChartSheet = workbook.Sheets['IncomeChart'];
+                    const incomeChartJson = XLSX.utils.sheet_to_json(incomeChartSheet, { header: 1 });
+                    
+                    // 提取数据
+                    const incomeLabels = [];
+                    const incomeDataArray = [];
+                    
+                    for (let i = 1; i < incomeChartJson.length; i++) {
+                        const row = incomeChartJson[i];
+                        if (row && row.length >= 2) {
+                            incomeLabels.push(row[0]);
+                            incomeDataArray.push(row[1]);
+                        }
+                    }
+                    
+                    // 更新收入图表
+                    if (incomeChart) {
+                        incomeChart.data.labels = incomeLabels;
+                        incomeChart.data.datasets[0].data = incomeDataArray;
+                        incomeChart.update();
+                    }
+                    
+                    // 移除加载状态
+                    loadingIndicator.remove();
+                })
+                .catch(error => {
+                    console.error('加载指标数据失败:', error);
+                    loadingIndicator.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 加载指标数据失败';
+                    
+                    // 5秒后移除提示
+                    setTimeout(() => {
+                        loadingIndicator.remove();
+                    }, 5000);
+                });
         }
     </script>
 </body>
