@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>长沙飞狐综合数据平台</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -665,6 +666,38 @@
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
         }
+        
+        /* 加载指示器 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 25, 41, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid rgba(0, 198, 255, 0.3);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+            color: var(--primary);
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -679,8 +712,14 @@
     <!-- 数据点阵 -->
     <div class="data-grid" id="data-grid"></div>
     
+    <!-- 加载指示器 -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在加载数据平台...</div>
+    </div>
+    
     <!-- 主页面容器 -->
-    <div id="main-container">
+    <div id="main-container" style="display: none;">
         <header>
             <div class="logo">
                 <i class="fas fa-bolt"></i>
@@ -740,9 +779,9 @@
                 <div class="metric-section">
                     <h3 class="metric-section-title"><i class="fas fa-chart-pie"></i> 总体运营指标</h3>
                     <div class="metric-grid centered">
-                        <div class="metric-card centered">
+                        <div class="metric-card centered" id="overall-metric">
                             <i class="fas fa-bolt"></i>
-                            <div class="metric-value-large">2,564,822.21 元</div>
+                            <div class="metric-value-large">加载中...</div>
                             <div class="metric-name-large">总收入</div>
                         </div>
                      </div>
@@ -751,74 +790,8 @@
                 <!-- 各板块运营指标 - 优化后布局 -->
                 <div class="metric-section">
                     <h3 class="metric-section-title"><i class="fas fa-cubes"></i> 各板块运营指标</h3>
-                    <div class="metric-grid">
-                        <!-- 第一行 -->
-                        <div class="metric-card">
-                            <div class="card-header">
-                                <i class="fas fa-water"></i>
-                                <div class="metric-name-large">车海洋</div>
-                            </div>
-                            <div class="metric-value">总收入: 480,425.00元</div>
-                            <div class="metric-value">总订单: 174,855笔</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="card-header">
-                                <i class="fas fa-broom"></i>
-                                <div class="metric-name-large">快易洁</div>
-                            </div>
-                            <div class="metric-value">总收入: 58,499.59元</div>
-                            <div class="metric-value">总订单: 999笔</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="card-header">
-                                <i class="fab fa-weixin"></i>
-                                <div class="metric-name-large">微信</div>
-                            </div>
-                            <div class="metric-value">总收入: 280,579.47元</div>
-                            <div class="metric-value">总订单: 4,000笔</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="card-header">
-                                <i class="fas fa-car"></i>
-                                <div class="metric-name-large">车颜知己</div>
-                            </div>
-                            <div class="metric-value">总收入: 337,944.30元</div>
-                            <div class="metric-value">总订单: 49,800笔</div>
-                        </div>
-                        
-                        <!-- 第二行 -->
-                        <div class="metric-card">
-                            <div class="card-header">
-                                <i class="fas fa-cash-register"></i>
-                                <div class="metric-name-large">兴元售货机</div>
-                            </div>
-                            <div class="metric-value">总收入: 271,220.90元</div>
-                            <div class="metric-value">总订单: 50,777笔</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="card-header">
-                                <i class="fas fa-qrcode"></i>
-                                <div class="metric-name-large">收钱吧</div>
-                            </div>
-                            <div class="metric-value">总收入: 459,643.16元</div>
-                            <div class="metric-value">总订单: 10,585笔</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="card-header">
-                                <i class="fas fa-door-open"></i>
-                                <div class="metric-name-large">红门</div>
-                            </div>
-                            <div class="metric-value">临停缴费总收入: 58,010.00元</div>
-                            <div class="metric-value">月卡缴费总收入: 49,160.00元</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="card-header">
-                                <i class="fas fa-traffic-light"></i>
-                                <div class="metric-name-large">赛菲姆道闸</div>
-                            </div>
-                            <div class="metric-value">总收入: 569,339.78元</div>
-                            <div class="metric-value">总订单: 64,819笔</div>
-                        </div>
+                    <div class="metric-grid" id="sector-metrics">
+                        <!-- 内容将由JavaScript动态填充 -->
                     </div>
                 </div>
             </div>
@@ -826,31 +799,8 @@
             <!-- 年度运营指标 -->
             <div class="annual-section">
                 <h3 class="annual-title"><i class="fas fa-calendar-alt"></i> 年度运营指标 (2020-2025)</h3>
-                <div class="annual-grid">
-                    <div class="annual-card">
-                        <div class="annual-year">2020年</div>
-                        <div class="annual-value">总收入: 172,983.00 元<br>总订单数量: 19,361笔</div>
-                    </div>
-                    <div class="annual-card">
-                        <div class="annual-year">2021年</div>
-                        <div class="annual-value">总收入: 465,403.00 元<br>总订单数量: 78,142笔</div>
-                    </div>
-                    <div class="annual-card">
-                        <div class="annual-year">2022年</div>
-                        <div class="annual-value">总收入: 474,854.7 元<br>总订单数量: 70,782笔</div>
-                    </div>
-                    <div class="annual-card">
-                        <div class="annual-year">2023年</div>
-                        <div class="annual-value">总收入: 470,940.7 元<br>总订单数量: 65,218笔</div>
-                    </div>
-                    <div class="annual-card">
-                        <div class="annual-year">2024年</div>
-                        <div class="annual-value">总收入: 605,487.00 元<br>总订单数量: 82,326笔</div>
-                    </div>
-                    <div class="annual-card">
-                        <div class="annual-year">2025年</div>
-                        <div class="annual-value">总收入: 375,153.80 元<br>总订单数量: 46,126笔</div>
-                    </div>                    
+                <div class="annual-grid" id="annual-metrics">
+                    <!-- 内容将由JavaScript动态填充 -->
                 </div>
             </div>
             
@@ -879,6 +829,10 @@
     </div>
 
     <script>
+        // 全局变量存储图表实例
+        let revenueChart = null;
+        let annualTrendChart = null;
+        
         // 创建数据点阵
         function createDataGrid() {
             const grid = document.getElementById('data-grid');
@@ -909,9 +863,6 @@
             document.getElementById('time-display').textContent = 
                 `${year}年${month}月${day}日 ${weekday} ${hours}:${minutes}:${seconds}`;
         }
-        
-        setInterval(updateTime, 1000);
-        updateTime();
         
         // 查询按钮事件 - 动态匹配GitHub仓库文件
         document.getElementById('query-btn').addEventListener('click', function() {
@@ -964,30 +915,187 @@
             });
         });
         
-        // 图表初始化
-        window.addEventListener('load', function() {
-            createDataGrid();
+        // 加载Excel数据
+        function loadExcelData() {
+            // 从GitHub仓库获取Excel文件
+            const excelUrl = 'https://www.csfhcdz.cn/data/zhdata.xlsx';
             
-            // 各板块收入情况图表 - 添加年份轴
+            fetch(excelUrl)
+                .then(response => response.arrayBuffer())
+                .then(buffer => {
+                    // 解析Excel数据
+                    const workbook = XLSX.read(buffer, { type: 'array' });
+                    
+                    // 获取各工作表数据
+                    const sheet1 = workbook.Sheets[workbook.SheetNames[0]];
+                    const sheet2 = workbook.Sheets[workbook.SheetNames[1]];
+                    const sheet3 = workbook.Sheets[workbook.SheetNames[2]];
+                    const sheet4 = workbook.Sheets[workbook.SheetNames[3]];
+                    const sheet5 = workbook.Sheets[workbook.SheetNames[4]];
+                    
+                    // 解析Sheet1：总体运营指标
+                    const sheet1Data = XLSX.utils.sheet_to_json(sheet1, { header: 1 });
+                    const totalRevenue = sheet1Data[1][1]; // 第二行第二列
+                    
+                    // 更新总体运营指标
+                    document.querySelector('#overall-metric .metric-value-large').textContent = 
+                        `${parseFloat(totalRevenue).toLocaleString('zh-CN', { maximumFractionDigits: 2 })} 元`;
+                    
+                    // 解析Sheet2：各板块运营指标
+                    const sheet2Data = XLSX.utils.sheet_to_json(sheet2, { header: 1 });
+                    const sectors = sheet2Data.slice(1); // 去掉标题行
+                    
+                    // 板块图标映射
+                    const sectorIcons = {
+                        'chy': 'fas fa-water',
+                        'kyj': 'fas fa-broom',
+                        'wx': 'fab fa-weixin',
+                        'cyzj': 'fas fa-car',
+                        'xy': 'fas fa-cash-register',
+                        'sqb': 'fas fa-qrcode',
+                        'hm': 'fas fa-door-open',
+                        'dz': 'fas fa-traffic-light'
+                    };
+                    
+                    // 板块名称映射
+                    const sectorNames = {
+                        'chy': '车海洋',
+                        'kyj': '快易洁',
+                        'wx': '微信',
+                        'cyzj': '车颜知己',
+                        'xy': '兴元售货机',
+                        'sqb': '收钱吧',
+                        'hm': '红门',
+                        'dz': '赛菲姆道闸'
+                    };
+                    
+                    // 更新各板块运营指标
+                    const sectorMetricsContainer = document.getElementById('sector-metrics');
+                    sectorMetricsContainer.innerHTML = '';
+                    
+                    sectors.forEach(sector => {
+                        const [sectorId, totalIncome, totalOrders] = sector;
+                        
+                        const card = document.createElement('div');
+                        card.className = 'metric-card';
+                        card.innerHTML = `
+                            <div class="card-header">
+                                <i class="${sectorIcons[sectorId]}"></i>
+                                <div class="metric-name-large">${sectorNames[sectorId]}</div>
+                            </div>
+                            <div class="metric-value">总收入: ${parseFloat(totalIncome).toLocaleString('zh-CN', { maximumFractionDigits: 2 })}元</div>
+                            <div class="metric-value">总订单: ${parseFloat(totalOrders).toLocaleString('zh-CN')}笔</div>
+                        `;
+                        sectorMetricsContainer.appendChild(card);
+                    });
+                    
+                    // 解析Sheet3：年度运营指标
+                    const sheet3Data = XLSX.utils.sheet_to_json(sheet3, { header: 1 });
+                    const annualMetrics = sheet3Data.slice(1); // 去掉标题行
+                    
+                    // 更新年度运营指标
+                    const annualMetricsContainer = document.getElementById('annual-metrics');
+                    annualMetricsContainer.innerHTML = '';
+                    
+                    annualMetrics.forEach(metric => {
+                        const [year, totalIncome, totalOrders] = metric;
+                        
+                        const card = document.createElement('div');
+                        card.className = 'annual-card';
+                        card.innerHTML = `
+                            <div class="annual-year">${year}年</div>
+                            <div class="annual-value">
+                                总收入: ${parseFloat(totalIncome).toLocaleString('zh-CN', { maximumFractionDigits: 2 })} 元<br>
+                                总订单数量: ${parseFloat(totalOrders).toLocaleString('zh-CN')}笔
+                            </div>
+                        `;
+                        annualMetricsContainer.appendChild(card);
+                    });
+                    
+                    // 解析Sheet4：各板块收入情况（用于柱状图）
+                    const sheet4Data = XLSX.utils.sheet_to_json(sheet4, { header: 1 });
+                    const revenueData = sheet4Data.slice(1); // 去掉标题行
+                    
+                    // 按年份和设备组织数据
+                    const revenuesByYear = {
+                        '2023年': [],
+                        '2024年': [],
+                        '2025年': []
+                    };
+                    
+                    // 设备顺序
+                    const deviceOrder = ['chy', 'kyj', 'wx', 'cyzj', 'xy', 'sqb', 'hm', 'dz'];
+                    
+                    // 初始化数据结构
+                    deviceOrder.forEach(device => {
+                        revenuesByYear['2023年'].push(0);
+                        revenuesByYear['2024年'].push(0);
+                        revenuesByYear['2025年'].push(0);
+                    });
+                    
+                    // 填充数据
+                    revenueData.forEach(row => {
+                        const [device, year, revenue] = row;
+                        const deviceIndex = deviceOrder.indexOf(device);
+                        
+                        if (deviceIndex !== -1 && revenuesByYear[year]) {
+                            revenuesByYear[year][deviceIndex] = parseFloat(revenue);
+                        }
+                    });
+                    
+                    // 解析Sheet5：年度总收入趋势（用于折线图）
+                    const sheet5Data = XLSX.utils.sheet_to_json(sheet5, { header: 1 });
+                    const trendData = sheet5Data.slice(1); // 去掉标题行
+                    
+                    const years = [];
+                    const annualRevenues = [];
+                    
+                    trendData.forEach(row => {
+                        years.push(row[0]);
+                        annualRevenues.push(parseFloat(row[1]));
+                    });
+                    
+                    // 初始化图表
+                    initCharts(revenuesByYear, years, annualRevenues);
+                    
+                    // 隐藏加载指示器，显示主内容
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    document.getElementById('main-container').style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('加载数据失败:', error);
+                    document.querySelector('#loading-overlay .loading-text').innerHTML = 
+                        '数据加载失败！<br>请检查网络连接或刷新页面重试。';
+                });
+        }
+        
+        // 初始化图表
+        function initCharts(revenuesByYear, years, annualRevenues) {
             const revenueChartCtx = document.getElementById('revenue-chart').getContext('2d');
-            new Chart(revenueChartCtx, {
+            
+            // 销毁现有图表
+            if (revenueChart) revenueChart.destroy();
+            if (annualTrendChart) annualTrendChart.destroy();
+            
+            // 创建各板块收入情况图表
+            revenueChart = new Chart(revenueChartCtx, {
                 type: 'bar',
                 data: {
                     labels: ['车海洋', '快易洁', '微信', '车颜知己', '兴元售货机', '收钱吧', '红门', '赛菲姆道闸'],
                     datasets: [
                         {
                             label: '2023年收入',
-                            data: [80754.89, 17379.48, 42490.20, 68848.00, 35487.90, 91060.20, 0, 134950.00],
+                            data: revenuesByYear['2023年'],
                             backgroundColor: 'rgba(54, 162, 235, 0.7)',
                         },
                         {
                             label: '2024年收入',
-                            data: [84064.40, 25829.64, 3535.03, 168284.50, 61996.3, 85629.00, 0, 135730.00],
+                            data: revenuesByYear['2024年'],
                             backgroundColor: 'rgba(75, 192, 192, 0.7)',
                         },
                         {
                             label: '2025年收入',
-                            data: [43964.18, 12708.99, 18846.00, 100167.80, 36451.70, 30170.17, 107170.00,25675.00],
+                            data: revenuesByYear['2025年'],
                             backgroundColor: 'rgba(153, 102, 255, 0.7)',
                         }
                     ]
@@ -1011,7 +1119,7 @@
                         x: {
                             ticks: {
                                 color: '#ddd',
-                                maxRotation: 45, // 旋转标签防止重叠
+                                maxRotation: 45,
                                 minRotation: 45
                             },
                             grid: {
@@ -1035,7 +1143,6 @@
                             color: '#fff'
                         }
                     },
-                    // 增加底部内边距确保标签可见
                     layout: {
                         padding: {
                             bottom: 20
@@ -1044,15 +1151,15 @@
                 }
             });
             
-            // 年度总收入趋势
+            // 创建年度总收入趋势图表
             const annualTrendCtx = document.getElementById('annual-trend-chart').getContext('2d');
-            new Chart(annualTrendCtx, {
+            annualTrendChart = new Chart(annualTrendCtx, {
                 type: 'line',
                 data: {
-                    labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
+                    labels: years,
                     datasets: [{
                         label: '年度总收入 (元)',
-                        data: [172983.00, 465403.00, 474854.70, 470940.70, 605487.00, 375153.80],
+                        data: annualRevenues,
                         borderColor: 'rgba(75, 192, 192, 1)',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         borderWidth: 2,
@@ -1098,7 +1205,6 @@
                             color: '#fff'
                         }
                     },
-                    // 增加底部内边距确保标签可见
                     layout: {
                         padding: {
                             bottom: 15
@@ -1106,6 +1212,16 @@
                     }
                 }
             });
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', function() {
+            createDataGrid();
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // 加载Excel数据
+            loadExcelData();
         });
     </script>
 </body>
