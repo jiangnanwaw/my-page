@@ -983,7 +983,7 @@
             const deviceSheet = workbook.Sheets[workbook.SheetNames[4]];
             const deviceData = XLSX.utils.sheet_to_json(deviceSheet, { header: 1 });
             
-            for (let i = 2; i < deviceData.length; i++) {
+            for (let i = 1; i < deviceData.length; i++) {
                 if (deviceData[i][0]) {
                     excelData.deviceMetrics.push({
                         name: deviceData[i][0],
