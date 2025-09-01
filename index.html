@@ -408,7 +408,7 @@
         
         .section-title {
             font-size: 22px;
-            margin-bottom: 25px;
+            margin-bottom: 3px;
             color: var(--dark);
             display: flex;
             align-items: center;
@@ -1664,20 +1664,54 @@
         </div>
     </div>
                     
-                    <!-- 充电数据图表 -->
-                    <div class="chart-container">
-                        <div class="chart-title">
-                            <i class="fas fa-chart-bar"></i>
-                            充电数据趋势 (2025年)
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="charging-chart"></canvas>
-                        </div>
-                        <div class="chart-actions">
-                            <button class="chart-action-btn"><i class="fas fa-download"></i> 导出图表</button>
-                            <button class="chart-action-btn"><i class="fas fa-sync-alt"></i> 刷新数据</button>
-                        </div>
-                    </div>
+               <!-- 充电数据看板 -->
+<h2 class="section-title" style="margin-top: 30px;"><i class="fas fa-charging-station"></i> 充电数据看板</h2>
+<div class="metrics-section">
+    <!-- 第一部分：数据表格 -->
+    <div class="chart-container">
+        <div class="chart-title">
+            <i class="fas fa-table"></i>
+            充电数据表格
+            <div style="display: flex; align-items: center; margin-left: auto; gap: 10px;">
+                <select id="year-select" style="padding: 5px;">
+                    <!-- 年份选项将由JavaScript动态生成 -->
+                </select>
+                <button class="export-btn" id="export-board-btn">
+                    <i class="fas fa-file-excel"></i>
+                    <span>导出数据</span>
+                </button>
+            </div>
+        </div>
+        <div class="table-container" id="charging-board-table-container">
+            <table id="charging-board-table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>充电量(kwh)</th>
+                        <th>充电电费(元)</th>
+                        <th>充电服务费(元)</th>
+                        <th>充电总收入(元)</th>
+                        <th>总订单数量</th>
+                    </tr>
+                </thead>
+                <tbody id="charging-board-table-body">
+                    <!-- 数据将由JavaScript动态填充 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 第二部分：可视化图表 -->
+    <div class="chart-container">
+        <div class="chart-title">
+            <i class="fas fa-chart-line"></i>
+            充电数据趋势
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="charging-board-chart"></canvas>
+        </div>
+    </div>
+</div>
                     
                     <!-- 充电数据总趋势图表 -->
                     <div class="chart-container">
@@ -2672,6 +2706,11 @@
                 
                 // 加载指标数据
                 loadMetricsData();
+
+                // 加载充电数据看板
+loadChargingBoardData();
+initChargingBoardExport();
+
             } else {
                 // 登录失败
                 loginAttempts++;
@@ -2833,62 +2872,7 @@ function formatNumber(value) {
 
         // 初始化图表
         function initCharts() {
-            // 充电数据图表
-            const chargingCtx = document.getElementById('charging-chart').getContext('2d');
-            chargingChart = new Chart(chargingCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-                    datasets: [
-                        {
-                            label: '充电量 (kwh)',
-                            data: [479733.16, 464263.68, 512991.91, 457884.94, 470890.75, 461424.8, 548439.35],
-                            backgroundColor: 'rgba(26, 115, 232, 0.7)',
-                            borderColor: 'rgba(26, 115, 232, 1)',
-                            borderWidth: 1,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: '服务费收入 (元)',
-                            data: [135946.9, 129429.97, 142060.47, 125140.44, 134990.15, 136456.45, 159618.18],
-                            type: 'line',
-                            borderColor: 'rgba(0, 200, 83, 1)',
-                            backgroundColor: 'rgba(0, 200, 83, 0.1)',
-                            borderWidth: 2,
-                            fill: false,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: '充电量 (kwh)'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: '服务费收入 (元)'
-                            },
-                            grid: {
-                                drawOnChartArea: false,
-                            },
-                        }
-                    }
-                }
-            });
-
+           
             // 收入数据图表
             const incomeCtx = document.getElementById('income-chart').getContext('2d');
             incomeChart = new Chart(incomeCtx, {
@@ -3069,6 +3053,304 @@ revenueBySectorChart = new Chart(revenueBySectorCtx, {
                 });
             });
         }
+
+        // 充电数据看板相关函数
+let chargingBoardData = [];
+
+// 加载充电数据看板数据
+function loadChargingBoardData() {
+    fetch('https://www.csfhcdz.cn/data/homepage.xlsx')
+        .then(response => response.arrayBuffer())
+        .then(arrayBuffer => {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // 获取Chargingdata工作表
+            const chargingSheet = workbook.Sheets['Chargingdata'];
+            const jsonData = XLSX.utils.sheet_to_json(chargingSheet, { header: 1 });
+            
+            // 保存表头和数据
+            const headers = jsonData[0];
+            chargingBoardData = jsonData.slice(1).map(row => {
+                let obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index];
+                });
+                return obj;
+            });
+            
+            // 初始化年份下拉框
+            initYearSelect();
+            
+            // 默认显示当前年度的数据
+            const currentYear = new Date().getFullYear();
+            renderChargingBoardTable(currentYear);
+        })
+        .catch(error => {
+            console.error('加载充电数据看板数据失败:', error);
+        });
+}
+
+// 初始化年份下拉框
+function initYearSelect() {
+    const yearSelect = document.getElementById('year-select');
+    // 获取数据中存在的年份
+    const years = new Set();
+    chargingBoardData.forEach(item => {
+        if (item['时间']) {
+            const dateStr = item['时间'];
+            let year;
+            if (dateStr instanceof Date) {
+                year = dateStr.getFullYear();
+            } else if (typeof dateStr === 'string') {
+                const match = dateStr.match(/(\d{4})/);
+                if (match) {
+                    year = parseInt(match[1]);
+                }
+            }
+            if (year) {
+                years.add(year);
+            }
+        }
+    });
+    
+    // 排序年份
+    const sortedYears = Array.from(years).sort();
+    
+    // 清空下拉框
+    yearSelect.innerHTML = '';
+    
+    // 添加年份选项
+    sortedYears.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year + '年';
+        yearSelect.appendChild(option);
+    });
+    
+    // 添加事件监听
+    yearSelect.addEventListener('change', function() {
+        const selectedYear = parseInt(this.value);
+        renderChargingBoardTable(selectedYear);
+    });
+}
+
+// 渲染充电数据看板表格
+function renderChargingBoardTable(year) {
+    const tableBody = document.getElementById('charging-board-table-body');
+    tableBody.innerHTML = '';
+    
+    // 过滤出指定年份的数据
+    const yearData = chargingBoardData.filter(item => {
+        if (item['时间']) {
+            const dateStr = item['时间'];
+            let itemYear;
+            if (dateStr instanceof Date) {
+                itemYear = dateStr.getFullYear();
+            } else if (typeof dateStr === 'string') {
+                const match = dateStr.match(/(\d{4})/);
+                if (match) {
+                    itemYear = parseInt(match[1]);
+                }
+            }
+            return itemYear === year;
+        }
+        return false;
+    });
+    
+    // 按时间排序
+    yearData.sort((a, b) => {
+        const dateA = new Date(a['时间']);
+        const dateB = new Date(b['时间']);
+        return dateA - dateB;
+    });
+    
+    // 填充数据
+    let totalCharge = 0;
+    let totalElectricity = 0;
+    let totalService = 0;
+    let totalIncome = 0;
+    let totalOrders = 0;
+    
+    yearData.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // 格式化时间显示为yyyy-mm
+        let timeDisplay = '';
+        if (item['时间'] instanceof Date) {
+            const date = item['时间'];
+            timeDisplay = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        } else if (typeof item['时间'] === 'string') {
+            const date = new Date(item['时间']);
+            if (!isNaN(date)) {
+                timeDisplay = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            } else {
+                timeDisplay = item['时间'];
+            }
+        }
+        
+        row.innerHTML = `
+            <td>${timeDisplay}</td>
+            <td>${formatNumber(item['充电量(kwh)'])}</td>
+            <td>${formatNumber(item['充电电费(元)'])}</td>
+            <td>${formatNumber(item['充电服务费(元)'])}</td>
+            <td>${formatNumber(item['充电总收入(元)'])}</td>
+            <td>${formatNumber(item['总订单数量'])}</td>
+        `;
+        
+        tableBody.appendChild(row);
+        
+        // 计算合计
+        totalCharge += Number(item['充电量(kwh)']) || 0;
+        totalElectricity += Number(item['充电电费(元)']) || 0;
+        totalService += Number(item['充电服务费(元)']) || 0;
+        totalIncome += Number(item['充电总收入(元)']) || 0;
+        totalOrders += Number(item['总订单数量']) || 0;
+    });
+    
+    // 添加合计行
+    const totalRow = document.createElement('tr');
+    totalRow.innerHTML = `
+        <td>合计</td>
+        <td>${formatNumber(totalCharge)}</td>
+        <td>${formatNumber(totalElectricity)}</td>
+        <td>${formatNumber(totalService)}</td>
+        <td>${formatNumber(totalIncome)}</td>
+        <td>${formatNumber(totalOrders)}</td>
+    `;
+    tableBody.appendChild(totalRow);
+    
+    // 渲染图表
+    renderChargingBoardChart(yearData);
+}
+
+// 渲染充电数据看板图表
+function renderChargingBoardChart(data) {
+    const ctx = document.getElementById('charging-board-chart').getContext('2d');
+    
+    // 如果已存在图表实例，先销毁它
+    if (window.chargingBoardChartInstance) {
+        window.chargingBoardChartInstance.destroy();
+    }
+    
+    // 按时间排序
+    data.sort((a, b) => {
+        const dateA = new Date(a['时间']);
+        const dateB = new Date(b['时间']);
+        return dateA - dateB;
+    });
+    
+    // 准备图表数据
+    const labels = data.map(item => {
+        if (item['时间'] instanceof Date) {
+            const date = item['时间'];
+            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        } else if (typeof item['时间'] === 'string') {
+            const date = new Date(item['时间']);
+            if (!isNaN(date)) {
+                return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            } else {
+                return item['时间'];
+            }
+        }
+        return '';
+    });
+    
+    const chargeData = data.map(item => Number(item['充电量(kwh)']) || 0);
+    const serviceData = data.map(item => Number(item['充电服务费(元)']) || 0);
+    
+    // 创建图表
+    window.chargingBoardChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: '充电量 (kwh)',
+                    data: chargeData,
+                    backgroundColor: 'rgba(26, 115, 232, 0.7)',
+                    borderColor: 'rgba(26, 115, 232, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: '充电服务费 (元)',
+                    data: serviceData,
+                    type: 'line',
+                    borderColor: 'rgba(0, 200, 83, 1)',
+                    backgroundColor: 'rgba(0, 200, 83, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: '充电量 (kwh)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: '充电服务费 (元)'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+}
+
+// 导出充电数据看板数据
+function exportChargingBoardData() {
+    // 获取当前显示的年份
+    const year = parseInt(document.getElementById('year-select').value);
+    
+    // 过滤出指定年份的数据
+    const yearData = chargingBoardData.filter(item => {
+        if (item['时间']) {
+            const dateStr = item['时间'];
+            let itemYear;
+            if (dateStr instanceof Date) {
+                itemYear = dateStr.getFullYear();
+            } else if (typeof dateStr === 'string') {
+                const match = dateStr.match(/(\d{4})/);
+                if (match) {
+                    itemYear = parseInt(match[1]);
+                }
+            }
+            return itemYear === year;
+        }
+        return false;
+    });
+    
+    // 创建一个新的工作簿
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(yearData);
+    XLSX.utils.book_append_sheet(wb, ws, '充电数据');
+    
+    // 导出文件
+    XLSX.writeFile(wb, `充电数据_${year}年.xlsx`);
+}
+
+// 初始化充电数据看板导出按钮事件
+function initChargingBoardExport() {
+    document.getElementById('export-board-btn').addEventListener('click', exportChargingBoardData);
+}
         
         // 从GitHub加载指标数据
         function loadMetricsData() {
