@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -4186,20 +4186,25 @@ function updateWcdscTable() {
     for (let i = startIndex; i < endIndex; i++) {
         const item = wcdscData[i];
         const row = document.createElement('tr');
+        
+        // 检查"截止一直未充电时间"列是否有数据，如果有则添加红色样式
+        const hasNoChargeUntilTime = item.noChargeUntilTime && item.noChargeUntilTime.trim() !== '';
+        const rowStyle = hasNoChargeUntilTime ? 'color: red; font-weight: bold;' : '';
 
         row.innerHTML = `
-            <td style="padding: 8px; text-align: center; white-space: nowrap;">${item.stationName}</td>
-            <td style="padding: 8px; text-align: center;">${item.terminalName}</td>
-            <td style="padding: 8px; text-align: center;">${item.lastChargeEndTime}</td>
-            <td style="padding: 8px; text-align: center;">${item.nextChargeStartTime}</td>
-            <td style="padding: 8px; text-align: center;">${item.noChargeUntilTime}</td>
-            <td style="padding: 8px; text-align: center;">${formatNumber(item.noChargeDuration)}</td>
+            <td style="padding: 8px; text-align: center; white-space: nowrap; ${rowStyle}">${item.stationName}</td>
+            <td style="padding: 8px; text-align: center; ${rowStyle}">${item.terminalName}</td>
+            <td style="padding: 8px; text-align: center; ${rowStyle}">${item.lastChargeEndTime}</td>
+            <td style="padding: 8px; text-align: center; ${rowStyle}">${item.nextChargeStartTime}</td>
+            <td style="padding: 8px; text-align: center; ${rowStyle}">${item.noChargeUntilTime}</td>
+            <td style="padding: 8px; text-align: center; ${rowStyle}">${formatNumber(item.noChargeDuration)}</td>
         `;
         
         // 添加鼠标事件
         row.addEventListener('mouseenter', () => {
             isWcdscPaused = true;
             clearInterval(wcdscInterval);
+            // 保持红色文本，但添加背景高亮
             row.style.backgroundColor = 'rgba(26, 115, 232, 0.1)';
         });
         
