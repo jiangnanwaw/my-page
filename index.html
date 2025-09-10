@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -1640,6 +1640,34 @@
         </div>
         <div class="chart-wrapper">
             <canvas id="realtime-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- 设备未充电时长统计 -->
+    <div class="chart-container" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        <div class="chart-title">
+            <i class="fas fa-plug"></i>
+            设备未充电时长统计
+        </div>
+        <div class="realtime-table-container" id="wcdsc-table-container" style="width: 100%; overflow-x: auto;">
+            <div class="data-loading" id="wcdsc-loading">
+                <i class="fas fa-spinner fa-spin"></i> 正在加载未充电时长数据，请稍候...
+            </div>
+            <table id="wcdsc-table" style="width: 100%; table-layout: fixed; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="width: 25%; padding: 8px; text-align: center; border: 1px solid #ddd; background-color: #f5f5f5; white-space: nowrap;">电站名称</th>
+                        <th style="width: 12%; padding: 8px; text-align: center; border: 1px solid #ddd; background-color: #f5f5f5;">终端名称</th>
+                        <th style="width: 20%; padding: 8px; text-align: center; border: 1px solid #ddd; background-color: #f5f5f5;">上一次充电结束时间</th>
+                        <th style="width: 20%; padding: 8px; text-align: center; border: 1px solid #ddd; background-color: #f5f5f5;">下一次充电开始时间</th>
+                        <th style="width: 20%; padding: 8px; text-align: center; border: 1px solid #ddd; background-color: #f5f5f5;">截止一直未充电时间</th>
+                        <th style="width: 10%; padding: 8px; text-align: center; border: 1px solid #ddd; background-color: #f5f5f5;">未充电时长(小时)</th>
+                    </tr>
+                </thead>
+                <tbody id="wcdsc-table-body" style="border: 1px solid #ddd;">
+                    <!-- 数据将由JavaScript动态填充 -->
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -3638,6 +3666,12 @@ let realtimeInterval = null;
 let isRealtimePaused = false;
 let realtimeChart = null;
 
+// 设备未充电时长统计变量
+let wcdscData = [];
+let currentWcdscIndex = 0;
+let wcdscInterval = null;
+let isWcdscPaused = false;
+
 // 加载实时数据
 function loadRealtimeData() {
     const loadingElement = document.getElementById('realtime-loading');
@@ -4010,10 +4044,233 @@ function drawRealtimeChart() {
     });
 }
 setTimeout(loadRealtimeData, 5 * 60 * 1000); // 每5分钟刷新一次
+
+// 加载设备未充电时长统计数据
+function loadWcdscData() {
+    const loadingElement = document.getElementById('wcdsc-loading');
+    loadingElement.style.display = 'block';
+    
+    fetch('https://www.csfhcdz.cn/data/wcdsc.xlsx?t=' + new Date().getTime())
+        .then(response => response.arrayBuffer())
+        .then(arrayBuffer => {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // 获取第一个工作表
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // 转换为JSON
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            // 处理表头
+            const headers = jsonData[0];
+
+            // Excel日期序列号转换函数
+            function excelDateToJSDate(serial) {
+                const utc_days = Math.floor(serial - 25569);
+                const utc_value = utc_days * 86400;
+                const date_info = new Date(utc_value * 1000);
+                return date_info;
+            }
+
+            // 格式化日期时间
+            function formatDateTime(dateValue) {
+                if (dateValue === null || dateValue === undefined || dateValue === '') {
+                    return '';
+                }
+                
+                let date;
+                if (typeof dateValue === 'number') {
+                    // 处理Excel日期序列号
+                    date = excelDateToJSDate(dateValue);
+                } else if (typeof dateValue === 'string') {
+                    // 尝试解析字符串日期
+                    date = new Date(dateValue);
+                    if (isNaN(date.getTime())) {
+                        return dateValue; // 如果无法解析，返回原始值
+                    }
+                } else if (dateValue instanceof Date) {
+                    date = dateValue;
+                } else {
+                    return String(dateValue); // 其他类型直接转为字符串
+                }
+                
+                // 格式化为 yyyy-MM-dd HH:mm:ss
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                const seconds = date.getSeconds().toString().padStart(2, '0');
+                
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+
+            // 处理数据行
+            wcdscData = [];
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                // 只要有数据就显示，不检查特定列
+                if (row && row.some(cell => cell !== null && cell !== undefined && cell !== '')) {
+                    // 确保所有字段都有值，并格式化时间字段
+                    wcdscData.push({
+                        stationName: row[0] || '',
+                        terminalName: row[1] || '',
+                        lastChargeEndTime: formatDateTime(row[2]),
+                        nextChargeStartTime: formatDateTime(row[3]),
+                        noChargeUntilTime: formatDateTime(row[4]),
+                        noChargeDuration: row[5] !== undefined && row[5] !== null && row[5] !== '' ? row[5] : 0
+                    });
+                }
+            }
+            
+            // 如果没有数据，添加一些默认行以确保表格显示
+            if (wcdscData.length === 0) {
+                for (let i = 0; i < 10; i++) {
+                    wcdscData.push({
+                        stationName: '暂无数据',
+                        terminalName: '暂无数据',
+                        lastChargeEndTime: '',
+                        nextChargeStartTime: '',
+                        noChargeUntilTime: '',
+                        noChargeDuration: 0
+                    });
+                }
+            }
+                    
+            // 更新表格
+            updateWcdscTable();
+
+            // 只有当数据超过表格显示范围时才开始轮播
+            if (wcdscData.length > 8) {
+                startWcdscCarousel();
+            }
+        })
+        .catch(error => {
+            console.error('加载未充电时长数据失败:', error);
+            loadingElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 加载未充电时长数据失败';
+            
+            // 添加默认数据以确保表格显示
+            wcdscData = [];
+            for (let i = 0; i < 10; i++) {
+                wcdscData.push({
+                    stationName: '加载失败',
+                    terminalName: '请刷新重试',
+                    lastChargeEndTime: '',
+                    nextChargeStartTime: '',
+                    noChargeUntilTime: '',
+                    noChargeDuration: 0
+                });
+            }
+            updateWcdscTable();
+        })
+        .finally(() => {
+            loadingElement.style.display = 'none';
+        });
+}
+
+// 更新未充电时长统计表格
+function updateWcdscTable() {
+    const tableBody = document.getElementById('wcdsc-table-body');
+    tableBody.innerHTML = '';
+    
+    // 显示当前页的数据
+    const startIndex = currentWcdscIndex;
+    // 确保能显示到最后一行
+    const endIndex = Math.min(startIndex + 10, wcdscData.length);
+    
+    // 确保至少显示10行数据，保持表格高度一致
+    const displayCount = Math.max(10, endIndex - startIndex);
+    
+    for (let i = startIndex; i < endIndex; i++) {
+        const item = wcdscData[i];
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+            <td style="padding: 8px; text-align: center; white-space: nowrap;">${item.stationName}</td>
+            <td style="padding: 8px; text-align: center;">${item.terminalName}</td>
+            <td style="padding: 8px; text-align: center;">${item.lastChargeEndTime}</td>
+            <td style="padding: 8px; text-align: center;">${item.nextChargeStartTime}</td>
+            <td style="padding: 8px; text-align: center;">${item.noChargeUntilTime}</td>
+            <td style="padding: 8px; text-align: center;">${formatNumber(item.noChargeDuration)}</td>
+        `;
+        
+        // 添加鼠标事件
+        row.addEventListener('mouseenter', () => {
+            isWcdscPaused = true;
+            clearInterval(wcdscInterval);
+            row.style.backgroundColor = 'rgba(26, 115, 232, 0.1)';
+        });
+        
+        row.addEventListener('mouseleave', () => {
+            isWcdscPaused = false;
+            row.style.backgroundColor = '';
+            // 只有当数据超过表格显示范围时才重新开始轮播
+            if (wcdscData.length > 10) {
+                startWcdscCarousel();
+            }
+        });
+        
+        tableBody.appendChild(row);
+    }
+
+    // 填充剩余行以保持表格高度一致
+    const remainingRows = 10 - (endIndex - startIndex);
+    for (let i = 0; i < remainingRows; i++) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="padding: 8px; text-align: center;">&nbsp;</td>
+            <td style="padding: 8px; text-align: center;">&nbsp;</td>
+            <td style="padding: 8px; text-align: center;">&nbsp;</td>
+            <td style="padding: 8px; text-align: center;">&nbsp;</td>
+            <td style="padding: 8px; text-align: center;">&nbsp;</td>
+            <td style="padding: 8px; text-align: center;">&nbsp;</td>
+        `;
+        tableBody.appendChild(row);
+    }
+
+    // 高亮当前行
+    if (tableBody.children.length > 0 && wcdscData.length > 0) {
+        const firstRow = tableBody.children[0];
+        firstRow.style.backgroundColor = 'rgba(0, 200, 83, 0.2)';
+        firstRow.style.transition = 'all 0.3s ease';
+        firstRow.style.border = '2px solid rgba(0, 200, 83, 0.5)';
+        firstRow.style.fontWeight = 'bold';
+        
+        // 移除之前的高亮
+        setTimeout(() => {
+            firstRow.style.backgroundColor = '';
+            firstRow.style.border = '1px solid #ddd';
+            firstRow.style.fontWeight = '';
+        }, 1000);
+    }
+}
+
+// 开始未充电时长统计轮播
+function startWcdscCarousel() {
+    clearInterval(wcdscInterval);
+    
+    wcdscInterval = setInterval(() => {
+        if (isWcdscPaused) return;
+        
+        currentWcdscIndex++;
+        // 修改重置条件
+        if (currentWcdscIndex >= wcdscData.length) {
+            currentWcdscIndex = 0;
+        }
+          
+        updateWcdscTable();
+    }, 1000); // 每1秒轮播一次
+}
+
+setTimeout(loadWcdscData, 5 * 60 * 1000); // 每5分钟刷新一次
+
 // 在页面加载完成后调用
 // 在登录成功后加载实时数据
 // 在登录成功的代码块中添加：
 loadRealtimeData();
+loadWcdscData(); // 加载设备未充电时长统计数据
 
 // 综合收入看板功能
 let incomeDashboardData = [];
