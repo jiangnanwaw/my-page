@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -1680,12 +1680,12 @@
                     
                     <div class="form-group">
                         <i class="fas fa-key"></i>
-                        <input type="text" id="registerCode" class="form-control" placeholder="注册邀请码" required>
+                        <input type="text" id="registerCode" class="form-control" placeholder="注册授权码" required>
                     </div>
                     
                     <button type="submit" class="btn">注册</button>
                     
-                    <p class="info-text">需要获取注册邀请码才能完成注册</p>
+                    <p class="info-text">需要获取注册授权码才能完成注册</p>
                     
                     <div class="back-to-login">
                         <a href="#" id="backToLoginFromRegister">返回登录</a>
@@ -2435,7 +2435,7 @@
             serverURLs: SERVER_URL
         });
         
-        // 预定义的注册邀请码（在实际应用中应该更复杂且存储在安全的地方）
+        // 预定义的注册授权码（在实际应用中应该更复杂且存储在安全的地方）
         const VALID_REGISTER_CODES = ["Csfhcdz", "Csfh123"];
         
         // 获取DOM元素
@@ -2534,7 +2534,7 @@
             
             // 检查注册码是否正确
             if (!VALID_REGISTER_CODES.includes(registerCode)) {
-                showMessage('注册失败: 无效的注册邀请码，无权限注册', 'error');
+                showMessage('注册失败: 无效的注册授权码，无权限注册', 'error');
                 return;
             }
             
