@@ -1,0 +1,4 @@
+build: npm install
+run: npm start
+runtime: nodejs
+memory: 256M
