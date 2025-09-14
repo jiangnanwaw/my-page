@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -2894,6 +2894,9 @@
             
             // 加载未充电时长统计数据
             loadUnchargedData();
+            
+            // 初始化登录超时管理
+            initSessionTimeout();
         }
         // 初始化菜单事件
         function initMenuEvents() {
@@ -2996,6 +2999,12 @@
         // GitHub数据文件URL
         const metricsDataUrl = 'https://www.csfhcdz.cn/data/homepage.xlsx';
         
+        // 登录超时管理相关变量
+        let sessionTimeoutId = null;
+        let lastActivityTime = Date.now();
+        const SESSION_TIMEOUT = 30 * 60 * 1000; // 30分钟（毫秒）
+        const WARNING_TIME = 5 * 60 * 1000; // 提前5分钟警告
+        
         // 显示功能提示弹窗
         function showFeaturePopup(message) {
             popupContent.textContent = message;
@@ -3005,6 +3014,113 @@
         // 关闭功能提示弹窗
         function closeFeaturePopup() {
             featurePopup.style.display = 'none';
+        }
+        
+        // 登录超时管理函数
+        function initSessionTimeout() {
+            console.log('初始化登录超时管理，超时时间: 30分钟');
+            
+            // 更新最后活动时间
+            updateLastActivity();
+            
+            // 监听用户活动事件
+            const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            activityEvents.forEach(event => {
+                document.addEventListener(event, updateLastActivity, true);
+            });
+            
+            // 开始超时检查
+            startSessionTimer();
+        }
+        
+        function updateLastActivity() {
+            lastActivityTime = Date.now();
+            // 重新开始计时器
+            if (sessionTimeoutId) {
+                clearTimeout(sessionTimeoutId);
+            }
+            startSessionTimer();
+        }
+        
+        function startSessionTimer() {
+            // 设置提前警告计时器
+            const warningTimeoutId = setTimeout(() => {
+                showSessionWarning();
+            }, SESSION_TIMEOUT - WARNING_TIME);
+            
+            // 设置自动登出计时器
+            sessionTimeoutId = setTimeout(() => {
+                autoLogout();
+            }, SESSION_TIMEOUT);
+        }
+        
+        function showSessionWarning() {
+            const currentTime = Date.now();
+            const timeSinceLastActivity = currentTime - lastActivityTime;
+            
+            // 如果用户在警告期间有活动，则不显示警告
+            if (timeSinceLastActivity < SESSION_TIMEOUT - WARNING_TIME) {
+                return;
+            }
+            
+            const remainingMinutes = Math.ceil((SESSION_TIMEOUT - timeSinceLastActivity) / 60000);
+            
+            if (remainingMinutes > 0) {
+                const confirmExtend = confirm(`由于您已经 ${Math.floor((SESSION_TIMEOUT - WARNING_TIME) / 60000)} 分钟未操作，系统将在 ${remainingMinutes} 分钟后自动登出。\n\n点击“确定”继续保持登录状态，点击“取消”立即登出。`);
+                
+                if (confirmExtend) {
+                    // 用户选择继续，更新活动时间
+                    updateLastActivity();
+                } else {
+                    // 用户选择登出
+                    autoLogout();
+                }
+            }
+        }
+        
+        function autoLogout() {
+            console.log('由于长时间未操作，自动登出');
+            
+            // 清理计时器
+            if (sessionTimeoutId) {
+                clearTimeout(sessionTimeoutId);
+                sessionTimeoutId = null;
+            }
+            
+            // 登出 LeanCloud 用户
+            try {
+                AV.User.logOut();
+            } catch (error) {
+                console.error('登出时出错:', error);
+            }
+            
+            // 显示提示信息
+            alert('由于您已经 30 分钟未进行任何操作，系统已自动登出。请重新登录。');
+            
+            // 跳转到登录页面
+            document.getElementById('main-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'flex';
+            
+            // 恢复登录表单状态
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('resetForm').style.display = 'none';
+            
+            // 恢复标题和图标
+            const formTitle = document.getElementById('form-title');
+            const formIcon = document.getElementById('form-icon');
+            if (formTitle) formTitle.textContent = '用户登录';
+            if (formIcon) formIcon.className = 'fas fa-user-lock';
+            
+            // 清空登录表单
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            
+            // 隐藏消息
+            const loginMessage = document.getElementById('loginMessage');
+            if (loginMessage) {
+                loginMessage.style.display = 'none';
+            }
         }
         
         // 调整工作表范围以仅包含有数据的部分
