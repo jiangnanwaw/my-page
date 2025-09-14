@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -1636,8 +1636,8 @@
         <div class="login-container">
             <div class="form-container">
                 <div class="logo">
-                    <i class="fas fa-user-lock"></i>
-                    <h2>用户登录</h2>
+                    <i class="fas fa-user-lock" id="form-icon"></i>
+                    <h2 id="form-title">用户登录</h2>
                 </div>
                 
                 <div id="loginMessage" class="message"></div>
@@ -2626,8 +2626,8 @@
                 return results.length > 0;
             } catch (error) {
                 console.error('检查用户授权失败:', error);
-                // 临时返回true以便测试，等AuthorizedUsers表创建后再改为false
-                return true;
+                // 如果找不到AuthorizedUsers表或出错，拒绝访问
+                return false;
             }
         }
         
@@ -2656,6 +2656,8 @@
         const registerForm = document.getElementById('registerForm');
         const resetForm = document.getElementById('resetForm');
         const loginMessage = document.getElementById('loginMessage');
+        const formTitle = document.getElementById('form-title');
+        const formIcon = document.getElementById('form-icon');
         
         const showReset = document.getElementById('showReset');
         const showRegister = document.getElementById('showRegister');
@@ -2668,6 +2670,9 @@
             loginForm.style.display = 'none';
             resetForm.style.display = 'block';
             registerForm.style.display = 'none';
+            // 更新标题和图标
+            formTitle.textContent = '密码重置';
+            formIcon.className = 'fas fa-key';
             hideMessage();
         });
         
@@ -2676,6 +2681,9 @@
             loginForm.style.display = 'none';
             resetForm.style.display = 'none';
             registerForm.style.display = 'block';
+            // 更新标题和图标
+            formTitle.textContent = '新用户注册';
+            formIcon.className = 'fas fa-user-plus';
             hideMessage();
         });
         
@@ -2684,6 +2692,9 @@
             loginForm.style.display = 'block';
             resetForm.style.display = 'none';
             registerForm.style.display = 'none';
+            // 恢复登录标题和图标
+            formTitle.textContent = '用户登录';
+            formIcon.className = 'fas fa-user-lock';
             hideMessage();
         });
         
@@ -2692,6 +2703,9 @@
             loginForm.style.display = 'block';
             resetForm.style.display = 'none';
             registerForm.style.display = 'none';
+            // 恢复登录标题和图标
+            formTitle.textContent = '用户登录';
+            formIcon.className = 'fas fa-user-lock';
             hideMessage();
         });
         
@@ -2799,6 +2813,9 @@
                 setTimeout(() => {
                     loginForm.style.display = 'block';
                     registerForm.style.display = 'none';
+                    // 恢复登录标题和图标
+                    formTitle.textContent = '用户登录';
+                    formIcon.className = 'fas fa-user-lock';
                     document.getElementById('loginUsername').value = username;
                     document.getElementById('loginPassword').value = '';
                 }, 2000);
@@ -2831,6 +2848,9 @@
                 setTimeout(() => {
                     loginForm.style.display = 'block';
                     resetForm.style.display = 'none';
+                    // 恢复登录标题和图标
+                    formTitle.textContent = '用户登录';
+                    formIcon.className = 'fas fa-user-lock';
                 }, 3000);
                 
             } catch (error) {
