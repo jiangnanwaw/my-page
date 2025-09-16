@@ -1729,6 +1729,9 @@
             <div class="user-info">
                 <img src="https://jiangnanwaw.github.io/my-page/photo/fhlogo.png" alt="用户头像" class="user-avatar">
                 <span class="username" id="user-display">admin</span>
+                <button id="logout-btn" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 10px; cursor: pointer;">
+                    <i class="fas fa-sign-out-alt"></i> 退出登录
+                </button>
             </div>
             <div class="time-display" id="time-display">
                 2025年08月05日 星期二 10:30:45
@@ -2469,11 +2472,17 @@
                 loginRecord.set('deviceInfo', getDeviceInfo());
                 loginRecord.set('page', window.location.href);
                 loginRecord.set('ipAddress', clientIP); // 使用真实IP地址
-                loginRecord.set('sessionId', 'web_session_' + Date.now());
+                
+                // 设置会话ID，如果未提供则生成一个
+                const sessionId = additionalData.sessionId || ('web_session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
+                loginRecord.set('sessionId', sessionId);
                 
                 // 添加额外数据
                 Object.keys(additionalData).forEach(key => {
-                    loginRecord.set(key, additionalData[key]);
+                    // 不重复设置已设置的字段
+                    if (!['username', 'user_name', 'loginTime', 'userAgent', 'deviceInfo', 'page', 'ipAddress', 'sessionId'].includes(key)) {
+                        loginRecord.set(key, additionalData[key]);
+                    }
                 });
                 
                 console.log('准备保存登录记录到LeanCloud...');
@@ -2483,7 +2492,8 @@
                     loginTime: loginRecord.get('loginTime'),
                     ipAddress: loginRecord.get('ipAddress'),
                     userAgent: loginRecord.get('userAgent'),
-                    deviceInfo: loginRecord.get('deviceInfo')
+                    deviceInfo: loginRecord.get('deviceInfo'),
+                    sessionId: loginRecord.get('sessionId')
                 });
                 const savedRecord = await loginRecord.save();
                 console.log('✅ 登录记录成功保存到LeanCloud！记录ID:', savedRecord.id);
@@ -2496,7 +2506,8 @@
                         id: verifyRecord.id,
                         username: verifyRecord.get('username'),
                         loginTime: verifyRecord.get('loginTime'),
-                        ipAddress: verifyRecord.get('ipAddress')
+                        ipAddress: verifyRecord.get('ipAddress'),
+                        sessionId: verifyRecord.get('sessionId')
                     });
                 } catch (verifyError) {
                     console.error('❌ 验证保存失败:', verifyError);
@@ -2507,6 +2518,7 @@
                     recordId: savedRecord.id,
                     loginTime: savedRecord.get('loginTime'),
                     ipAddress: clientIP,
+                    sessionId: sessionId,
                     message: '登录记录已保存'
                 };
                 
@@ -2721,6 +2733,80 @@
             loginMessage.style.display = 'none';
         }
         
+        // 记录用户登出
+        async function recordUserLogout(username, sessionId) {
+            try {
+                console.log('开始记录登出:', username, sessionId);
+                
+                // 查找对应的登录记录
+                const query = new AV.Query('LoginRecord');
+                query.equalTo('username', username);
+                query.equalTo('sessionId', sessionId);
+                query.descending('loginTime');
+                query.limit(1);
+                
+                const records = await query.find();
+                if (records.length > 0) {
+                    const loginRecord = records[0];
+                    loginRecord.set('logoutTime', new Date());
+                    await loginRecord.save();
+                    console.log('✅ 登出记录成功保存到LeanCloud！');
+                    return {
+                        success: true,
+                        message: '登出记录已保存'
+                    };
+                } else {
+                    console.warn('未找到对应的登录记录');
+                    return {
+                        success: false,
+                        message: '未找到对应的登录记录'
+                    };
+                }
+            } catch (error) {
+                console.error('❌ 记录登出失败:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // 检查并强制登出其他设备
+        async function forceLogoutOtherDevices(username, currentSessionId) {
+            try {
+                console.log('检查并强制登出其他设备:', username);
+                
+                // 查找该用户除了当前会话外的其他未登出的登录记录
+                const query = new AV.Query('LoginRecord');
+                query.equalTo('username', username);
+                query.notEqualTo('sessionId', currentSessionId);
+                query.doesNotExist('logoutTime'); // 只查找未登出的记录
+                query.descending('loginTime');
+                
+                const records = await query.find();
+                console.log('找到需要强制登出的设备数量:', records.length);
+                
+                // 更新这些记录，设置登出时间
+                for (const record of records) {
+                    record.set('logoutTime', new Date());
+                    record.set('logoutReason', 'forced_by_new_login');
+                    await record.save();
+                    console.log('✅ 强制登出设备:', record.get('sessionId'));
+                }
+                
+                return {
+                    success: true,
+                    forcedLogoutCount: records.length
+                };
+            } catch (error) {
+                console.error('❌ 强制登出其他设备失败:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
         // 登录处理
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -2740,16 +2826,31 @@
                 const user = await AV.User.logIn(username, password);
                 showMessage(`登录成功！欢迎回来，${user.getUsername()}`, 'success');
                 
+                // 生成当前会话ID
+                const currentSessionId = 'web_session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                
+                // 强制登出其他设备
+                const forceLogoutResult = await forceLogoutOtherDevices(user.getUsername(), currentSessionId);
+                if (forceLogoutResult.success) {
+                    console.log('强制登出其他设备成功，登出设备数:', forceLogoutResult.forcedLogoutCount);
+                } else {
+                    console.warn('强制登出其他设备失败:', forceLogoutResult.error);
+                }
+                
                 console.log('登录成功，开始记录登录信息...');
                 console.log('获取到的用户名:', user.getUsername());
                 console.log('用户对象详情:', user.toJSON());
                 try {
                     const loginResult = await recordUserLogin(user.getUsername(), {
                         loginMethod: 'web_form',
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        sessionId: currentSessionId
                     });
                     if (loginResult && loginResult.success) {
                         console.log('✅ 登录记录成功！记录ID:', loginResult.recordId);
+                        // 将sessionId保存到localStorage以便登出时使用
+                        localStorage.setItem('currentSessionId', currentSessionId);
+                        localStorage.setItem('currentUsername', user.getUsername());
                     } else {
                         console.warn('⚠️ 登录记录失败:', loginResult ? loginResult.error : '未知错误');
                     }
@@ -2897,6 +2998,13 @@
             
             // 初始化登录超时管理
             initSessionTimeout();
+            
+            // 添加登出按钮事件监听器
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                if (confirm('确定要登出吗？')) {
+                    manualLogout();
+                }
+            });
         }
         // 初始化菜单事件
         function initMenuEvents() {
@@ -3081,6 +3189,22 @@
         function autoLogout() {
             console.log('由于长时间未操作，自动登出');
             
+            // 获取当前用户信息
+            const currentUser = AV.User.current();
+            const currentUsername = currentUser ? currentUser.getUsername() : localStorage.getItem('currentUsername');
+            const currentSessionId = localStorage.getItem('currentSessionId');
+            
+            // 记录登出信息
+            if (currentUsername && currentSessionId) {
+                recordUserLogout(currentUsername, currentSessionId).then(result => {
+                    if (result.success) {
+                        console.log('登出记录保存成功');
+                    } else {
+                        console.warn('登出记录保存失败:', result.error);
+                    }
+                });
+            }
+            
             // 清理计时器
             if (sessionTimeoutId) {
                 clearTimeout(sessionTimeoutId);
@@ -3093,6 +3217,10 @@
             } catch (error) {
                 console.error('登出时出错:', error);
             }
+            
+            // 清理本地存储
+            localStorage.removeItem('currentSessionId');
+            localStorage.removeItem('currentUsername');
             
             // 显示提示信息
             alert('由于您已经 30 分钟未进行任何操作，系统已自动登出。请重新登录。');
@@ -3122,7 +3250,67 @@
                 loginMessage.style.display = 'none';
             }
         }
-        
+
+        // 添加手动登出功能
+        function manualLogout() {
+            console.log('用户手动登出');
+            
+            // 获取当前用户信息
+            const currentUser = AV.User.current();
+            const currentUsername = currentUser ? currentUser.getUsername() : localStorage.getItem('currentUsername');
+            const currentSessionId = localStorage.getItem('currentSessionId');
+            
+            // 记录登出信息
+            if (currentUsername && currentSessionId) {
+                recordUserLogout(currentUsername, currentSessionId).then(result => {
+                    if (result.success) {
+                        console.log('登出记录保存成功');
+                    } else {
+                        console.warn('登出记录保存失败:', result.error);
+                    }
+                });
+            }
+            
+            // 登出 LeanCloud 用户
+            try {
+                AV.User.logOut();
+            } catch (error) {
+                console.error('登出时出错:', error);
+            }
+            
+            // 清理本地存储
+            localStorage.removeItem('currentSessionId');
+            localStorage.removeItem('currentUsername');
+            
+            // 跳转到登录页面
+            document.getElementById('main-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'flex';
+            
+            // 恢复登录表单状态
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('resetForm').style.display = 'none';
+            
+            // 恢复标题和图标
+            const formTitle = document.getElementById('form-title');
+            const formIcon = document.getElementById('form-icon');
+            if (formTitle) formTitle.textContent = '用户登录';
+            if (formIcon) formIcon.className = 'fas fa-user-lock';
+            
+            // 清空登录表单
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            
+            // 隐藏消息
+            const loginMessage = document.getElementById('loginMessage');
+            if (loginMessage) {
+                loginMessage.style.display = 'none';
+            }
+            
+            // 显示登出成功消息
+            showMessage('您已成功退出登录', 'success');
+        }
+
         // 调整工作表范围以仅包含有数据的部分
         function adjustSheetRange(worksheet) {
             if (!worksheet['!ref']) return;
