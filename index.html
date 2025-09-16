@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -75,7 +75,7 @@
         
         .login-container {
             width: 100%;
-            max-width: 350px;
+            max-width: 420px;
             background: rgba(255, 255, 255, 0.9);
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
@@ -2444,65 +2444,42 @@
         // 登录记录相关函数
         // 记录用户登录
         async function recordUserLogin(username, additionalData = {}) {
-            // 记录用户登出时间
-async function recordLogoutTime(username) {
-    try {
-        console.log('开始记录登出时间:', username);
-        
-        // 查询该用户最近的登录记录
-        const LoginRecord = AV.Object.extend('LoginRecord');
-        const query = new AV.Query('LoginRecord');
-        query.equalTo('username', username);
-        query.descending('loginTime');
-        query.limit(1);
-        
-        const records = await query.find();
-        
-        if (records.length > 0) {
-            const record = records[0];
-            // 更新登出时间
-            record.set('logoutTime', new Date());
-            
-            // 设置ACL权限
-            const acl = new AV.ACL();
-            acl.setPublicReadAccess(true);
-            acl.setPublicWriteAccess(true);
-            record.setACL(acl);
-            
-            await record.save();
-            console.log('✅ 登出时间记录成功！记录ID:', record.id);
-            return {
-                success: true,
-                recordId: record.id,
-                logoutTime: new Date()
-            };
-        } else {
-            console.warn('⚠️ 未找到该用户的登录记录，无法记录登出时间');
-            return {
-                success: false,
-                error: '未找到登录记录'
-            };
-        }
-    } catch (error) {
-        console.error('❌ 记录登出时间失败:', error);
-        // 尝试记录错误日志
-        try {
-            const ErrorLog = AV.Object.extend('ErrorLog');
-            const errorLog = new ErrorLog();
-            errorLog.set('error', error.message);
-            errorLog.set('type', 'logout_time_record');
-            errorLog.set('username', username);
-            await errorLog.save();
-        } catch (err) {
-            console.error('记录错误日志失败:', err);
-        }
-        
-        return {
-            success: false,
-            error: error.message
-        };
-    }
-}
+            // 自动记录登出时间
+            window.addEventListener('beforeunload', async function() {
+                try {
+                    const LoginRecord = AV.Object.extend('LoginRecord');
+                    const query = new AV.Query('LoginRecord');
+                    query.equalTo('username', username);
+                    query.descending('createdAt');
+                    query.limit(1);
+                    const records = await query.find();
+                    
+                    if (records.length > 0) {
+                        const record = records[0];
+                        record.set('logoutTime', new Date());
+                        // 添加ACL权限设置
+                        const acl = new AV.ACL();
+                        acl.setPublicReadAccess(true);
+                        acl.setPublicWriteAccess(true);
+                        record.setACL(acl);
+                        await record.save();
+                        console.log('登出时间记录成功:', record.id);
+                    }
+                } catch (error) {
+                    console.error('记录登出时间失败:', error);
+                    // 尝试发送错误到服务器
+                    try {
+                        const ErrorLog = AV.Object.extend('ErrorLog');
+                        const errorLog = new ErrorLog();
+                        errorLog.set('error', error.message);
+                        errorLog.set('type', 'logout_time_record');
+                        errorLog.set('username', username);
+                        await errorLog.save();
+                    } catch (err) {
+                        console.error('记录错误日志失败:', err);
+                    }
+                }
+            });
             try {
                 console.log('开始记录登录:', username);
                 
@@ -3138,61 +3115,49 @@ async function recordLogoutTime(username) {
         }
         
         function autoLogout() {
-      async function autoLogout() {
-    console.log('由于长时间未操作，自动登出');
-    
-    // 清理计时器
-    if (sessionTimeoutId) {
-        clearTimeout(sessionTimeoutId);
-        sessionTimeoutId = null;
-    }
-    
-    try {
-        // 获取当前用户名
-        const currentUser = AV.User.current();
-        const username = currentUser ? currentUser.getUsername() : '未知用户';
-        
-        // 记录登出时间
-        await recordLogoutTime(username);
-    } catch (error) {
-        console.error('记录登出时间时出错:', error);
-    }
-    
-    // 登出 LeanCloud 用户
-    try {
-        AV.User.logOut();
-    } catch (error) {
-        console.error('登出时出错:', error);
-    }
-    
-    // 显示提示信息
-    alert('由于您已经 30 分钟未进行任何操作，系统已自动登出。请重新登录。');
-    
-    // 跳转到登录页面
-    document.getElementById('main-container').style.display = 'none';
-    document.getElementById('login-container').style.display = 'flex';
-    
-    // 恢复登录表单状态
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-    document.getElementById('resetForm').style.display = 'none';
-    
-    // 恢复标题和图标
-    const formTitle = document.getElementById('form-title');
-    const formIcon = document.getElementById('form-icon');
-    if (formTitle) formTitle.textContent = '用户登录';
-    if (formIcon) formIcon.className = 'fas fa-user-lock';
-    
-    // 清空登录表单
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
-    
-    // 隐藏消息
-    const loginMessage = document.getElementById('loginMessage');
-    if (loginMessage) {
-        loginMessage.style.display = 'none';
-    }
-}
+            console.log('由于长时间未操作，自动登出');
+            
+            // 清理计时器
+            if (sessionTimeoutId) {
+                clearTimeout(sessionTimeoutId);
+                sessionTimeoutId = null;
+            }
+            
+            // 登出 LeanCloud 用户
+            try {
+                AV.User.logOut();
+            } catch (error) {
+                console.error('登出时出错:', error);
+            }
+            
+            // 显示提示信息
+            alert('由于您已经 30 分钟未进行任何操作，系统已自动登出。请重新登录。');
+            
+            // 跳转到登录页面
+            document.getElementById('main-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'flex';
+            
+            // 恢复登录表单状态
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('resetForm').style.display = 'none';
+            
+            // 恢复标题和图标
+            const formTitle = document.getElementById('form-title');
+            const formIcon = document.getElementById('form-icon');
+            if (formTitle) formTitle.textContent = '用户登录';
+            if (formIcon) formIcon.className = 'fas fa-user-lock';
+            
+            // 清空登录表单
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            
+            // 隐藏消息
+            const loginMessage = document.getElementById('loginMessage');
+            if (loginMessage) {
+                loginMessage.style.display = 'none';
+            }
+        }
         
         // 调整工作表范围以仅包含有数据的部分
         function adjustSheetRange(worksheet) {
