@@ -2444,6 +2444,25 @@
         // 登录记录相关函数
         // 记录用户登录
         async function recordUserLogin(username, additionalData = {}) {
+            // 自动记录登出时间
+            window.addEventListener('beforeunload', async function() {
+                try {
+                    const LoginRecord = AV.Object.extend('LoginRecord');
+                    const query = new AV.Query('LoginRecord');
+                    query.equalTo('username', username);
+                    query.descending('createdAt');
+                    query.limit(1);
+                    const records = await query.find();
+                    
+                    if (records.length > 0) {
+                        const record = records[0];
+                        record.set('logoutTime', new Date());
+                        await record.save();
+                    }
+                } catch (error) {
+                    console.error('记录登出时间失败:', error);
+                }
+            });
             try {
                 console.log('开始记录登录:', username);
                 
