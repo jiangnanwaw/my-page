@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -1729,9 +1729,7 @@
             <div class="user-info">
                 <img src="https://jiangnanwaw.github.io/my-page/photo/fhlogo.png" alt="用户头像" class="user-avatar">
                 <span class="username" id="user-display">admin</span>
-                <button id="logout-btn" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 10px; cursor: pointer;">
-                    <i class="fas fa-sign-out-alt"></i> 退出登录
-                </button>
+
             </div>
             <div class="time-display" id="time-display">
                 2025年08月05日 星期二 10:30:45
@@ -2459,10 +2457,16 @@
                 const LoginRecord = AV.Object.extend('LoginRecord');
                 const loginRecord = new LoginRecord();
                 
-                // 设置ACL权限，允许公开读写
+                // 设置ACL权限，允许用户本人读写和公众读取
                 const acl = new AV.ACL();
                 acl.setPublicReadAccess(true);
                 acl.setPublicWriteAccess(true);
+                // 如果有当前用户，也允许当前用户读写
+                const currentUser = AV.User.current();
+                if (currentUser) {
+                    acl.setWriteAccess(currentUser, true);
+                    acl.setReadAccess(currentUser, true);
+                }
                 loginRecord.setACL(acl);
                 
                 loginRecord.set('user_name', username);  // 改用user_name避免与系统字段冲突
@@ -2532,7 +2536,107 @@
                 };
             }
         }
-        
+
+        // 记录用户登出
+        async function recordUserLogout(username, sessionId) {
+            try {
+                console.log('开始记录登出:', username, sessionId);
+                
+                // 查找对应的登录记录
+                const query = new AV.Query('LoginRecord');
+                query.equalTo('username', username);
+                query.equalTo('sessionId', sessionId);
+                query.descending('loginTime');
+                query.limit(1);
+                
+                const records = await query.find();
+                if (records.length > 0) {
+                    const loginRecord = records[0];
+                    loginRecord.set('logoutTime', new Date());
+                    // 设置ACL权限确保可以更新
+                    const acl = new AV.ACL();
+                    acl.setPublicReadAccess(true);
+                    acl.setPublicWriteAccess(true);
+                    const currentUser = AV.User.current();
+                    if (currentUser) {
+                        acl.setWriteAccess(currentUser, true);
+                        acl.setReadAccess(currentUser, true);
+                    }
+                    loginRecord.setACL(acl);
+                    await loginRecord.save();
+                    console.log('✅ 登出记录成功保存到LeanCloud！记录ID:', loginRecord.id);
+                    return {
+                        success: true,
+                        message: '登出记录已保存'
+                    };
+                } else {
+                    console.warn('未找到对应的登录记录');
+                    return {
+                        success: false,
+                        message: '未找到对应的登录记录'
+                    };
+                }
+            } catch (error) {
+                console.error('❌ 记录登出失败:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // 检查并强制登出其他设备
+        async function forceLogoutOtherDevices(username, currentSessionId) {
+            try {
+                console.log('检查并强制登出其他设备:', username);
+                
+                // 查找该用户除了当前会话外的其他未登出的登录记录
+                const query = new AV.Query('LoginRecord');
+                query.equalTo('username', username);
+                query.notEqualTo('sessionId', currentSessionId);
+                query.doesNotExist('logoutTime'); // 只查找未登出的记录
+                query.descending('loginTime');
+                
+                const records = await query.find();
+                console.log('找到需要强制登出的设备数量:', records.length);
+                
+                // 更新这些记录，设置登出时间
+                let logoutCount = 0;
+                for (const record of records) {
+                    try {
+                        record.set('logoutTime', new Date());
+                        record.set('logoutReason', 'forced_by_new_login');
+                        // 确保有写入权限
+                        const acl = new AV.ACL();
+                        acl.setPublicReadAccess(true);
+                        acl.setPublicWriteAccess(true);
+                        const currentUser = AV.User.current();
+                        if (currentUser) {
+                            acl.setWriteAccess(currentUser, true);
+                            acl.setReadAccess(currentUser, true);
+                        }
+                        record.setACL(acl);
+                        await record.save();
+                        console.log('✅ 强制登出设备:', record.get('sessionId'));
+                        logoutCount++;
+                    } catch (saveError) {
+                        console.error('强制登出设备失败:', record.get('sessionId'), saveError);
+                    }
+                }
+                
+                return {
+                    success: true,
+                    forcedLogoutCount: logoutCount
+                };
+            } catch (error) {
+                console.error('❌ 强制登出其他设备失败:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
         // 获取用户登录历史
         async function getUserLoginHistory(username, limit = 10) {
             try {
@@ -2890,43 +2994,21 @@
 
         // 处理被强制登出的情况
         function handleForcedLogout() {
-            // 显示提示信息
-            alert('检测到您已在其他设备登录，当前会话已失效，请重新登录。');
-            
-            // 清理本地存储
-            localStorage.removeItem('currentSessionId');
-            localStorage.removeItem('currentUsername');
-            
-            // 登出 LeanCloud 用户
-            try {
-                AV.User.logOut();
-            } catch (error) {
-                console.error('登出时出错:', error);
-            }
-            
-            // 跳转到登录页面
-            document.getElementById('main-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'flex';
-            
-            // 恢复登录表单状态
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('resetForm').style.display = 'none';
-            
-            // 恢复标题和图标
-            const formTitle = document.getElementById('form-title');
-            const formIcon = document.getElementById('form-icon');
-            if (formTitle) formTitle.textContent = '用户登录';
-            if (formIcon) formIcon.className = 'fas fa-user-lock';
-            
-            // 清空登录表单
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            
-            // 隐藏消息
-            const loginMessage = document.getElementById('loginMessage');
-            if (loginMessage) {
-                loginMessage.style.display = 'none';
+            // 显示提示信息并在用户点击确定后执行回调函数
+            if (confirm('检测到您已在其他设备登录，当前会话已失效，请重新登录。')) {
+                // 清理本地存储
+                localStorage.removeItem('currentSessionId');
+                localStorage.removeItem('currentUsername');
+                
+                // 登出 LeanCloud 用户
+                try {
+                    AV.User.logOut();
+                } catch (error) {
+                    console.error('登出时出错:', error);
+                }
+                
+                // 直接重定向到登录页面，这样可以确保页面完全刷新，弹窗消失
+                window.location.href = window.location.pathname;
             }
         }
 
