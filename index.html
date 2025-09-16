@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -1729,7 +1729,9 @@
             <div class="user-info">
                 <img src="https://jiangnanwaw.github.io/my-page/photo/fhlogo.png" alt="用户头像" class="user-avatar">
                 <span class="username" id="user-display">admin</span>
-
+                <button id="logout-btn" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 10px; cursor: pointer;">
+                    <i class="fas fa-sign-out-alt"></i> 退出登录
+                </button>
             </div>
             <div class="time-display" id="time-display">
                 2025年08月05日 星期二 10:30:45
@@ -2994,57 +2996,8 @@
 
         // 处理被强制登出的情况
         function handleForcedLogout() {
-            // 创建自定义弹窗而不是使用confirm
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '0';
-            modal.style.left = '0';
-            modal.style.width = '100%';
-            modal.style.height = '100%';
-            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-            modal.style.zIndex = '9999';
-            modal.style.display = 'flex';
-            modal.style.justifyContent = 'center';
-            modal.style.alignItems = 'center';
-            
-            const content = document.createElement('div');
-            content.style.backgroundColor = 'white';
-            content.style.padding = '30px';
-            content.style.borderRadius = '10px';
-            content.style.maxWidth = '500px';
-            content.style.textAlign = 'center';
-            
-            content.innerHTML = `
-                <h3 style="color: #dc3545; margin-bottom: 20px;">
-                    <i class="fas fa-exclamation-triangle"></i> 会话已失效
-                </h3>
-                <p style="margin-bottom: 20px;">检测到您已在其他设备登录，当前会话已失效。</p>
-                <p style="margin-bottom: 30px;">系统将在5秒后自动跳转到登录页面...</p>
-                <button id="confirm-logout" style="
-                    background: #dc3545;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                ">
-                    立即跳转
-                </button>
-            `;
-            
-            modal.appendChild(content);
-            document.body.appendChild(modal);
-            
-            // 添加立即跳转按钮事件
-            document.getElementById('confirm-logout').addEventListener('click', function() {
-                forceRedirect();
-            });
-            
-            // 5秒后自动跳转
-            const timer = setTimeout(forceRedirect, 5000);
-            
-            function forceRedirect() {
-                clearTimeout(timer);
+            // 显示提示信息并在用户点击确定后执行回调函数
+            if (confirm('检测到您已在其他设备登录，当前会话已失效，请重新登录。')) {
                 // 清理本地存储
                 localStorage.removeItem('currentSessionId');
                 localStorage.removeItem('currentUsername');
@@ -3056,53 +3009,9 @@
                     console.error('登出时出错:', error);
                 }
                 
-                // 直接重定向到登录页面
+                // 直接重定向到登录页面，这样可以确保页面完全刷新，弹窗消失
                 window.location.href = window.location.pathname;
             }
-        }
-        
-        // 加强会话检查机制
-        function startSessionValidation() {
-            // 每30秒检查一次会话状态
-            setInterval(async () => {
-                try {
-                    const isValid = await checkSessionValidity();
-                    if (!isValid) {
-                        console.log('检测到会话已失效，执行强制登出');
-                        handleForcedLogout();
-                    }
-                } catch (error) {
-                    console.error('会话检查出错:', error);
-                }
-            }, 30 * 1000); // 30秒
-            
-            // 页面可见性改变时也检查一次
-            document.addEventListener('visibilitychange', async () => {
-                if (!document.hidden) {
-                    try {
-                        const isValid = await checkSessionValidity();
-                        if (!isValid) {
-                            console.log('页面变为可见时检测到会话已失效');
-                            handleForcedLogout();
-                        }
-                    } catch (error) {
-                        console.error('可见性改变检查出错:', error);
-                    }
-                }
-            });
-            
-            // 页面获得焦点时也检查一次
-            window.addEventListener('focus', async () => {
-                try {
-                    const isValid = await checkSessionValidity();
-                    if (!isValid) {
-                        console.log('页面获得焦点时检测到会话已失效');
-                        handleForcedLogout();
-                    }
-                } catch (error) {
-                    console.error('焦点检查出错:', error);
-                }
-            });
         }
 
         // 登录处理
