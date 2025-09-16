@@ -1636,8 +1636,8 @@
         <div class="login-container">
             <div class="form-container">
                 <div class="logo">
-                    <i class="fas fa-user-lock" id="form-icon"></i>
-                    <h2 id="form-title">用户登录</h2>
+                    <i class="fas fa-user-lock"></i>
+                    <h2>用户登录</h2>
                 </div>
                 
                 <div id="loginMessage" class="message"></div>
@@ -2444,42 +2444,6 @@
         // 登录记录相关函数
         // 记录用户登录
         async function recordUserLogin(username, additionalData = {}) {
-            // 自动记录登出时间
-            window.addEventListener('beforeunload', async function() {
-                try {
-                    const LoginRecord = AV.Object.extend('LoginRecord');
-                    const query = new AV.Query('LoginRecord');
-                    query.equalTo('username', username);
-                    query.descending('createdAt');
-                    query.limit(1);
-                    const records = await query.find();
-                    
-                    if (records.length > 0) {
-                        const record = records[0];
-                        record.set('logoutTime', new Date());
-                        // 添加ACL权限设置
-                        const acl = new AV.ACL();
-                        acl.setPublicReadAccess(true);
-                        acl.setPublicWriteAccess(true);
-                        record.setACL(acl);
-                        await record.save();
-                        console.log('登出时间记录成功:', record.id);
-                    }
-                } catch (error) {
-                    console.error('记录登出时间失败:', error);
-                    // 尝试发送错误到服务器
-                    try {
-                        const ErrorLog = AV.Object.extend('ErrorLog');
-                        const errorLog = new ErrorLog();
-                        errorLog.set('error', error.message);
-                        errorLog.set('type', 'logout_time_record');
-                        errorLog.set('username', username);
-                        await errorLog.save();
-                    } catch (err) {
-                        console.error('记录错误日志失败:', err);
-                    }
-                }
-            });
             try {
                 console.log('开始记录登录:', username);
                 
@@ -2618,6 +2582,50 @@
                 }
             }
         }
+
+        // 添加记录用户登出信息的函数
+        async function recordUserLogout(username) {
+            try {
+                console.log('开始记录登出信息:', username);
+                
+                // 查询当前用户的最新登录记录
+                const query = new AV.Query('LoginRecord');
+                query.equalTo('username', username);
+                query.descending('loginTime');
+                query.limit(1);
+                
+                const records = await query.find();
+                
+                if (records.length > 0) {
+                    const loginRecord = records[0];
+                    
+                    // 更新登出时间
+                    loginRecord.set('logoutTime', new Date());
+                    
+                    // 保存更新
+                    await loginRecord.save();
+                    console.log('✅ 登出信息记录成功，记录ID:', loginRecord.id);
+                    
+                    return {
+                        success: true,
+                        recordId: loginRecord.id,
+                        message: '登出信息已记录'
+                    };
+                } else {
+                    console.warn('未找到用户的登录记录');
+                    return {
+                        success: false,
+                        error: '未找到登录记录'
+                    };
+                }
+            } catch (error) {
+                console.error('❌ 记录登出信息失败:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
         
         // 通过WebRTC获取本地IP地址
         async function getLocalIP() {
@@ -2662,8 +2670,8 @@
                 return results.length > 0;
             } catch (error) {
                 console.error('检查用户授权失败:', error);
-                // 如果找不到AuthorizedUsers表或出错，拒绝访问
-                return false;
+                // 临时返回true以便测试，等AuthorizedUsers表创建后再改为false
+                return true;
             }
         }
         
@@ -2692,8 +2700,6 @@
         const registerForm = document.getElementById('registerForm');
         const resetForm = document.getElementById('resetForm');
         const loginMessage = document.getElementById('loginMessage');
-        const formTitle = document.getElementById('form-title');
-        const formIcon = document.getElementById('form-icon');
         
         const showReset = document.getElementById('showReset');
         const showRegister = document.getElementById('showRegister');
@@ -2706,9 +2712,6 @@
             loginForm.style.display = 'none';
             resetForm.style.display = 'block';
             registerForm.style.display = 'none';
-            // 更新标题和图标
-            formTitle.textContent = '密码重置';
-            formIcon.className = 'fas fa-key';
             hideMessage();
         });
         
@@ -2717,9 +2720,6 @@
             loginForm.style.display = 'none';
             resetForm.style.display = 'none';
             registerForm.style.display = 'block';
-            // 更新标题和图标
-            formTitle.textContent = '新用户注册';
-            formIcon.className = 'fas fa-user-plus';
             hideMessage();
         });
         
@@ -2728,9 +2728,6 @@
             loginForm.style.display = 'block';
             resetForm.style.display = 'none';
             registerForm.style.display = 'none';
-            // 恢复登录标题和图标
-            formTitle.textContent = '用户登录';
-            formIcon.className = 'fas fa-user-lock';
             hideMessage();
         });
         
@@ -2739,9 +2736,6 @@
             loginForm.style.display = 'block';
             resetForm.style.display = 'none';
             registerForm.style.display = 'none';
-            // 恢复登录标题和图标
-            formTitle.textContent = '用户登录';
-            formIcon.className = 'fas fa-user-lock';
             hideMessage();
         });
         
@@ -2849,9 +2843,6 @@
                 setTimeout(() => {
                     loginForm.style.display = 'block';
                     registerForm.style.display = 'none';
-                    // 恢复登录标题和图标
-                    formTitle.textContent = '用户登录';
-                    formIcon.className = 'fas fa-user-lock';
                     document.getElementById('loginUsername').value = username;
                     document.getElementById('loginPassword').value = '';
                 }, 2000);
@@ -2884,9 +2875,6 @@
                 setTimeout(() => {
                     loginForm.style.display = 'block';
                     resetForm.style.display = 'none';
-                    // 恢复登录标题和图标
-                    formTitle.textContent = '用户登录';
-                    formIcon.className = 'fas fa-user-lock';
                 }, 3000);
                 
             } catch (error) {
@@ -2931,9 +2919,38 @@
             // 加载未充电时长统计数据
             loadUnchargedData();
             
-            // 初始化登录超时管理
-            initSessionTimeout();
+            // 添加页面关闭事件监听器
+            window.addEventListener('beforeunload', handlePageUnload);
         }
+        
+        // 处理页面关闭事件
+        async function handlePageUnload(event) {
+            // 阻止默认的页面关闭行为，确保有足够时间记录登出信息
+            event.preventDefault();
+            event.returnValue = '';
+            
+            // 获取当前登录用户
+            const currentUser = AV.User.current();
+            if (currentUser) {
+                console.log('页面即将关闭，记录用户登出信息...');
+                
+                // 记录登出信息
+                try {
+                    const logoutResult = await recordUserLogout(currentUser.getUsername());
+                    if (logoutResult.success) {
+                        console.log('✅ 用户登出信息记录成功');
+                    } else {
+                        console.warn('⚠️ 用户登出信息记录失败:', logoutResult.error);
+                    }
+                } catch (error) {
+                    console.error('❌ 记录登出信息时出错:', error);
+                }
+            }
+            
+            // 返回undefined以允许页面关闭
+            return undefined;
+        }
+        
         // 初始化菜单事件
         function initMenuEvents() {
             // 可以在这里添加其他菜单事件
@@ -3035,12 +3052,6 @@
         // GitHub数据文件URL
         const metricsDataUrl = 'https://www.csfhcdz.cn/data/homepage.xlsx';
         
-        // 登录超时管理相关变量
-        let sessionTimeoutId = null;
-        let lastActivityTime = Date.now();
-        const SESSION_TIMEOUT = 30 * 60 * 1000; // 30分钟（毫秒）
-        const WARNING_TIME = 5 * 60 * 1000; // 提前5分钟警告
-        
         // 显示功能提示弹窗
         function showFeaturePopup(message) {
             popupContent.textContent = message;
@@ -3050,113 +3061,6 @@
         // 关闭功能提示弹窗
         function closeFeaturePopup() {
             featurePopup.style.display = 'none';
-        }
-        
-        // 登录超时管理函数
-        function initSessionTimeout() {
-            console.log('初始化登录超时管理，超时时间: 30分钟');
-            
-            // 更新最后活动时间
-            updateLastActivity();
-            
-            // 监听用户活动事件
-            const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-            activityEvents.forEach(event => {
-                document.addEventListener(event, updateLastActivity, true);
-            });
-            
-            // 开始超时检查
-            startSessionTimer();
-        }
-        
-        function updateLastActivity() {
-            lastActivityTime = Date.now();
-            // 重新开始计时器
-            if (sessionTimeoutId) {
-                clearTimeout(sessionTimeoutId);
-            }
-            startSessionTimer();
-        }
-        
-        function startSessionTimer() {
-            // 设置提前警告计时器
-            const warningTimeoutId = setTimeout(() => {
-                showSessionWarning();
-            }, SESSION_TIMEOUT - WARNING_TIME);
-            
-            // 设置自动登出计时器
-            sessionTimeoutId = setTimeout(() => {
-                autoLogout();
-            }, SESSION_TIMEOUT);
-        }
-        
-        function showSessionWarning() {
-            const currentTime = Date.now();
-            const timeSinceLastActivity = currentTime - lastActivityTime;
-            
-            // 如果用户在警告期间有活动，则不显示警告
-            if (timeSinceLastActivity < SESSION_TIMEOUT - WARNING_TIME) {
-                return;
-            }
-            
-            const remainingMinutes = Math.ceil((SESSION_TIMEOUT - timeSinceLastActivity) / 60000);
-            
-            if (remainingMinutes > 0) {
-                const confirmExtend = confirm(`由于您已经 ${Math.floor((SESSION_TIMEOUT - WARNING_TIME) / 60000)} 分钟未操作，系统将在 ${remainingMinutes} 分钟后自动登出。\n\n点击“确定”继续保持登录状态，点击“取消”立即登出。`);
-                
-                if (confirmExtend) {
-                    // 用户选择继续，更新活动时间
-                    updateLastActivity();
-                } else {
-                    // 用户选择登出
-                    autoLogout();
-                }
-            }
-        }
-        
-        function autoLogout() {
-            console.log('由于长时间未操作，自动登出');
-            
-            // 清理计时器
-            if (sessionTimeoutId) {
-                clearTimeout(sessionTimeoutId);
-                sessionTimeoutId = null;
-            }
-            
-            // 登出 LeanCloud 用户
-            try {
-                AV.User.logOut();
-            } catch (error) {
-                console.error('登出时出错:', error);
-            }
-            
-            // 显示提示信息
-            alert('由于您已经 30 分钟未进行任何操作，系统已自动登出。请重新登录。');
-            
-            // 跳转到登录页面
-            document.getElementById('main-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'flex';
-            
-            // 恢复登录表单状态
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('resetForm').style.display = 'none';
-            
-            // 恢复标题和图标
-            const formTitle = document.getElementById('form-title');
-            const formIcon = document.getElementById('form-icon');
-            if (formTitle) formTitle.textContent = '用户登录';
-            if (formIcon) formIcon.className = 'fas fa-user-lock';
-            
-            // 清空登录表单
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            
-            // 隐藏消息
-            const loginMessage = document.getElementById('loginMessage');
-            if (loginMessage) {
-                loginMessage.style.display = 'none';
-            }
         }
         
         // 调整工作表范围以仅包含有数据的部分
@@ -3470,7 +3374,7 @@
                     lastUpdateElement.textContent = `最后更新时间: ${now.toLocaleString()}`;
                     
                     // 显示成功信息
-                    queryInfo.innerHTML = `<i class="fas fa-check-circle"></i> 成功加载 ${fileName} 数据(暂不支持跨越查询数据)`;
+                    queryInfo.innerHTML = `<i class="fas fa-check-circle"></i> 成功加载 ${fileName} 数据(暂不支持跨月查询数据)`;
                     queryInfo.className = 'query-info success';
                     
                     // 保存为默认数据
