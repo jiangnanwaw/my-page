@@ -2773,6 +2773,18 @@
                 console.log('登录成功，开始记录登录信息...');
                 console.log('获取到的用户名:', user.getUsername());
                 console.log('用户对象详情:', user.toJSON());
+                
+                // 立即隐藏登录框并显示主页面
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('main-container').style.display = 'block';
+                
+                // 显示用户名
+                document.getElementById('user-display').textContent = user.getUsername();
+                
+                // 初始化主页面系统
+                initMainSystem();
+                
+                // 在后台记录登录信息，不影响用户界面响应
                 try {
                     const loginResult = await recordUserLogin(user.getUsername(), {
                         loginMethod: 'web_form',
@@ -2786,18 +2798,6 @@
                 } catch (recordError) {
                     console.error('❌ 登录记录出错:', recordError);
                 }
-                
-                // 登录成功后跳转到主页面
-                setTimeout(() => {
-                    document.getElementById('login-container').style.display = 'none';
-                    document.getElementById('main-container').style.display = 'block';
-                    
-                    // 显示用户名
-                    document.getElementById('user-display').textContent = user.getUsername();
-                    
-                    // 初始化主页面系统
-                    initMainSystem();
-                }, 1500);
                 
             } catch (error) {
                 console.error('登录错误:', error);
