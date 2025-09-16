@@ -2444,42 +2444,6 @@
         // 登录记录相关函数
         // 记录用户登录
         async function recordUserLogin(username, additionalData = {}) {
-            // 自动记录登出时间
-            window.addEventListener('beforeunload', async function() {
-                try {
-                    const LoginRecord = AV.Object.extend('LoginRecord');
-                    const query = new AV.Query('LoginRecord');
-                    query.equalTo('username', username);
-                    query.descending('createdAt');
-                    query.limit(1);
-                    const records = await query.find();
-                    
-                    if (records.length > 0) {
-                        const record = records[0];
-                        record.set('logoutTime', new Date());
-                        // 添加ACL权限设置
-                        const acl = new AV.ACL();
-                        acl.setPublicReadAccess(true);
-                        acl.setPublicWriteAccess(true);
-                        record.setACL(acl);
-                        await record.save();
-                        console.log('登出时间记录成功:', record.id);
-                    }
-                } catch (error) {
-                    console.error('记录登出时间失败:', error);
-                    // 尝试发送错误到服务器
-                    try {
-                        const ErrorLog = AV.Object.extend('ErrorLog');
-                        const errorLog = new ErrorLog();
-                        errorLog.set('error', error.message);
-                        errorLog.set('type', 'logout_time_record');
-                        errorLog.set('username', username);
-                        await errorLog.save();
-                    } catch (err) {
-                        console.error('记录错误日志失败:', err);
-                    }
-                }
-            });
             try {
                 console.log('开始记录登录:', username);
                 
@@ -2538,6 +2502,43 @@
                     console.error('❌ 验证保存失败:', verifyError);
                 }
                 
+                // 自动记录登出时间
+                window.addEventListener('beforeunload', async function() {
+                    try {
+                        const LoginRecord = AV.Object.extend('LoginRecord');
+                        const query = new AV.Query('LoginRecord');
+                        query.equalTo('username', username);
+                        query.descending('createdAt');
+                        query.limit(1);
+                        const records = await query.find();
+                        
+                        if (records.length > 0) {
+                            const record = records[0];
+                            record.set('logoutTime', new Date());
+                            // 添加ACL权限设置
+                            const acl = new AV.ACL();
+                            acl.setPublicReadAccess(true);
+                            acl.setPublicWriteAccess(true);
+                            record.setACL(acl);
+                            await record.save();
+                            console.log('登出时间记录成功:', record.id);
+                        }
+                    } catch (error) {
+                        console.error('记录登出时间失败:', error);
+                        // 尝试发送错误到服务器
+                        try {
+                            const ErrorLog = AV.Object.extend('ErrorLog');
+                            const errorLog = new ErrorLog();
+                            errorLog.set('error', error.message);
+                            errorLog.set('type', 'logout_time_record');
+                            errorLog.set('username', username);
+                            await errorLog.save();
+                        } catch (err) {
+                            console.error('记录错误日志失败:', err);
+                        }
+                    }
+                });
+                
                 return {
                     success: true,
                     recordId: savedRecord.id,
@@ -2556,6 +2557,7 @@
                 };
             }
         }
+
         
         // 获取用户登录历史
         async function getUserLoginHistory(username, limit = 10) {
