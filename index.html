@@ -2786,6 +2786,8 @@
                     });
                     if (loginResult && loginResult.success) {
                         console.log('✅ 登录记录成功！记录ID:', loginResult.recordId);
+                        // 保存记录ID以便登出时更新
+                        localStorage.setItem('currentLoginRecordId', loginResult.recordId);
                     } else {
                         console.warn('⚠️ 登录记录失败:', loginResult ? loginResult.error : '未知错误');
                     }
@@ -3117,6 +3119,9 @@
         function autoLogout() {
             console.log('由于长时间未操作，自动登出');
             
+            // 记录登出时间
+            recordUserLogout();
+            
             // 清理计时器
             if (sessionTimeoutId) {
                 clearTimeout(sessionTimeoutId);
@@ -3182,6 +3187,98 @@
                     if (cellAddress.r < firstRow) firstRow = cellAddress.r;
                     if (cellAddress.r > lastRow) lastRow = cellAddress.r;
                     if (cellAddress.c < firstCol) firstCol = cellAddress.c;
+                    if (cellAddress.c > lastCol) lastCol = cellAddress.c;
+                }
+            });
+            
+            // 更新工作表范围
+            worksheet['!ref'] = XLSX.utils.encode_range({
+                s: { r: firstRow, c: firstCol },
+                e: { r: lastRow, c: lastCol }
+            });
+        }
+        
+        // 添加登出功能函数
+        async function recordUserLogout(logoutReason = 'user_initiated') {
+            try {
+                const currentRecordId = localStorage.getItem('currentLoginRecordId');
+                if (!currentRecordId) {
+                    console.warn('未找到当前登录记录ID，无法记录登出时间');
+                    return;
+                }
+                
+                // 查询并更新登录记录
+                const LoginRecord = AV.Object.extend('LoginRecord');
+                const record = AV.Object.createWithoutData('LoginRecord', currentRecordId);
+                record.set('logoutTime', new Date());
+                record.set('logoutReason', logoutReason);
+                
+                // 添加ACL权限设置
+                const acl = new AV.ACL();
+                acl.setPublicReadAccess(true);
+                acl.setPublicWriteAccess(true);
+                record.setACL(acl);
+                
+                await record.save();
+                console.log('登出时间记录成功:', currentRecordId);
+                
+                // 清除本地存储的记录ID
+                localStorage.removeItem('currentLoginRecordId');
+                
+                return {
+                    success: true,
+                    recordId: currentRecordId,
+                    logoutTime: new Date(),
+                    message: '登出记录已保存'
+                };
+            } catch (error) {
+                console.error('记录登出时间失败:', error);
+                // 尝试发送错误到服务器
+                try {
+                    const ErrorLog = AV.Object.extend('ErrorLog');
+                    const errorLog = new ErrorLog();
+                    errorLog.set('error', error.message);
+                    errorLog.set('type', 'logout_time_record');
+                    errorLog.set('recordId', localStorage.getItem('currentLoginRecordId') || 'unknown');
+                    await errorLog.save();
+                } catch (err) {
+                    console.error('记录错误日志失败:', err);
+                }
+                
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // 在页面加载时检查是否有未完成的登出记录
+        window.addEventListener('DOMContentLoaded', function() {
+            // 显示登录界面
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('main-container').style.display = 'none';
+            
+            // 检查是否有未完成的登录记录（可能由于页面刷新等原因）
+            const currentRecordId = localStorage.getItem('currentLoginRecordId');
+            if (currentRecordId) {
+                // 如果存在记录ID，说明用户可能意外退出，记录一次登出
+                recordUserLogout('page_refresh_or_close');
+            }
+        });
+
+        // 在页面关闭前记录登出时间
+        window.addEventListener('beforeunload', async function() {
+            // 只有在用户已登录且有记录ID时才记录登出
+            const currentRecordId = localStorage.getItem('currentLoginRecordId');
+            if (currentRecordId) {
+                try {
+                    await recordUserLogout('page_close');
+                } catch (error) {
+                    console.error('页面关闭时记录登出失败:', error);
+                }
+            }
+        });
+
                     if (cellAddress.c > lastCol) lastCol = cellAddress.c;
                 }
             });
