@@ -2898,6 +2898,17 @@
                     record.set('logoutReason', 'forced_by_new_login');
                     await record.save();
                     console.log('✅ 强制登出设备:', record.get('sessionId'));
+                    
+                    // 检查是否为移动端登录强制登出电脑端
+                    const userAgent = record.get('userAgent') || '';
+                    const isMobile = /Mobile|Android|iPhone|iPod|BlackBerry|IEMobile/.test(userAgent);
+                    const currentIsMobile = /Mobile|Android|iPhone|iPod|BlackBerry|IEMobile/.test(navigator.userAgent);
+                    
+                    if (isMobile !== currentIsMobile) {
+                        console.log('检测到跨设备登录，强制登出');
+                        // 触发强制登出逻辑
+                        handleForcedLogout();
+                    }
                 }
                 
                 return {
@@ -2996,36 +3007,25 @@
 
         // 处理被强制登出的情况
         function handleForcedLogout() {
-            // 显示提示信息并在用户点击确定后执行回调函数
-            if (confirm('检测到您已在其他设备登录，当前会话已失效，请重新登录。')) {
-                // 清理本地存储
-                localStorage.removeItem('currentSessionId');
-                localStorage.removeItem('currentUsername');
-                
-                // 登出 LeanCloud 用户
-                try {
-                    AV.User.logOut();
-                } catch (error) {
-                    console.error('登出时出错:', error);
-                }
-                
-                // 直接重定向到登录页面，这样可以确保页面完全刷新，弹窗消失
-                window.location.href = window.location.pathname;
-            } else {
-                // 即使用户点击取消，也执行相同的登出逻辑
-                // 清理本地存储
-                localStorage.removeItem('currentSessionId');
-                localStorage.removeItem('currentUsername');
-                
-                // 登出 LeanCloud 用户
-                try {
-                    AV.User.logOut();
-                } catch (error) {
-                    console.error('登出时出错:', error);
-                }
-                
-                // 重定向到登录页面
-                window.location.href = window.location.pathname;
+            // 显示提示信息
+            const isConfirmed = confirm('检测到您已在其他设备登录，当前会话已失效，请重新登录。');
+            
+            // 无论用户点击确定还是取消，都执行登出逻辑
+            // 清理本地存储
+            localStorage.removeItem('currentSessionId');
+            localStorage.removeItem('currentUsername');
+            
+            // 登出 LeanCloud 用户
+            try {
+                AV.User.logOut();
+            } catch (error) {
+                console.error('登出时出错:', error);
+            }
+            
+            // 重定向到登录页面并关闭弹窗
+            window.location.href = "/login";
+            if (typeof modal !== 'undefined' && modal.hide) {
+                modal.hide();
             }
         }
 
@@ -3510,30 +3510,8 @@
             localStorage.removeItem('currentSessionId');
             localStorage.removeItem('currentUsername');
             
-            // 直接跳转到登录页面，不显示任何提示弹窗
-            document.getElementById('main-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'flex';
-            
-            // 恢复登录表单状态
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('resetForm').style.display = 'none';
-            
-            // 恢复标题和图标
-            const formTitle = document.getElementById('form-title');
-            const formIcon = document.getElementById('form-icon');
-            if (formTitle) formTitle.textContent = '用户登录';
-            if (formIcon) formIcon.className = 'fas fa-user-lock';
-            
-            // 清空登录表单
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            
-            // 隐藏消息
-            const loginMessage = document.getElementById('loginMessage');
-            if (loginMessage) {
-                loginMessage.style.display = 'none';
-            }
+            // 直接跳转到登录页面
+            window.location.href = "/login";
         }
 
         // 调整工作表范围以仅包含有数据的部分
