@@ -2442,62 +2442,44 @@
         });
         
         // 登录记录相关函数
-        // 记录用户登出
-        async function recordUserLogout(username) {
-            try {
-                console.log('开始记录登出:', username);
-                
-                const LoginRecord = AV.Object.extend('LoginRecord');
-                const query = new AV.Query('LoginRecord');
-                query.equalTo('username', username);
-                query.descending('createdAt');
-                query.limit(1);
-                const records = await query.find();
-                
-                if (records.length > 0) {
-                    const record = records[0];
-                    record.set('logoutTime', new Date());
-                    // 添加ACL权限设置
-                    const acl = new AV.ACL();
-                    acl.setPublicReadAccess(true);
-                    acl.setPublicWriteAccess(true);
-                    record.setACL(acl);
-                    await record.save();
-                    console.log('✅ 登出时间记录成功:', record.id);
-                    return {
-                        success: true,
-                        recordId: record.id,
-                        logoutTime: record.get('logoutTime')
-                    };
-                } else {
-                    console.warn('⚠️ 未找到该用户的登录记录');
-                    return {
-                        success: false,
-                        error: '未找到登录记录'
-                    };
-                }
-            } catch (error) {
-                console.error('❌ 记录登出时间失败:', error);
-                // 尝试发送错误到服务器
-                try {
-                    const ErrorLog = AV.Object.extend('ErrorLog');
-                    const errorLog = new ErrorLog();
-                    errorLog.set('error', error.message);
-                    errorLog.set('type', 'logout_time_record');
-                    errorLog.set('username', username);
-                    await errorLog.save();
-                } catch (err) {
-                    console.error('记录错误日志失败:', err);
-                }
-                return {
-                    success: false,
-                    error: error.message
-                };
-            }
-        }
-        
         // 记录用户登录
         async function recordUserLogin(username, additionalData = {}) {
+            // 自动记录登出时间
+            window.addEventListener('beforeunload', async function() {
+                try {
+                    const LoginRecord = AV.Object.extend('LoginRecord');
+                    const query = new AV.Query('LoginRecord');
+                    query.equalTo('username', username);
+                    query.descending('createdAt');
+                    query.limit(1);
+                    const records = await query.find();
+                    
+                    if (records.length > 0) {
+                        const record = records[0];
+                        record.set('logoutTime', new Date());
+                        // 添加ACL权限设置
+                        const acl = new AV.ACL();
+                        acl.setPublicReadAccess(true);
+                        acl.setPublicWriteAccess(true);
+                        record.setACL(acl);
+                        await record.save();
+                        console.log('登出时间记录成功:', record.id);
+                    }
+                } catch (error) {
+                    console.error('记录登出时间失败:', error);
+                    // 尝试发送错误到服务器
+                    try {
+                        const ErrorLog = AV.Object.extend('ErrorLog');
+                        const errorLog = new ErrorLog();
+                        errorLog.set('error', error.message);
+                        errorLog.set('type', 'logout_time_record');
+                        errorLog.set('username', username);
+                        await errorLog.save();
+                    } catch (err) {
+                        console.error('记录错误日志失败:', err);
+                    }
+                }
+            });
             try {
                 console.log('开始记录登录:', username);
                 
@@ -2951,20 +2933,6 @@
             
             // 初始化登录超时管理
             initSessionTimeout();
-            
-            // 添加页面关闭时的登出记录
-            const currentUser = AV.User.current();
-            if (currentUser) {
-                window.addEventListener('beforeunload', function() {
-                    // 使用navigator.sendBeacon来确保数据发送完成
-                    const logoutData = new FormData();
-                    logoutData.append('username', currentUser.getUsername());
-                    navigator.sendBeacon('https://api.leancloud.cn/1.1/functions/recordLogout', logoutData);
-                    
-                    // 备用方案：直接调用登出记录函数
-                    recordUserLogout(currentUser.getUsername());
-                });
-            }
         }
         // 初始化菜单事件
         function initMenuEvents() {
@@ -3153,18 +3121,6 @@
             if (sessionTimeoutId) {
                 clearTimeout(sessionTimeoutId);
                 sessionTimeoutId = null;
-            }
-            
-            // 记录登出时间
-            const currentUser = AV.User.current();
-            if (currentUser) {
-                recordUserLogout(currentUser.getUsername())
-                    .then(result => {
-                        console.log('自动登出记录结果:', result);
-                    })
-                    .catch(error => {
-                        console.error('自动登出记录失败:', error);
-                    });
             }
             
             // 登出 LeanCloud 用户
