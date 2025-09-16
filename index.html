@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -3011,6 +3011,21 @@
                 
                 // 直接重定向到登录页面，这样可以确保页面完全刷新，弹窗消失
                 window.location.href = window.location.pathname;
+            } else {
+                // 即使用户点击取消，也执行相同的登出逻辑
+                // 清理本地存储
+                localStorage.removeItem('currentSessionId');
+                localStorage.removeItem('currentUsername');
+                
+                // 登出 LeanCloud 用户
+                try {
+                    AV.User.logOut();
+                } catch (error) {
+                    console.error('登出时出错:', error);
+                }
+                
+                // 重定向到登录页面
+                window.location.href = window.location.pathname;
             }
         }
 
@@ -3495,7 +3510,7 @@
             localStorage.removeItem('currentSessionId');
             localStorage.removeItem('currentUsername');
             
-            // 跳转到登录页面
+            // 直接跳转到登录页面，不显示任何提示弹窗
             document.getElementById('main-container').style.display = 'none';
             document.getElementById('login-container').style.display = 'flex';
             
@@ -3519,9 +3534,6 @@
             if (loginMessage) {
                 loginMessage.style.display = 'none';
             }
-            
-            // 显示登出成功消息
-            showMessage('您已成功退出登录', 'success');
         }
 
         // 调整工作表范围以仅包含有数据的部分
