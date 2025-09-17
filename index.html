@@ -2883,66 +2883,6 @@
             }
         });
         
-        // 处理页面关闭事件
-        async function handlePageUnload(event) {
-            // 获取当前登录用户
-            const currentUser = AV.User.current();
-            if (currentUser) {
-                console.log('页面即将关闭，记录用户登出信息...');
-                
-                // 创建一个Promise来处理登出记录
-                const logoutPromise = new Promise(async (resolve) => {
-                    try {
-                        const result = await recordUserLogout(currentUser.getUsername());
-                        if (result.success) {
-                            console.log('✅ 用户登出信息记录成功');
-                        } else {
-                            console.warn('⚠️ 用户登出信息记录失败:', result.error);
-                        }
-                    } catch (error) {
-                        console.error('❌ 记录登出信息时出错:', error);
-                    }
-                    resolve();
-                });
-                
-                // 给予足够的时间来完成登出记录
-                await Promise.race([
-                    logoutPromise,
-                    new Promise(resolve => setTimeout(resolve, 1000)) // 最多等待1秒
-                ]);
-            }
-        }
-        
-        // 使用信标模式记录用户登出信息
-        async function recordUserLogoutBeacon(username) {
-            try {
-                console.log('开始记录登出信息(信标模式):', username);
-                
-                // 查询当前用户的最新登录记录
-                const query = new AV.Query('LoginRecord');
-                query.equalTo('username', username);
-                query.descending('loginTime');
-                query.limit(1);
-                
-                const records = await query.find();
-                
-                if (records.length > 0) {
-                    const loginRecord = records[0];
-                    
-                    // 更新登出时间
-                    loginRecord.set('logoutTime', new Date());
-                    
-                    // 保存更新
-                    await loginRecord.save();
-                    console.log('✅ 登出信息记录成功，记录ID:', loginRecord.id);
-                } else {
-                    console.warn('未找到用户的登录记录');
-                }
-            } catch (error) {
-                console.error('❌ 记录登出信息失败:', error);
-            }
-        }
-        
         // 初始化主页面系统函数
         function initMainSystem() {
             // 初始化移动端菜单
@@ -2979,9 +2919,43 @@
             // 加载未充电时长统计数据
             loadUnchargedData();
             
-            // 添加页面关闭事件监听器（只添加一次）
-            window.removeEventListener('beforeunload', handlePageUnload); // 先移除可能的重复监听器
+            // 添加页面关闭事件监听器
             window.addEventListener('beforeunload', handlePageUnload);
+        }
+        
+        // 处理页面关闭事件
+        function handlePageUnload(event) {
+            // 获取当前登录用户
+            const currentUser = AV.User.current();
+            if (currentUser) {
+                console.log('页面即将关闭，记录用户登出信息...');
+                
+                // 使用sendBeacon API非阻塞方式记录登出信息
+                const username = currentUser.getUsername();
+                // 创建一个简单的表单数据对象
+                const data = new FormData();
+                data.append('username', username);
+                
+                // 使用navigator.sendBeacon发送数据
+                // 这是一个非阻塞API，即使页面关闭也能完成请求
+                navigator.sendBeacon('/api/logout', data);
+                
+                // 直接调用recordUserLogout函数，但不等待其完成
+                recordUserLogout(username)
+                    .then(result => {
+                        if (result && result.success) {
+                            console.log('✅ 用户登出信息记录成功');
+                        } else {
+                            console.warn('⚠️ 用户登出信息记录失败:', result ? result.error : '未知错误');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ 记录登出信息时出错:', error);
+                    });
+            }
+            
+            // 不阻止页面关闭，也不显示确认对话框
+            return undefined;
         }
         
         // 初始化菜单事件
