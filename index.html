@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -1637,7 +1637,7 @@
             <div class="form-container">
                 <div class="logo">
                     <i class="fas fa-user-lock"></i>
-                    <h2>用户登录</h2>
+                    <h2 id="form-title">用户登录</h2>
                 </div>
                 
                 <div id="loginMessage" class="message"></div>
@@ -2583,34 +2583,14 @@
             }
         }
 
-        // 处理页面关闭事件 - 修复版本
-        async function handlePageUnload(event) {
-            // 获取当前登录用户
-            const currentUser = AV.User.current();
-            if (currentUser) {
-                console.log('页面即将关闭，记录用户登出信息...');
-                
-                try {
-                    // 使用Promise.race确保登出记录不会阻塞页面关闭
-                    await Promise.race([
-                        recordUserLogout(currentUser.getUsername()),
-                        new Promise(resolve => setTimeout(resolve, 1000)) // 最多等待1秒
-                    ]);
-                } catch (error) {
-                    console.error('❌ 记录登出信息时出错:', error);
-                }
-            }
-        }
-        
-        // 记录用户登出信息的函数 - 完善版本
+        // 添加记录用户登出信息的函数
         async function recordUserLogout(username) {
             try {
                 console.log('开始记录登出信息:', username);
                 
-                // 查询当前用户的最新登录记录（未设置登出时间的记录）
+                // 查询当前用户的最新登录记录
                 const query = new AV.Query('LoginRecord');
                 query.equalTo('username', username);
-                query.doesNotExist('logoutTime'); // 只查询还没有登出时间的记录
                 query.descending('loginTime');
                 query.limit(1);
                 
@@ -2619,106 +2599,34 @@
                 if (records.length > 0) {
                     const loginRecord = records[0];
                     
-                    // 检查是否已经有登出时间（防止重复设置）
-                    if (!loginRecord.get('logoutTime')) {
-                        // 更新登出时间
-                        loginRecord.set('logoutTime', new Date());
-                        
-                        // 保存更新
-                        const savedRecord = await loginRecord.save();
-                        console.log('✅ 登出信息记录成功，记录ID:', savedRecord.id);
-                        
-                        // 验证数据是否真的保存了
-                        try {
-                            const verifyQuery = new AV.Query('LoginRecord');
-                            const verifyRecord = await verifyQuery.get(savedRecord.id);
-                            console.log('📋 验证登出记录成功，记录详情:', {
-                                id: verifyRecord.id,
-                                username: verifyRecord.get('username'),
-                                loginTime: verifyRecord.get('loginTime'),
-                                logoutTime: verifyRecord.get('logoutTime')
-                            });
-                        } catch (verifyError) {
-                            console.error('❌ 验证登出记录失败:', verifyError);
-                        }
-                        
-                        return {
-                            success: true,
-                            recordId: savedRecord.id,
-                            message: '登出信息已记录'
-                        };
-                    } else {
-                        console.log('用户已登出，无需重复记录');
-                        return {
-                            success: true,
-                            message: '用户已登出'
-                        };
-                    }
+                    // 更新登出时间
+                    loginRecord.set('logoutTime', new Date());
+                    
+                    // 保存更新
+                    await loginRecord.save();
+                    console.log('✅ 登出信息记录成功，记录ID:', loginRecord.id);
+                    
+                    return {
+                        success: true,
+                        recordId: loginRecord.id,
+                        message: '登出信息已记录'
+                    };
                 } else {
-                    // 如果没有找到未登出的记录，查找最新的记录
-                    const latestQuery = new AV.Query('LoginRecord');
-                    latestQuery.equalTo('username', username);
-                    latestQuery.descending('loginTime');
-                    latestQuery.limit(1);
-                    
-                    const latestRecords = await latestQuery.find();
-                    
-                    if (latestRecords.length > 0) {
-                        const loginRecord = latestRecords[0];
-                        
-                        // 检查是否已经有登出时间
-                        if (!loginRecord.get('logoutTime')) {
-                            // 更新登出时间
-                            loginRecord.set('logoutTime', new Date());
-                            
-                            // 保存更新
-                            const savedRecord = await loginRecord.save();
-                            console.log('✅ 登出信息记录成功，记录ID:', savedRecord.id);
-                            
-                            // 验证数据是否真的保存了
-                            try {
-                                const verifyQuery = new AV.Query('LoginRecord');
-                                const verifyRecord = await verifyQuery.get(savedRecord.id);
-                                console.log('📋 验证登出记录成功，记录详情:', {
-                                    id: verifyRecord.id,
-                                    username: verifyRecord.get('username'),
-                                    loginTime: verifyRecord.get('loginTime'),
-                                    logoutTime: verifyRecord.get('logoutTime')
-                                });
-                            } catch (verifyError) {
-                                console.error('❌ 验证登出记录失败:', verifyError);
-                            }
-                            
-                            return {
-                                success: true,
-                                recordId: savedRecord.id,
-                                message: '登出信息已记录'
-                            };
-                        } else {
-                            console.log('用户已登出，无需重复记录');
-                            return {
-                                success: true,
-                                message: '用户已登出'
-                            };
-                        }
-                    } else {
-                        console.warn('未找到用户的登录记录');
-                        return {
-                            success: false,
-                            error: '未找到登录记录'
-                        };
-                    }
+                    console.warn('未找到用户的登录记录');
+                    return {
+                        success: false,
+                        error: '未找到登录记录'
+                    };
                 }
             } catch (error) {
                 console.error('❌ 记录登出信息失败:', error);
-                console.error('错误详情:', error.message, error.code);
                 return {
                     success: false,
                     error: error.message
                 };
             }
         }
-
+        
         // 通过WebRTC获取本地IP地址
         async function getLocalIP() {
             return new Promise((resolve) => {
@@ -2749,9 +2657,6 @@
                 } catch (error) {
                     console.warn('WebRTC获取IP失败:', error);
                     resolve('未知IP');
-                }
-            });
-        }
                 }
             });
         }
@@ -2808,6 +2713,8 @@
             resetForm.style.display = 'block';
             registerForm.style.display = 'none';
             hideMessage();
+            // 修改标题为"密码重置"
+            document.getElementById('form-title').textContent = '密码重置';
         });
         
         showRegister.addEventListener('click', (e) => {
@@ -2816,6 +2723,8 @@
             resetForm.style.display = 'none';
             registerForm.style.display = 'block';
             hideMessage();
+            // 修改标题为"新用户注册"
+            document.getElementById('form-title').textContent = '新用户注册';
         });
         
         backToLoginFromRegister.addEventListener('click', (e) => {
@@ -2824,6 +2733,8 @@
             resetForm.style.display = 'none';
             registerForm.style.display = 'none';
             hideMessage();
+            // 修改标题为"用户登录"
+            document.getElementById('form-title').textContent = '用户登录';
         });
         
         backToLoginFromReset.addEventListener('click', (e) => {
@@ -2832,6 +2743,8 @@
             resetForm.style.display = 'none';
             registerForm.style.display = 'none';
             hideMessage();
+            // 修改标题为"用户登录"
+            document.getElementById('form-title').textContent = '用户登录';
         });
         
         // 显示消息
@@ -2978,52 +2891,6 @@
             }
         });
         
-        // 处理页面关闭事件 - 优化版本
-        function handlePageUnload(event) {
-            // 获取当前登录用户
-            const currentUser = AV.User.current();
-            if (currentUser) {
-                console.log('页面即将关闭，记录用户登出信息...');
-                
-                // 使用navigator.sendBeacon发送登出信息，确保在页面关闭时也能可靠发送
-                try {
-                    // 构造登出数据
-                    const logoutData = {
-                        username: currentUser.getUsername(),
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    // 尝试使用sendBeacon发送数据（更可靠）
-                    const beaconUrl = `https://api.leancloud.cn/1.1/classes/LoginRecord?where={"username":"${currentUser.getUsername()}"}&order=-loginTime&limit=1`;
-                    const headers = {
-                        'X-LC-Id': APP_ID,
-                        'X-LC-Key': APP_KEY,
-                        'Content-Type': 'application/json'
-                    };
-                    
-                    // 由于sendBeacon的限制，我们改用另一种方式
-                    // 直接调用recordUserLogout函数，但使用短超时机制
-                    recordUserLogoutWithTimeout(currentUser.getUsername());
-                    
-                } catch (error) {
-                    console.error('❌ 使用sendBeacon记录登出信息失败:', error);
-                }
-            }
-        }
-        
-        // 带超时的登出记录函数
-        async function recordUserLogoutWithTimeout(username) {
-            try {
-                // 使用Promise.race确保登出记录不会阻塞页面关闭
-                await Promise.race([
-                    recordUserLogout(username),
-                    new Promise(resolve => setTimeout(resolve, 500)) // 最多等待500毫秒
-                ]);
-            } catch (error) {
-                console.error('❌ 记录登出信息时出错:', error);
-            }
-        }
-
         // 初始化主页面系统函数
         function initMainSystem() {
             // 初始化移动端菜单
@@ -3060,25 +2927,38 @@
             // 加载未充电时长统计数据
             loadUnchargedData();
             
-            // 添加页面关闭事件监听器（只添加一次）
-            window.removeEventListener('beforeunload', handlePageUnload); // 先移除可能的重复监听器
+            // 添加页面关闭事件监听器
             window.addEventListener('beforeunload', handlePageUnload);
-            
-            // 添加页面隐藏事件监听器（移动端切换应用时触发）
-            document.removeEventListener('visibilitychange', handleVisibilityChange); // 先移除可能的重复监听器
-            document.addEventListener('visibilitychange', handleVisibilityChange);
         }
         
-        // 处理页面可见性变化事件
-        function handleVisibilityChange() {
+        // 处理页面关闭事件
+        async function handlePageUnload(event) {
+            // 阻止默认的页面关闭行为，确保有足够时间记录登出信息
+            event.preventDefault();
+            event.returnValue = '';
+            
+            // 获取当前登录用户
             const currentUser = AV.User.current();
-            if (currentUser && document.visibilityState === 'hidden') {
-                console.log('页面隐藏，记录用户登出信息...');
-                // 页面隐藏时也尝试记录登出信息
-                recordUserLogoutWithTimeout(currentUser.getUsername());
+            if (currentUser) {
+                console.log('页面即将关闭，记录用户登出信息...');
+                
+                // 记录登出信息
+                try {
+                    const logoutResult = await recordUserLogout(currentUser.getUsername());
+                    if (logoutResult.success) {
+                        console.log('✅ 用户登出信息记录成功');
+                    } else {
+                        console.warn('⚠️ 用户登出信息记录失败:', logoutResult.error);
+                    }
+                } catch (error) {
+                    console.error('❌ 记录登出信息时出错:', error);
+                }
             }
+            
+            // 返回undefined以允许页面关闭
+            return undefined;
         }
-
+        
         // 初始化菜单事件
         function initMenuEvents() {
             // 可以在这里添加其他菜单事件
