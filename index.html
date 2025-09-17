@@ -2934,10 +2934,6 @@
         
         // 处理页面关闭事件
         async function handlePageUnload(event) {
-            // 阻止默认的页面关闭行为，确保有足够时间记录登出信息
-            event.preventDefault();
-            event.returnValue = '';
-            
             // 获取当前登录用户
             const currentUser = AV.User.current();
             if (currentUser) {
@@ -2955,9 +2951,6 @@
                     console.error('❌ 记录登出信息时出错:', error);
                 }
             }
-            
-            // 返回undefined以允许页面关闭
-            return undefined;
         }
         
         // 初始化菜单事件
