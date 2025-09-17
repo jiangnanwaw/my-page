@@ -1989,10 +1989,11 @@
             <div style="display: flex; align-items: center; margin-left: auto; gap: 10px;">
                 <select id="uncharged-duration-filter" style="padding: 5px;">
                     <option value="all">全部时长</option>
-                    <option value="lt30"><30小时</option>
-                    <option value="ge30lt60">>=30<60小时</option>
-                    <option value="ge60lt90">>=60<90小时</option>
-                    <option value="ge90">>=90小时</option>
+                    <option value="lt30">&lt;30小时</option>
+                    <option value="ge30lt60">&gt;=30&lt;60小时</option>
+                    <option value="ge60lt90">&gt;=60&lt;90小时</option>
+                    <option value="ge90">&gt;=90小时</option>
+                    <option value="stillUncharged">截止一直未充电</option>
                 </select>
             </div>
         </div>
@@ -5229,6 +5230,11 @@ function initDurationFilter() {
 function filterUnchargedData() {
     if (currentDurationFilter === 'all') {
         filteredUnchargedData = [...unchargedData];
+    } else if (currentDurationFilter === 'stillUncharged') {
+        // 筛选"截止一直未充电"的数据，即stillUnchargedTime字段有值的记录
+        filteredUnchargedData = unchargedData.filter(item => {
+            return item.stillUnchargedTime && item.stillUnchargedTime.trim() !== '';
+        });
     } else {
         filteredUnchargedData = unchargedData.filter(item => {
             const duration = parseFloat(item.duration);
