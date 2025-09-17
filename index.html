@@ -2491,8 +2491,15 @@
                     userAgent: loginRecord.get('userAgent'),
                     deviceInfo: loginRecord.get('deviceInfo')
                 });
-                const savedRecord = await loginRecord.save();
+				const savedRecord = await loginRecord.save();
                 console.log('✅ 登录记录成功保存到LeanCloud！记录ID:', savedRecord.id);
+				// 记录最近一次登录记录ID，便于快速更新logoutTime
+				try {
+					window.__lastLoginRecordId = savedRecord.id;
+					localStorage.setItem('lastLoginRecordId', savedRecord.id);
+				} catch (e) {
+					console.warn('无法保存lastLoginRecordId到本地存储:', e);
+				}
                 
                 // 验证数据是否真的保存了
                 try {
@@ -2589,10 +2596,34 @@
             }
         }
 
-        // 添加记录用户登出信息的函数
-        async function recordUserLogout(username) {
+		// 添加记录用户登出信息的函数
+		async function recordUserLogout(username) {
             try {
                 console.log('开始记录登出信息:', username);
+
+				// 优先使用本地缓存的最近一次登录记录ID，避免查询耗时导致未能及时保存
+				let cachedRecordId = null;
+				try {
+					cachedRecordId = window.__lastLoginRecordId || localStorage.getItem('lastLoginRecordId');
+				} catch (e) {
+					console.warn('读取本地lastLoginRecordId失败:', e);
+				}
+
+				if (cachedRecordId) {
+					try {
+						const loginRecord = AV.Object.createWithoutData('LoginRecord', cachedRecordId);
+						loginRecord.set('logoutTime', new Date());
+						await loginRecord.save();
+						console.log('✅ 通过缓存ID快速更新登出时间成功，记录ID:', cachedRecordId);
+						return {
+							success: true,
+							recordId: cachedRecordId,
+							message: '登出信息已记录'
+						};
+					} catch (fastUpdateError) {
+						console.warn('通过缓存ID更新登出时间失败，回退到查询方式:', fastUpdateError);
+					}
+				}
                 
                 // 查询当前用户的最新登录记录
                 const query = new AV.Query('LoginRecord');
@@ -2605,12 +2636,21 @@
                 if (records.length > 0) {
                     const loginRecord = records[0];
                     
-                    // 更新登出时间
-                    loginRecord.set('logoutTime', new Date());
+					// 更新登出时间
+					loginRecord.set('logoutTime', new Date());
                     
                     // 保存更新
                     await loginRecord.save();
                     console.log('✅ 登出信息记录成功，记录ID:', loginRecord.id);
+					// 清除本地缓存的记录ID，避免重复更新
+					try {
+						if (window.__lastLoginRecordId === loginRecord.id) {
+							window.__lastLoginRecordId = null;
+						}
+						localStorage.removeItem('lastLoginRecordId');
+					} catch (e) {
+						console.warn('清理lastLoginRecordId失败:', e);
+					}
                     
                     return {
                         success: true,
@@ -2933,8 +2973,32 @@
             // 加载未充电时长统计数据
             loadUnchargedData();
             
-            // 添加页面关闭事件监听器
-            window.addEventListener('beforeunload', handlePageUnload);
+			// 添加页面关闭相关事件监听器，尽量在卸载前完成登出记录
+			window.addEventListener('beforeunload', handlePageUnload);
+			// 当页面变为隐藏状态时（切到后台或关闭前），优先尝试记录登出
+			document.addEventListener('visibilitychange', async () => {
+				try {
+					const currentUser = AV.User.current();
+					if (document.hidden && currentUser && !window.__logoutRecordingInProgress) {
+						window.__logoutRecordingInProgress = true;
+						await recordUserLogout(currentUser.getUsername());
+					}
+				} finally {
+					window.__logoutRecordingInProgress = false;
+				}
+			});
+			// Safari等浏览器更可靠的卸载事件
+			window.addEventListener('pagehide', async () => {
+				try {
+					const currentUser = AV.User.current();
+					if (currentUser && !window.__logoutRecordingInProgress) {
+						window.__logoutRecordingInProgress = true;
+						await recordUserLogout(currentUser.getUsername());
+					}
+				} finally {
+					window.__logoutRecordingInProgress = false;
+				}
+			});
         }
         
         // 处理页面关闭事件
