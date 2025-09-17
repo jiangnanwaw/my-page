@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -50,8 +50,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80') no-repeat center center/cover;
-            opacity: 0.05;
+            background: url('https://www.csfhcdz.cn/photo/1.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.3;
             z-index: -1;
         }
         
@@ -65,22 +68,24 @@
             width: 100%;
             height: 100%;
             display: flex;
-            justify-content: center;
+            justify-content: flex-end; /* 靠右对齐 */
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            
             padding: 20px;
             z-index: 1000;
         }
         
         .login-container {
             width: 100%;
-            max-width: 350px;
+            max-width: 330px;  /* 调整登录窗体宽度 */
             background: rgba(255, 255, 255, 0.9);
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             overflow: hidden;
             position: relative;
+            margin-right: 400px; /* 调整这个值来控制向左移动的距离 */
+            margin-bottom:220px;  /* 这里控制垂直位置 */
         }
         
         .form-container {
