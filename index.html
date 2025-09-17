@@ -666,8 +666,8 @@
         }
         
         .table-container {
-            /* 确保表格有横向滚动条 */
-            overflow-x: auto;
+            /* 报表在桌面和移动端均支持双向滚动 */
+            overflow: auto;
             max-height: 600px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -1636,6 +1636,30 @@
         
         #uncharged-table tr:hover {
             background-color: #e8f0fe;
+        }
+
+        /* 桌面端：报表容器显示底部横向滚动条并禁止单元格换行 */
+        @media (min-width: 901px) {
+            #table-container,
+            #comprehensive-table-container,
+            .table-wrapper {
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            #table-container th, #table-container td,
+            #comprehensive-table-container th, #comprehensive-table-container td {
+                white-space: nowrap;
+                word-break: keep-all;
+                max-width: none;
+            }
+
+            /* 让表格在内容较多时能触发横向滚动 */
+            #table-container table,
+            #comprehensive-table-container table {
+                table-layout: auto;
+                min-width: 1000px;
+            }
         }
 
     </style>
