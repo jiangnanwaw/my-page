@@ -58,9 +58,53 @@
             z-index: -1;
         }
         
-
+        /* 添加头部标题样式 */
+        .header-title {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 1001;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
         
-        /* LeanCloud 登录系统样式 */
+        .header-logo {
+            height: 35px; /* 调整图片大小与文字一致 */
+            vertical-align: middle;
+             margin-top: 40px; /* 添加与文字相同的上边距 */
+        }
+        
+       .header-text {
+    color: white;
+    font-size: 35px; /* 增大字体 */
+    font-weight: bold; /* 这里修改字体粗细 */
+    font-family: "SimSun", serif; /* 宋体 */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    margin: 0;
+    vertical-align: middle;
+    letter-spacing: 2px; /* 添加字符间距 */
+    margin-top: 40px;   /* 或者: margin-bottom: 10px; 会使文字向上移动 */
+}
+        
+        /* 修改底部版权信息样式 */
+        .footer-copyright {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 15px 0;
+            color: white;
+            font-size: 14px;
+            z-index: 1001;
+            background: transparent; /* 移除背景 */
+        }
+        
+        /* 调整登录容器的z-index以确保它在标题上方 */
         #login-container {
             position: fixed;
             top: 0;
@@ -68,10 +112,9 @@
             width: 100%;
             height: 100%;
             display: flex;
-            justify-content: flex-end; /* 靠右对齐 */
+            justify-content: flex-end;
             align-items: center;
             min-height: 100vh;
-            
             padding: 20px;
             z-index: 1000;
         }
@@ -84,8 +127,8 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             overflow: hidden;
             position: relative;
-            margin-right: 400px; /* 调整这个值来控制向左移动的距离 */
-            margin-bottom:220px;  /* 这里控制垂直位置 */
+            margin-right: 160px; /* 调整这个值来控制向左移动的距离 */
+            margin-bottom:180px;  /* 这里控制垂直位置 */
         }
         
         .form-container {
@@ -1695,6 +1738,12 @@
     </style>
 </head>
 <body>
+    <!-- 在body开始处添加头部标题区域 -->
+    <div class="header-title" id="login-header-title">
+        <img src="https://jiangnanwaw.github.io/my-page/photo/fhlogo.png" alt="Logo" class="header-logo">
+        <h1 class="header-text">长沙飞狐数据管理平台</h1>
+    </div>
+    
     <!-- LeanCloud 登录系统 -->
     <div id="login-container">
         <div class="login-container">
@@ -2486,6 +2535,11 @@
         </footer>
     </div>
 
+    <!-- 在body结束前添加版权信息 -->
+    <div class="footer-copyright" id="login-footer-copyright">
+        <p>© 2018-2025 长沙飞狐电动汽车充电服务有限公司</p>
+    </div>
+
     <script>
         // LeanCloud 配置
         const APP_ID = 'N4KUUvF2eY8wOG0sF5oddkdC-gzGzoHsz';
@@ -2890,6 +2944,10 @@
                 // 立即隐藏登录框并显示主页面
                 document.getElementById('login-container').style.display = 'none';
                 document.getElementById('main-container').style.display = 'block';
+                
+                // 隐藏登录页面的标题和版权信息
+                document.getElementById('login-header-title').style.display = 'none';
+                document.getElementById('login-footer-copyright').style.display = 'none';
                 
                 // 显示用户名
                 document.getElementById('user-display').textContent = user.getUsername();
@@ -5537,5 +5595,10 @@ function updateUnchargedTable() {
           }
         }
     </script>
+    
+    <!-- 在主容器结束后添加新的版权信息 -->
+    <div class="footer-copyright">
+        <p>© 2018-2025 长沙飞狐电动汽车充电服务有限公司</p>
+    </div>
 </body>
 </html>
