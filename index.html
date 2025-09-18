@@ -708,6 +708,36 @@
             max-width: 300px;
         }
         
+        /* 确保数字列也居中对齐 */
+        .table-container .num-cell,
+        .table-container .num-col {
+            text-align: center !important;
+        }
+        
+        /* 综合数据报表数字列居中对齐 */
+        #comprehensive-table-container .num-cell,
+        #comprehensive-table-container .num-col {
+            text-align: center !important;
+        }
+        
+        /* 充电数据看板表格数字列居中对齐 */
+        #charging-board-table-container .num-cell,
+        #charging-board-table-container .num-col {
+            text-align: center !important;
+        }
+        
+        /* 实时数据表格数字列居中对齐 */
+        #realtime-table .num-cell,
+        #realtime-table .num-col {
+            text-align: center !important;
+        }
+        
+        /* 未充电时长统计表格数字列居中对齐 */
+        #uncharged-table .num-cell,
+        #uncharged-table .num-col {
+            text-align: center !important;
+        }
+        
         .table-container tr:nth-child(even) {
             background-color: #f9f9f9;
         }
@@ -5461,7 +5491,7 @@ function updateUnchargedTable() {
                     cell.style.whiteSpace = 'nowrap';
                     cell.style.wordBreak = 'normal';
                     cell.style.overflowWrap = 'normal';
-                    cell.style.textAlign = 'right';
+                    cell.style.textAlign = 'center';
                 }
             });
         }
