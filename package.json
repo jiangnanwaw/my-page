@@ -1,0 +1,17 @@
+{
+  "name": "csfh-sms-login",
+  "version": "1.0.0",
+  "description": "长沙飞狐数据管理平台短信验证码登录功能",
+  "main": "cloud.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "lean up"
+  },
+  "dependencies": {
+    "leancloud-storage": "^4.13.2",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": "12.x"
+  }
+}
