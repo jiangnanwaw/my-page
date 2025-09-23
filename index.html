@@ -1125,6 +1125,67 @@
 .main-content .form-control {
     padding: 12px 15px !important; /* 移除左侧内边距 */
 }
+
+/* 短信验证码登录样式 */
+#smsLoginForm {
+    display: none;
+}
+
+#smsLoginForm .form-group {
+    position: relative;
+}
+
+#smsLoginForm .form-group:has(#smsCode) {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#smsLoginForm #smsCode {
+    flex: 1;
+    padding: 12px 15px 12px 45px !important;
+}
+
+.btn-sms {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.btn-sms:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-sms:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-sms.countdown {
+    background: #999;
+    cursor: not-allowed;
+}
+
+/* 手机号输入框样式 */
+#smsPhone {
+    padding: 12px 15px 12px 45px !important;
+}
+
+/* 验证码输入框样式 */
+#smsCode {
+    padding: 12px 15px 12px 45px !important;
+}
         
         /* 图表加载指示器 */
         .chart-loading {
@@ -1771,6 +1832,7 @@
                     <div class="links">
                         <a href="#" id="showReset">忘记密码?</a>
                         <a href="#" id="showRegister">注册新账号</a>
+                        <a href="#" id="showSmsLogin">短信验证码登录</a>
                     </div>
                 </form>
                 
@@ -1812,6 +1874,25 @@
                     
                     <div class="back-to-login">
                         <a href="#" id="backToLoginFromReset">返回登录</a>
+                    </div>
+                </form>
+                
+                <form id="smsLoginForm">
+                    <div class="form-group">
+                        <i class="fas fa-mobile-alt"></i>
+                        <input type="tel" id="smsPhone" class="form-control" placeholder="请输入手机号码" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <i class="fas fa-key"></i>
+                        <input type="text" id="smsCode" class="form-control" placeholder="请输入验证码" required>
+                        <button type="button" id="sendSmsCode" class="btn-sms">发送验证码</button>
+                    </div>
+                    
+                    <button type="submit" class="btn">验证码登录</button>
+                    
+                    <div class="back-to-login">
+                        <a href="#" id="backToLoginFromSms">返回登录</a>
                     </div>
                 </form>
             </div>
@@ -2542,8 +2623,8 @@
 
     <script>
         // LeanCloud 配置
-        const APP_ID = 'N4KUUvF2eY8wOG0sF5oddkdC-gzGzoHsz';
-        const APP_KEY = 'xtsTJ4R0uMAJCjCJJvNcwsHt';
+        const APP_ID = 'YTZnYJZLrOLM1iUgi3hyF3LX-gzGzoHsz';
+        const APP_KEY = 'gd1zSY9FVQdpBwdmNhn91RUT';
         const SERVER_URL = 'https://api.leancloud.cn';
         
         // 删除旧的LEANCLOUD_APP_URL配置
@@ -2823,14 +2904,33 @@
         // 检查用户是否被授权的函数
         async function checkUserAuthorization(username) {
             try {
-                const query = new AV.Query('AuthorizedUsers');
-                query.equalTo('username', username);
-                const results = await query.find();
-                return results.length > 0;
+                // 使用HTTP请求查询leanengine-demo应用的AuthorizedUsers表
+                const authUrl = 'https://api.leancloud.cn/1.1/classes/AuthorizedUsers';
+                const authResponse = await fetch(authUrl, {
+                    method: 'GET',
+                    headers: {
+                        'X-LC-Id': 'N4KUUvF2eY8wOG0sF5oddkdC-gzGzoHsz', // leanengine-demo应用ID
+                        'X-LC-Key': 'xtsTJ4R0uMAJCjCJJvNcwsHt', // leanengine-demo应用Key
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!authResponse.ok) {
+                    console.error('查询授权表失败:', authResponse.status, authResponse.statusText);
+                    return false;
+                }
+                
+                const authData = await authResponse.json();
+                console.log('授权表查询结果:', authData);
+                
+                // 检查用户名是否在授权列表中
+                const isAuthorized = authData.results && authData.results.some(user => user.username === username);
+                return isAuthorized;
+                
             } catch (error) {
                 console.error('检查用户授权失败:', error);
-                // 临时返回true以便测试，等AuthorizedUsers表创建后再改为false
-                return true;
+                // 查询失败时拒绝授权，确保安全
+                return false;
             }
         }
         
@@ -2862,8 +2962,10 @@
         
         const showReset = document.getElementById('showReset');
         const showRegister = document.getElementById('showRegister');
+        const showSmsLogin = document.getElementById('showSmsLogin');
         const backToLoginFromRegister = document.getElementById('backToLoginFromRegister');
         const backToLoginFromReset = document.getElementById('backToLoginFromReset');
+        const backToLoginFromSms = document.getElementById('backToLoginFromSms');
         
         // 表单切换
         showReset.addEventListener('click', (e) => {
@@ -2881,9 +2983,21 @@
             loginForm.style.display = 'none';
             resetForm.style.display = 'none';
             registerForm.style.display = 'block';
+            document.getElementById('smsLoginForm').style.display = 'none';
             hideMessage();
             // 修改标题为"新用户注册"
             document.getElementById('form-title').textContent = '新用户注册';
+        });
+        
+        showSmsLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            resetForm.style.display = 'none';
+            registerForm.style.display = 'none';
+            document.getElementById('smsLoginForm').style.display = 'block';
+            hideMessage();
+            // 修改标题为"短信验证码登录"
+            document.getElementById('form-title').textContent = '短信验证码登录';
         });
         
         backToLoginFromRegister.addEventListener('click', (e) => {
@@ -2891,6 +3005,7 @@
             loginForm.style.display = 'block';
             resetForm.style.display = 'none';
             registerForm.style.display = 'none';
+            document.getElementById('smsLoginForm').style.display = 'none';
             hideMessage();
             // 修改标题为"用户登录"
             document.getElementById('form-title').textContent = '用户登录';
@@ -2901,6 +3016,18 @@
             loginForm.style.display = 'block';
             resetForm.style.display = 'none';
             registerForm.style.display = 'none';
+            document.getElementById('smsLoginForm').style.display = 'none';
+            hideMessage();
+            // 修改标题为"用户登录"
+            document.getElementById('form-title').textContent = '用户登录';
+        });
+        
+        backToLoginFromSms.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.style.display = 'block';
+            resetForm.style.display = 'none';
+            registerForm.style.display = 'none';
+            document.getElementById('smsLoginForm').style.display = 'none';
             hideMessage();
             // 修改标题为"用户登录"
             document.getElementById('form-title').textContent = '用户登录';
@@ -3053,6 +3180,123 @@
                 showMessage(`密码重置失败: ${error.message}`, 'error');
             }
         });
+        
+        // 短信验证码登录处理
+        const smsLoginForm = document.getElementById('smsLoginForm');
+        const sendSmsCodeBtn = document.getElementById('sendSmsCode');
+        const smsPhoneInput = document.getElementById('smsPhone');
+        const smsCodeInput = document.getElementById('smsCode');
+        
+        // 发送验证码
+        sendSmsCodeBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const phone = smsPhoneInput.value.trim();
+            
+            // 验证手机号格式
+            const phoneRegex = /^1[3-9]\d{9}$/;
+            if (!phoneRegex.test(phone)) {
+                showMessage('请输入正确的手机号码', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('正在发送验证码...', 'info');
+                sendSmsCodeBtn.disabled = true;
+                sendSmsCodeBtn.textContent = '发送中...';
+                
+                // 调用LeanCloud云函数发送短信
+                const result = await AV.Cloud.run('sendSmsCode', {
+                    phone: phone
+                });
+                
+                if (result.success) {
+                    showMessage('验证码已发送，请查收短信', 'success');
+                    startCountdown();
+                } else {
+                    showMessage(result.message || '发送失败，请重试', 'error');
+                    sendSmsCodeBtn.disabled = false;
+                    sendSmsCodeBtn.textContent = '发送验证码';
+                }
+                
+            } catch (error) {
+                console.error('发送验证码错误:', error);
+                showMessage('发送失败，请重试', 'error');
+                sendSmsCodeBtn.disabled = false;
+                sendSmsCodeBtn.textContent = '发送验证码';
+            }
+        });
+        
+        // 短信验证码登录提交
+        smsLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const phone = smsPhoneInput.value.trim();
+            const code = smsCodeInput.value.trim();
+            
+            if (!phone || !code) {
+                showMessage('请填写手机号和验证码', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('正在验证...', 'info');
+                
+                // 调用LeanCloud云函数验证短信验证码
+                const result = await AV.Cloud.run('verifySmsCode', {
+                    phone: phone,
+                    code: code
+                });
+                
+                if (result.success) {
+                    showMessage('登录成功！欢迎回来', 'success');
+                    
+                    // 记录登录
+                    await recordUserLogin(phone, {
+                        loginMethod: 'sms',
+                        phone: phone
+                    });
+                    
+                    // 隐藏登录容器，显示主页面
+                    setTimeout(() => {
+                        document.getElementById('login-container').style.display = 'none';
+                        document.getElementById('main-container').style.display = 'block';
+                        
+                        // 隐藏登录页面的标题和版权信息
+                        document.getElementById('login-header-title').style.display = 'none';
+                        document.getElementById('login-footer-copyright').style.display = 'none';
+                        
+                        initMainSystem();
+                    }, 1000);
+                    
+                } else {
+                    showMessage(result.message || '验证失败，请检查验证码', 'error');
+                }
+                
+            } catch (error) {
+                console.error('短信验证码登录错误:', error);
+                showMessage('登录失败，请重试', 'error');
+            }
+        });
+        
+        // 倒计时功能
+        function startCountdown() {
+            let countdown = 60;
+            sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
+            sendSmsCodeBtn.classList.add('countdown');
+            
+            const timer = setInterval(() => {
+                countdown--;
+                sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
+                
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    sendSmsCodeBtn.disabled = false;
+                    sendSmsCodeBtn.textContent = '发送验证码';
+                    sendSmsCodeBtn.classList.remove('countdown');
+                }
+            }, 1000);
+        }
         
         // 初始化主页面系统函数
         function initMainSystem() {
