@@ -1811,6 +1811,79 @@
             }
         }
 
+        /* 整体情况概要 */
+        .overview-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        .overview-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .overview-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .overview-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+        
+        .overview-value-large {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .overview-name-large {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .overview-subtext {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .overview-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -2080,6 +2153,14 @@
             
             <!-- 主内容区 -->
             <div class="main-content">
+            
+            <!-- 整体情况概要 -->
+            <div class="overview-section">
+                <h3 class="metric-section-title"><i class="fas fa-tachometer-alt"></i> 整体情况概要</h3>
+                <div class="overview-grid" id="overview-grid">
+                    <!-- 数据将由JavaScript动态填充 -->
+                </div>
+            </div>
 
 <!-- 本月实时数据板块 -->
 <h2 class="section-title"><i class="fas fa-chart-line"></i> 本月实时数据</h2>
@@ -5870,6 +5951,206 @@ function updateUnchargedTable() {
             }
           }
         }
+
+        // 整体情况概要数据存储对象
+        const overviewData = {
+            summary: {},
+            overallMetrics: {},
+            sfpMetrics: {},
+            glMetrics: {},
+            deviceMetrics: [],
+            annualMetrics: [],
+            coreMetrics: [],
+            timeDistribution: { sfp: [], gl: [] },
+            revenueCost: [],
+            annualTrend: []
+        };
+
+        // 从Excel文件加载整体情况概要数据
+        async function loadOverviewData() {
+            try {
+                const response = await fetch('https://www.csfhcdz.cn/data/cddata.xlsx');
+                if (!response.ok) {
+                    throw new Error('无法加载Excel文件');
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // 解析每个工作表的数据
+                parseOverviewSheetData(workbook);
+                
+                // 更新整体情况概要
+                updateOverviewData();
+                
+            } catch (error) {
+                console.error('加载整体情况概要数据失败:', error);
+            }
+        }
+
+        // 解析整体情况概要工作表数据
+        function parseOverviewSheetData(workbook) {
+            // 解析整体情况概要 (Sheet1)
+            const summarySheet = workbook.Sheets[workbook.SheetNames[0]];
+            const summaryData = XLSX.utils.sheet_to_json(summarySheet, { header: 1 });
+            
+            // 跳过标题行
+            for (let i = 1; i < summaryData.length; i++) {
+                if (summaryData[i][0]) {
+                    overviewData.summary[summaryData[i][0]] = summaryData[i][1];
+                }
+            }
+            
+            // 解析总体运营指标 (Sheet2)
+            const overallSheet = workbook.Sheets[workbook.SheetNames[1]];
+            const overallData = XLSX.utils.sheet_to_json(overallSheet, { header: 1 });
+            
+            for (let i = 1; i < overallData.length; i++) {
+                if (overallData[i][0]) {
+                    overviewData.overallMetrics[overallData[i][0]] = overallData[i][1];
+                }
+            }
+            
+            // 解析四方坪站运营指标 (Sheet3)
+            const sfpSheet = workbook.Sheets[workbook.SheetNames[2]];
+            const sfpData = XLSX.utils.sheet_to_json(sfpSheet, { header: 1 });
+            
+            for (let i = 1; i < sfpData.length; i++) {
+                if (sfpData[i][0]) {
+                    overviewData.sfpMetrics[sfpData[i][0]] = sfpData[i][1];
+                }
+            }
+            
+            // 解析高岭站运营指标 (Sheet4)
+            const glSheet = workbook.Sheets[workbook.SheetNames[3]];
+            const glData = XLSX.utils.sheet_to_json(glSheet, { header: 1 });
+            
+            for (let i = 1; i < glData.length; i++) {
+                if (glData[i][0]) {
+                    overviewData.glMetrics[glData[i][0]] = glData[i][1];
+                }
+            }
+            
+            // 解析设备充电总数据 (Sheet5)
+            const deviceSheet = workbook.Sheets[workbook.SheetNames[4]];
+            const deviceData = XLSX.utils.sheet_to_json(deviceSheet, { header: 1 });
+            
+            for (let i = 1; i < deviceData.length; i++) {
+                if (deviceData[i][0]) {
+                    overviewData.deviceMetrics.push({
+                        name: deviceData[i][0],
+                        charge: deviceData[i][1],
+                        revenue: deviceData[i][2]
+                    });
+                }
+            }
+            
+            // 解析年度运营数据 (Sheet6)
+            const annualSheet = workbook.Sheets[workbook.SheetNames[5]];
+            const annualData = XLSX.utils.sheet_to_json(annualSheet, { header: 1 });
+            
+            for (let i = 1; i < annualData.length; i++) {
+                if (annualData[i][0]) {
+                    overviewData.annualMetrics.push({
+                        year: annualData[i][0],
+                        charge: annualData[i][1],
+                        revenue: annualData[i][2]
+                    });
+                }
+            }
+            
+            // 解析充电站核心指标对比 (Sheet7)
+            const coreSheet = workbook.Sheets[workbook.SheetNames[6]];
+            const coreData = XLSX.utils.sheet_to_json(coreSheet, { header: 1 });
+            
+            for (let i = 2; i < coreData.length; i++) {
+                if (coreData[i][0]) {
+                    overviewData.coreMetrics.push({
+                        station: coreData[i][0],
+                        charge: coreData[i][1],
+                        revenue: coreData[i][2],
+                        orders: coreData[i][3]
+                    });
+                }
+            }
+            
+            // 解析充电时段分布 (Sheet8)
+            const timeSheet = workbook.Sheets[workbook.SheetNames[7]];
+            const timeData = XLSX.utils.sheet_to_json(timeSheet, { header: 1 });
+            
+            // 分组数据
+            for (let i = 2; i < timeData.length; i += 2) {
+                if (timeData[i][0] && timeData[i][0].includes('sfp')) {
+                    overviewData.timeDistribution.sfp.push(timeData[i][2]);
+                    if (timeData[i+1] && timeData[i+1][0].includes('gl')) {
+                        overviewData.timeDistribution.gl.push(timeData[i+1][2]);
+                    }
+                }
+            }
+            
+            // 解析收入与成本构成 (Sheet9)
+            const revenueSheet = workbook.Sheets[workbook.SheetNames[8]];
+            const revenueData = XLSX.utils.sheet_to_json(revenueSheet, { header: 1 });
+            
+            for (let i = 2; i < revenueData.length; i++) {
+                if (revenueData[i][0]) {
+                    overviewData.revenueCost.push({
+                        station: revenueData[i][0],
+                        income: revenueData[i][1],
+                        cost: revenueData[i][2],
+                        profit: revenueData[i][3]
+                    });
+                }
+            }
+            
+            // 解析年度充电量趋势 (Sheet10)
+            const trendSheet = workbook.Sheets[workbook.SheetNames[9]];
+            const trendData = XLSX.utils.sheet_to_json(trendSheet, { header: 1 });
+            
+            // 修正：确保正确获取年度充电量数据
+            overviewData.annualTrend = [];
+            for (let i = 1; i < trendData.length; i++) {
+                if (trendData[i][0]) {
+                    // 确保只获取充电量数据（第二列）
+                    overviewData.annualTrend.push(trendData[i][1]);
+                }
+            }
+        }
+
+        // 更新整体情况概要数据
+        function updateOverviewData() {
+            const overviewGrid = document.getElementById('overview-grid');
+            if (overviewGrid) {
+                overviewGrid.innerHTML = `
+                    <div class="overview-card">
+                        <div class="overview-value-large">${overviewData.summary.cdz || '2座'}</div>
+                        <div class="overview-name-large">运营中充电站数量</div>
+                        <div class="overview-subtext">四方坪站、高岭站</div>
+                    </div>
+                    <div class="overview-card">
+                        <div class="overview-value-large">${overviewData.summary.gl || '11150kw'}</div>
+                        <div class="overview-name-large">设备总功率</div>
+                        <div class="overview-subtext">四方坪站${overviewData.summary.sfpgl || '8990kw'}<br>高岭站${overviewData.summary.glgl || '2160kw'}</div>
+                    </div>
+                    <div class="overview-card">
+                        <div class="overview-value-large">${overviewData.summary.qs || '178支'}</div>
+                        <div class="overview-name-large">总充电枪数量</div>
+                        <div class="overview-subtext">四方坪站${overviewData.summary.sfpcdq || '142支'}<br>高岭站${overviewData.summary.glcdq || '36支'}</div>
+                    </div>
+                    <div class="overview-card">
+                        <div class="overview-value-large">${overviewData.summary.zy || '15支'}</div>
+                        <div class="overview-name-large">占用充电枪数量</div>
+                        <div class="overview-subtext">四方坪站${overviewData.summary.sfpz || '15支'}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // 页面加载完成后加载整体情况概要数据
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOverviewData();
+        });
     </script>
     
     <!-- 版权信息已移除 -->
