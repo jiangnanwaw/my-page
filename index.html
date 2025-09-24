@@ -496,13 +496,19 @@
         
         .section-title {
             font-size: 22px;
-            margin-bottom: 3px;
+            margin-top: 40px;
+            margin-bottom: 20px;
             color: var(--dark);
             display: flex;
             align-items: center;
             gap: 10px;
             padding-bottom: 10px;
             border-bottom: 2px solid var(--primary);
+        }
+        
+        /* 第一个section-title不需要上边距 */
+        .main-content > .section-title:first-child {
+            margin-top: 0;
         }
         
         .section-title i {
@@ -513,11 +519,11 @@
         .query-section {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 10px 15px; /* 减少内边距 */
-            margin-bottom: 20px; /* 减少下边距 */
+            padding: 25px;
+            margin-bottom: 40px;
             box-shadow: var(--shadow);
-            width: 100%; /* 宽度铺满 */
-            height: auto; /* 高度自适应 */
+            width: 100%;
+            height: auto;
         }
         
         .query-form {
@@ -698,7 +704,7 @@
             border-radius: 12px;
             padding: 25px;
             box-shadow: var(--shadow);
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         
         .excel-header {
@@ -763,6 +769,11 @@
             text-align: center !important;
         }
         
+        /* 单位信息左对齐 */
+        .unit-info-cell {
+            text-align: left !important;
+        }
+        
         /* 充电数据看板表格数字列居中对齐 */
         #charging-board-table-container .num-cell,
         #charging-board-table-container .num-col {
@@ -808,7 +819,7 @@
             border-radius: 12px;
             padding: 25px;
             box-shadow: var(--shadow);
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         
         .comprehensive-header {
@@ -1409,10 +1420,14 @@
             gap: 30px;
         }
 
+        .metrics-section {
+            margin-bottom: 40px;
+        }
+        
         .metrics-section > .metrics-row {
-    width: 100%;
-    margin-bottom: 15px;
-}
+            width: 100%;
+            margin-bottom: 15px;
+        }
 
 /* 调整指标卡片宽度 */
 .metrics-section > .metrics-row:nth-child(1) .metric-item {
@@ -1562,7 +1577,7 @@
             border-radius: 12px;
             padding: 25px;
             box-shadow: var(--shadow);
-            margin-top: 15px;
+            margin-bottom: 40px;
         }
 
         .chart-title {
@@ -2065,76 +2080,9 @@
             
             <!-- 主内容区 -->
             <div class="main-content">
-                <!-- 查询板块 -->
-                <div class="query-section">
-                    <h2 class="section-title"><i class="fas fa-search"></i> 数据查询</h2>
-                    <div class="query-form" id="data-query-form">
-                        <div class="form-group date-picker-container" style="flex: 0 0 18%;">
-                           <label for="start-date">开始日期</label>
-        <input type="text" id="start-date" placeholder="选择开始日期" readonly style="width: 100%; height: 36px; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white;">
-        <div class="custom-picker" id="start-date-picker" style="width: 100%;">
-                                <div class="custom-date-picker">
-                                    <div class="date-header">
-                                        <div class="year-control">
-                                            <button class="year-btn prev-year"><i class="fas fa-chevron-left"></i></button>
-                                            <div class="year-display" id="start-year-display">2025</div>
-                                            <button class="year-btn next-year"><i class="fas fa-chevron-right"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="month-grid" id="start-month-grid">
-                                        <!-- 月份按钮由JS生成 -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group date-picker-container" style="flex: 0 0 18%;">
-                             <label for="end-date">结束日期</label>
-        <input type="text" id="end-date" placeholder="选择结束日期" readonly style="width: 100%; height: 36px; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white;">
-        <div class="custom-picker" id="end-date-picker" style="width: 100%;">
-                                <div class="custom-date-picker">
-                                    <div class="date-header">
-                                        <div class="year-control">
-                                            <button class="year-btn prev-year"><i class="fas fa-chevron-left"></i></button>
-                                            <div class="year-display" id="end-year-display">2025</div>
-                                            <button class="year-btn next-year"><i class="fas fa-chevron-right"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="month-grid" id="end-month-grid">
-                                        <!-- 月份按钮由JS生成 -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group" style="flex: 0 0 18%;">
-                            <label for="data-type">数据类型</label>
-        <select id="data-type" style="width: 100%; height: 36px; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white;">
-            <option value="charging">充电数据</option>
-            <option value="comprehensive">综合数据</option>
-        </select>
-    </div>
-                        
-                        <div class="btn-group" style="flex: 0 0 auto; display: flex; gap: 8px; align-items: center;">
-                           <button class="query-btn" id="query-btn" style="margin-bottom: 0;">
-            <span class="spinner"></span>
-            <i class="fas fa-search"></i>
-            <span>查询数据</span>
-        </button>
-        <button class="export-btn" id="export-btn" disabled style="margin-bottom: 0;">
-            <i class="fas fa-file-excel"></i>
-            <span>导出Excel</span>
-        </button>
-    </div>
-</div>
-                    <div class="query-info" id="query-info" style="margin-top: 2px; padding: 4px;">
-                        <i class="fas fa-info-circle"></i> 
-                        请选择日期和数据类型来查询数据
-                    </div>
-                </div>
 
 <!-- 本月实时数据板块 -->
-<h2 class="section-title" style="margin-top: 30px;"><i class="fas fa-chart-line"></i> 本月实时数据</h2>
+<h2 class="section-title"><i class="fas fa-chart-line"></i> 本月实时数据</h2>
 <div class="metrics-section">
     <!-- 实时数据轮播表格 -->
     <div class="chart-container">
@@ -2221,7 +2169,7 @@
 </div>
  
 
-                <h2 class="section-title" style="margin-top: 15px;"><i class="fas fa-charging-station"></i> 充电数据</h2>
+                <h2 class="section-title"><i class="fas fa-charging-station"></i> 充电数据</h2>
                 <!-- 充电数据指标板块 -->
                 <div class="metrics-section" style="gap: 8px;">
     <!-- 本月充电数据 - 单独一行 -->
@@ -2310,7 +2258,7 @@
     </div>
                     
                <!-- 充电数据看板 -->
-<h2 class="section-title" style="margin-top: 30px;"><i class="fas fa-charging-station"></i> 充电数据看板</h2>
+<h2 class="section-title"><i class="fas fa-charging-station"></i> 充电数据看板</h2>
 <div class="metrics-section">
     <!-- 第一部分：数据表格 -->
     <div class="chart-container">
@@ -2373,7 +2321,7 @@
                         </div>
                     </div>
                 </div>
-                <h2 class="section-title" style="margin-top: 30px;"><i class="fas fa-chart-line"></i> 综合业务数据</h2>
+                <h2 class="section-title"><i class="fas fa-chart-line"></i> 综合业务数据</h2>
                 <!-- 综合数据板块 -->
                 <div class="metrics-section">
                     <div class="metrics-row">
@@ -2461,7 +2409,75 @@
                         </div>
                     </div>
                 </div>
-                <h2 class="section-title" style="margin-top: 30px;"><i class="fas fa-table"></i> 数据报表</h2>
+                <!-- 查询板块 -->
+                <div class="query-section">
+                    <h2 class="section-title"><i class="fas fa-search"></i> 数据查询</h2>
+                    <div class="query-form" id="data-query-form">
+                        <div class="form-group date-picker-container" style="flex: 0 0 18%;">
+                           <label for="start-date">开始日期</label>
+        <input type="text" id="start-date" placeholder="选择开始日期" readonly style="width: 100%; height: 36px; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white;">
+        <div class="custom-picker" id="start-date-picker" style="width: 100%;">
+                                <div class="custom-date-picker">
+                                    <div class="date-header">
+                                        <div class="year-control">
+                                            <button class="year-btn prev-year"><i class="fas fa-chevron-left"></i></button>
+                                            <div class="year-display" id="start-year-display">2025</div>
+                                            <button class="year-btn next-year"><i class="fas fa-chevron-right"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="month-grid" id="start-month-grid">
+                                        <!-- 月份按钮由JS生成 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group date-picker-container" style="flex: 0 0 18%;">
+                             <label for="end-date">结束日期</label>
+        <input type="text" id="end-date" placeholder="选择结束日期" readonly style="width: 100%; height: 36px; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white;">
+        <div class="custom-picker" id="end-date-picker" style="width: 100%;">
+                                <div class="custom-date-picker">
+                                    <div class="date-header">
+                                        <div class="year-control">
+                                            <button class="year-btn prev-year"><i class="fas fa-chevron-left"></i></button>
+                                            <div class="year-display" id="end-year-display">2025</div>
+                                            <button class="year-btn next-year"><i class="fas fa-chevron-right"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="month-grid" id="end-month-grid">
+                                        <!-- 月份按钮由JS生成 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="flex: 0 0 18%;">
+                            <label for="data-type">数据类型</label>
+        <select id="data-type" style="width: 100%; height: 36px; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white;">
+            <option value="charging">充电数据</option>
+            <option value="comprehensive">综合数据</option>
+        </select>
+    </div>
+                        
+                        <div class="btn-group" style="flex: 0 0 auto; display: flex; gap: 8px; align-items: center;">
+                           <button class="query-btn" id="query-btn" style="margin-bottom: 0;">
+            <span class="spinner"></span>
+            <i class="fas fa-search"></i>
+            <span>查询数据</span>
+        </button>
+        <button class="export-btn" id="export-btn" disabled style="margin-bottom: 0;">
+            <i class="fas fa-file-excel"></i>
+            <span>导出Excel</span>
+        </button>
+    </div>
+</div>
+                    <div class="query-info" id="query-info" style="margin-top: 2px; padding: 4px;">
+                        <i class="fas fa-info-circle"></i> 
+                        请选择日期和数据类型来查询数据
+                    </div>
+                </div>
+                
+                <h2 class="section-title"><i class="fas fa-table"></i> 数据报表</h2>
                 <!-- Excel 表格区域 -->
                 <div class="excel-section" id="report-section">
                     <div class="excel-header">
@@ -3784,6 +3800,8 @@
                         });
                         // 标记数字为不换行
                         markNumericCells(tableEl);
+                        // 处理单位信息左对齐
+                        handleUnitInfoAlignment(tableEl);
                     }
                     
                     // 如果是用户查询，设置导出数据
@@ -3902,6 +3920,8 @@
                 });
                 // 标记数字为不换行
                 markNumericCells(tableEl);
+                // 处理单位信息左对齐
+                handleUnitInfoAlignment(tableEl);
             }
         }
         
@@ -5794,6 +5814,18 @@ function updateUnchargedTable() {
                     cell.style.wordBreak = 'normal';
                     cell.style.overflowWrap = 'normal';
                     cell.style.textAlign = 'center';
+                }
+            });
+        }
+
+        // 处理单位信息左对齐
+        function handleUnitInfoAlignment(tableEl) {
+            const cells = tableEl.querySelectorAll('td, th');
+            cells.forEach(cell => {
+                const txt = (cell.textContent || '').trim();
+                if (txt.includes('单位：长沙飞狐电动汽车充电服务有限公司')) {
+                    cell.classList.add('unit-info-cell');
+                    cell.style.textAlign = 'left';
                 }
             });
         }
