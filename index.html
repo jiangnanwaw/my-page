@@ -2223,11 +2223,10 @@
             <div style="display: flex; align-items: center; margin-left: auto; gap: 10px;">
                 <select id="uncharged-duration-filter" style="padding: 5px;">
                     <option value="all">全部时长</option>
-                    <option value="lt30">&lt;12小时</option>
-                    <option value="ge30lt60">&gt;=12&lt;24小时</option>
-                    <option value="ge60lt90">&gt;=24&lt;60小时</option>
-                    <option value="ge90">&gt;=60小时</option>
-                    <option value="stillUncharged">截止一直未充电</option>
+                    <option value="lt30">&lt;30小时</option>
+                    <option value="ge30lt60">&gt;=30&lt;60小时</option>
+                    <option value="ge60lt90">&gt;=60&lt;90小时</option>
+                    <option value="ge90">&gt;=90小时</option>
                 </select>
             </div>
         </div>
@@ -2237,9 +2236,9 @@
                     <tr>
                         <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">电站名称</th>
                         <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">终端名称</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">最近一次充电结束时间</th>
+                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">上一次充电结束时间</th>
                         <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">截止一直未充电时间</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">截止一直未充电时长(小时)</th>
+                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">未充电时长(小时)</th>
                     </tr>
                 </thead>
                 <tbody id="uncharged-table-body">
@@ -5659,19 +5658,17 @@ function loadUnchargedData() {
             unchargedData = [];
             for (let i = 1; i < jsonData.length; i++) {
                 const row = jsonData[i];
-                if (row && row.length >= 6) {
+                if (row && row.length >= 5) {
                     // 确保日期格式正确
                     const lastEndTime = formatDateString(row[2]);
-                    const nextStartTime = formatDateString(row[3]);
-                    const stillUnchargedTime = formatDateString(row[4]);
+                    const stillUnchargedTime = formatDateString(row[3]);
                     
                     unchargedData.push({
                         stationName: row[0] || '',
                         terminalName: row[1] || '',
                         lastEndTime: lastEndTime,
-                        nextStartTime: nextStartTime,
                         stillUnchargedTime: stillUnchargedTime,
-                        duration: row[5] || 0
+                        duration: row[4] || 0
                     });
                 }
             }
@@ -5768,11 +5765,6 @@ function initDurationFilter() {
 function filterUnchargedData() {
     if (currentDurationFilter === 'all') {
         filteredUnchargedData = [...unchargedData];
-    } else if (currentDurationFilter === 'stillUncharged') {
-        // 筛选"截止一直未充电"的数据，即stillUnchargedTime字段有值的记录
-        filteredUnchargedData = unchargedData.filter(item => {
-            return item.stillUnchargedTime && item.stillUnchargedTime.trim() !== '';
-        });
     } else {
         filteredUnchargedData = unchargedData.filter(item => {
             const duration = parseFloat(item.duration);
@@ -5839,26 +5831,15 @@ function updateUnchargedTable() {
         const item = filteredUnchargedData[i];
         const row = document.createElement('tr');
         
-        // 如果有"截止一直未充电时间"数据，标红显示
-        if (item.stillUnchargedTime) {
-            row.style.backgroundColor = '#ffebee'; // 浅红色背景
-            row.style.color = '#d32f2f'; // 红色文字
-            // 确保单元格样式保持一致
-            const cells = row.querySelectorAll('td');
-            cells.forEach(cell => {
-                cell.style.border = '1px solid #e0e0e0';
-                cell.style.textAlign = 'center';
-                cell.style.padding = '10px 8px';
-            });
-        }
+        // 格式化时长数据，保留2位小数
+        const formattedDuration = parseFloat(item.duration).toFixed(2);
         
         row.innerHTML = `
-            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0;">${item.stationName}</td>
-            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0;">${item.terminalName}</td>
-            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0;">${item.lastEndTime}</td>
-            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0;">${item.nextStartTime}</td>
-            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0;">${item.stillUnchargedTime}</td>
-            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0;">${item.duration}</td>
+            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0; color: black;">${item.stationName}</td>
+            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0; color: black;">${item.terminalName}</td>
+            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0; color: black;">${item.lastEndTime}</td>
+            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0; color: black;">${item.stillUnchargedTime}</td>
+            <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0; color: black;">${formattedDuration}</td>
         `;
         
         tableBody.appendChild(row);
