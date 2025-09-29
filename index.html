@@ -2291,24 +2291,44 @@
             <canvas id="behavior-chart"></canvas>
         </div>
         
-        <!-- 尖峰平谷充电记录表格 -->
-        <div class="electricity-analysis-table" style="margin-top: 20px;">
-            <div style="margin-bottom: 10px; font-weight: bold; color: #333;">尖峰平谷充电记录</div>
-            <table id="electricity-table" style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
-                <thead>
-                    <tr>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">站点</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">尖</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">峰</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">平</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">谷</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">小计</th>
-                    </tr>
-                </thead>
-                <tbody id="electricity-table-body">
-                    <!-- 数据将由JavaScript动态填充 -->
-                </tbody>
-            </table>
+        <!-- 尖峰平谷充电记录表格和饼图 -->
+        <div class="electricity-analysis-container" style="margin-top: 20px; display: flex; gap: 20px;">
+            <!-- 表格部分 - 缩小到一半 -->
+            <div class="electricity-analysis-table" style="flex: 1;">
+                <div style="margin-bottom: 10px; font-weight: bold; color: #333;">尖峰平谷充电记录</div>
+                <table id="electricity-table" style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">站点</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">尖</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">峰</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">平</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">谷</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">小计</th>
+                        </tr>
+                    </thead>
+                    <tbody id="electricity-table-body">
+                        <!-- 数据将由JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 饼图部分 - 分为两个独立的饼图 -->
+            <div class="electricity-pie-charts" style="flex: 1; display: flex; gap: 20px;">
+                <!-- 四方坪站饼图 -->
+                <div class="electricity-pie-chart-sfp" style="flex: 1;">
+                    <div style="position: relative; height: 200px; width: 200px; margin: 0 auto;">
+                        <canvas id="electricity-pie-chart-sfp"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 高岭站饼图 -->
+                <div class="electricity-pie-chart-gl" style="flex: 1;">
+                    <div style="position: relative; height: 200px; width: 200px; margin: 0 auto;">
+                        <canvas id="electricity-pie-chart-gl"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2549,7 +2569,7 @@
                             <div class="income-grid">
                                 <div class="metric-item">
                                     <div class="metric-value" id="month-income">¥43,435.85</div>
-                                    <div class="metric-label">本月总收入</div>
+                                    <div class="metric-label">上期总收入</div>
                                 </div>
                                 <div class="metric-item">
                                     <div class="metric-value" id="year-income">¥375,153.84</div>
@@ -3287,7 +3307,7 @@
                 // 首先检查用户是否被授权
                 const isAuthorized = await checkUserAuthorization(username);
                 if (!isAuthorized) {
-                    showMessage('登录失败: 该用户未获得访问授权，请联系管理员', 'error');
+                    showMessage('登录失败: 该用户未获得访问授权！', 'error');
                     return;
                 }
                 
@@ -3355,7 +3375,7 @@
                 // 首先检查用户是否被授权
                 const isAuthorized = await checkUserAuthorization(username);
                 if (!isAuthorized) {
-                    showMessage('注册失败: 该用户未获得授权，请联系管理员将您的用户名添加到授权列表', 'error');
+                    showMessage('注册失败: 该用户未获得授权！', 'error');
                     return;
                 }
                 
@@ -3714,6 +3734,9 @@
         let chargingTrendChart = null;
         let revenueBySectorChart = null;
         let annualRevenueTrendChart = null;
+        let electricityPieChart = null; // 尖峰平谷饼图（已废弃）
+        let electricityPieChartSFP = null; // 四方坪站尖峰平谷饼图
+        let electricityPieChartGL = null; // 高岭站尖峰平谷饼图
         
         // GitHub数据文件URL
         const metricsDataUrl = 'https://www.csfhcdz.cn/data/homepage.xlsx';
@@ -6654,6 +6677,146 @@ function updateUnchargedTable() {
                     <td style="text-align: center; padding: 8px; border: 1px solid #e0e0e0;">${totalAll.toFixed(2)}</td>
                 </tr>
             `;
+            
+            // 同时更新两个饼图
+            updateElectricityPieChartSFP(electricityData);
+            updateElectricityPieChartGL(electricityData);
+        }
+
+        // 更新四方坪站尖峰平谷饼图
+        function updateElectricityPieChartSFP(electricityData) {
+            const ctx = document.getElementById('electricity-pie-chart-sfp');
+            if (!ctx) return;
+
+            // 销毁现有图表
+            if (electricityPieChartSFP) {
+                electricityPieChartSFP.destroy();
+            }
+
+            // 准备四方坪站饼图数据
+            const labels = ['尖', '峰', '平', '谷'];
+            const data = [
+                electricityData.sfp.jian,
+                electricityData.sfp.feng,
+                electricityData.sfp.ping,
+                electricityData.sfp.gu
+            ];
+
+            const total = data.reduce((sum, value) => sum + value, 0);
+
+            electricityPieChartSFP = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#ff6b6b', '#ffa726', '#66bb6a', '#42a5f5' // 四方坪站：尖峰平谷
+                        ],
+                        borderColor: [
+                            '#d32f2f', '#f57c00', '#388e3c', '#1976d2' // 四方坪站：尖峰平谷
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '四方坪站 - 尖峰平谷分布图',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const percentage = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                    return `${label}: ${value.toFixed(2)}kW (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '50%' // 空心饼图
+                }
+            });
+        }
+
+        // 更新高岭站尖峰平谷饼图
+        function updateElectricityPieChartGL(electricityData) {
+            const ctx = document.getElementById('electricity-pie-chart-gl');
+            if (!ctx) return;
+
+            // 销毁现有图表
+            if (electricityPieChartGL) {
+                electricityPieChartGL.destroy();
+            }
+
+            // 准备高岭站饼图数据
+            const labels = ['尖', '峰', '平', '谷'];
+            const data = [
+                electricityData.gl.jian,
+                electricityData.gl.feng,
+                electricityData.gl.ping,
+                electricityData.gl.gu
+            ];
+
+            const total = data.reduce((sum, value) => sum + value, 0);
+
+            electricityPieChartGL = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#e57373', '#ffb74d', '#81c784', '#64b5f6' // 高岭站：尖峰平谷
+                        ],
+                        borderColor: [
+                            '#c62828', '#ef6c00', '#2e7d32', '#1565c0' // 高岭站：尖峰平谷
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '高岭站 - 尖峰平谷分布图',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const percentage = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                    return `${label}: ${value.toFixed(2)}kW (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '50%' // 空心饼图
+                }
+            });
         }
 
 
