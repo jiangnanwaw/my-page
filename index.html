@@ -2543,12 +2543,62 @@
                     <div style="position: relative; height: 200px; width: 200px; margin: 0 auto;">
                         <canvas id="electricity-pie-chart-sfp"></canvas>
                     </div>
+                    <!-- 四方坪站数字显示 -->
+                    <div class="electricity-numbers-sfp" style="margin-top: 10px; text-align: center;">
+                        <div style="display: flex; justify-content: space-around; flex-wrap: nowrap; gap: 5px; font-size: 12px;">
+                            <div class="number-item" style="display: flex; align-items: center; gap: 3px;">
+                                <span style="color: #ff6b6b; font-weight: bold; font-size: 11px;">尖:</span>
+                                <span id="sfp-jian-number" style="font-weight: bold; font-size: 11px;">0</span>
+                                <span id="sfp-jian-percent" style="font-size: 10px; color: #666;">(0%)</span>
+                            </div>
+                            <div class="number-item" style="display: flex; align-items: center; gap: 3px;">
+                                <span style="color: #ffa726; font-weight: bold; font-size: 11px;">峰:</span>
+                                <span id="sfp-feng-number" style="font-weight: bold; font-size: 11px;">0</span>
+                                <span id="sfp-feng-percent" style="font-size: 10px; color: #666;">(0%)</span>
+                            </div>
+                            <div class="number-item" style="display: flex; align-items: center; gap: 3px;">
+                                <span style="color: #66bb6a; font-weight: bold; font-size: 11px;">平:</span>
+                                <span id="sfp-ping-number" style="font-weight: bold; font-size: 11px;">0</span>
+                                <span id="sfp-ping-percent" style="font-size: 10px; color: #666;">(0%)</span>
+                            </div>
+                            <div class="number-item" style="display: flex; align-items: center; gap: 3px;">
+                                <span style="color: #42a5f5; font-weight: bold; font-size: 11px;">谷:</span>
+                                <span id="sfp-gu-number" style="font-weight: bold; font-size: 11px;">0</span>
+                                <span id="sfp-gu-percent" style="font-size: 10px; color: #666;">(0%)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- 高岭站饼图 -->
                 <div class="electricity-pie-chart-gl" style="flex: 1;">
                     <div style="position: relative; height: 200px; width: 200px; margin: 0 auto;">
                         <canvas id="electricity-pie-chart-gl"></canvas>
+                    </div>
+                    <!-- 高岭站数字显示 -->
+                    <div class="electricity-numbers-gl" style="margin-top: 10px; text-align: center;">
+                        <div style="display: flex; justify-content: space-around; flex-wrap: nowrap; gap: 5px; font-size: 12px;">
+                            <div class="number-item" style="display: flex; align-items: center; gap: 3px;">
+                                <span style="color: #e57373; font-weight: bold; font-size: 11px;">尖:</span>
+                                <span id="gl-jian-number" style="font-weight: bold; font-size: 11px;">0</span>
+                                <span id="gl-jian-percent" style="font-size: 10px; color: #666;">(0%)</span>
+                            </div>
+                            <div class="number-item" style="display: flex; align-items: center; gap: 3px;">
+                                <span style="color: #ffb74d; font-weight: bold; font-size: 11px;">峰:</span>
+                                <span id="gl-feng-number" style="font-weight: bold; font-size: 11px;">0</span>
+                                <span id="gl-feng-percent" style="font-size: 10px; color: #666;">(0%)</span>
+                            </div>
+                            <div class="number-item" style="display: flex; align-items: center; gap: 3px;">
+                                <span style="color: #81c784; font-weight: bold; font-size: 11px;">平:</span>
+                                <span id="gl-ping-number" style="font-weight: bold; font-size: 11px;">0</span>
+                                <span id="gl-ping-percent" style="font-size: 10px; color: #666;">(0%)</span>
+                            </div>
+                            <div class="number-item" style="display: flex; align-items: center; gap: 3px;">
+                                <span style="color: #64b5f6; font-weight: bold; font-size: 11px;">谷:</span>
+                                <span id="gl-gu-number" style="font-weight: bold; font-size: 11px;">0</span>
+                                <span id="gl-gu-percent" style="font-size: 10px; color: #666;">(0%)</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -7384,6 +7434,54 @@ function updateUnchargedTable() {
             // 同时更新两个饼图
             updateElectricityPieChartSFP(electricityData);
             updateElectricityPieChartGL(electricityData);
+            
+            // 更新数字显示和箭头
+            updateElectricityNumbers(electricityData, data);
+        }
+
+        // 更新数字显示和箭头
+        function updateElectricityNumbers(electricityData, currentData) {
+            // 获取上个月的数据进行比较
+            const currentDate = new Date(currentData.date);
+            const previousMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+            const previousMonthKey = previousMonth.toISOString().split('T')[0];
+            
+            // 查找上个月的数据
+            const previousData = behaviorData.find(d => d.date === previousMonthKey);
+            
+            // 更新四方坪站数字显示
+            updateStationNumbers('sfp', electricityData.sfp, previousData);
+            
+            // 更新高岭站数字显示
+            updateStationNumbers('gl', electricityData.gl, previousData);
+        }
+        
+        // 更新单个站点的数字显示
+        function updateStationNumbers(stationPrefix, currentData, previousData) {
+            const fields = ['jian', 'feng', 'ping', 'gu'];
+            
+            // 计算总数用于百分比计算
+            const total = currentData.jian + currentData.feng + currentData.ping + currentData.gu;
+            
+            fields.forEach(field => {
+                const numberElement = document.getElementById(`${stationPrefix}-${field}-number`);
+                const percentElement = document.getElementById(`${stationPrefix}-${field}-percent`);
+                const numberItemElement = numberElement ? numberElement.closest('.number-item') : null;
+                
+                if (numberElement && percentElement && numberItemElement) {
+                    const value = currentData[field];
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    
+                    // 如果数据为0，隐藏整个数字项
+                    if (value === 0) {
+                        numberItemElement.style.display = 'none';
+                    } else {
+                        numberItemElement.style.display = 'flex';
+                        numberElement.textContent = value.toFixed(2);
+                        percentElement.textContent = `(${percentage}%)`;
+                    }
+                }
+            });
         }
 
         // 更新四方坪站尖峰平谷饼图
@@ -7436,17 +7534,17 @@ function updateUnchargedTable() {
                         },
                         legend: {
                             display: true,
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 10,
+                                boxWidth: 6,
+                                boxHeight: 6
+                            }
                         },
                         tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed;
-                                    const percentage = total > 0 ? (value / total * 100).toFixed(1) : 0;
-                                    return `${label}: ${value.toFixed(2)}kW (${percentage}%)`;
-                                }
-                            }
+                            enabled: false
                         }
                     },
                     cutout: '50%' // 空心饼图
@@ -7504,17 +7602,17 @@ function updateUnchargedTable() {
                         },
                         legend: {
                             display: true,
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 10,
+                                boxWidth: 6,
+                                boxHeight: 6
+                            }
                         },
                         tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed;
-                                    const percentage = total > 0 ? (value / total * 100).toFixed(1) : 0;
-                                    return `${label}: ${value.toFixed(2)}kW (${percentage}%)`;
-                                }
-                            }
+                            enabled: false
                         }
                     },
                     cutout: '50%' // 空心饼图
