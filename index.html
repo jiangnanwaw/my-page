@@ -793,6 +793,229 @@
             text-align: center !important;
         }
         
+        /* 站点数据统计板块样式 */
+        .site-stats-section {
+            margin-bottom: 30px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+        
+        .site-stats-container {
+            width: 100%;
+        }
+        
+        .stats-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .data-mode-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .mode-btn {
+            padding: 8px 16px;
+            border: 2px solid #e9ecef;
+            background: #fff;
+            color: #6c757d;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .mode-btn:hover {
+            border-color: #007bff;
+            color: #007bff;
+        }
+        
+        .mode-btn.active {
+            background: #007bff;
+            border-color: #007bff;
+            color: #fff;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .page-btn {
+            width: 35px;
+            height: 35px;
+            border: 2px solid #e9ecef;
+            background: #fff;
+            color: #6c757d;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .page-btn:hover:not(:disabled) {
+            border-color: #007bff;
+            color: #007bff;
+        }
+        
+        .page-btn:disabled {
+            background: #f8f9fa;
+            border-color: #e9ecef;
+            color: #adb5bd;
+            cursor: not-allowed;
+        }
+        
+        .page-info {
+            font-weight: 600;
+            color: #495057;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        .stats-data-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0px;
+        }
+        
+        .site-data-section {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            margin-bottom: 0;
+        }
+        
+        .site-name-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: #495057;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #007bff;
+            text-align: center;
+        }
+        
+        .data-item {
+            margin-bottom: 4px;
+            padding: 5px;
+            background: #fff;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .site-name {
+            font-size: 14px;
+            color: #007bff;
+            font-weight: 700;
+            min-width: 80px;
+            flex-shrink: 0;
+            text-align: center;
+            background: #e3f2fd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #bbdefb;
+        }
+        
+        .site-name-spacer {
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+        
+        .data-label {
+            font-size: 14px;
+            color: #495057;
+            font-weight: 600;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+        
+        .data-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            border-radius: 6px;
+            transition: width 0.8s ease;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .progress-value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: 600;
+            color: #495057;
+            font-size: 12px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .stats-controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stats-data-container {
+                flex-direction: column;
+            }
+            
+            .site-data-section {
+                width: 100%;
+            }
+            
+            .data-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .progress-bar {
+                width: 100%;
+            }
+        }
+        
         /* 未充电时长统计表格数字列居中对齐 */
         #uncharged-table .num-cell,
         #uncharged-table .num-col {
@@ -2492,6 +2715,141 @@
         </div>
     </div>
                     
+               <!-- 站点数据统计板块 -->
+<div class="site-stats-section">
+    <h2 class="section-title"><i class="fas fa-chart-bar"></i> 站点数据统计</h2>
+    <div class="site-stats-container">
+        <!-- 控制按钮区域 -->
+        <div class="stats-controls">
+            <div class="data-mode-buttons">
+                <button class="mode-btn active" data-mode="month">月份数据</button>
+                <button class="mode-btn" data-mode="year">年份数据</button>
+                <button class="mode-btn" data-mode="total">总数据</button>
+            </div>
+            <div class="pagination-controls">
+                <button class="page-btn" id="prev-btn" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="page-info" id="page-info">2024-01</span>
+                <button class="page-btn" id="next-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 数据展示区域 -->
+        <div class="stats-data-container">
+            <!-- 四方坪站数据 -->
+            <div class="site-data-section">
+                <div class="data-item">
+                    <div class="site-name-spacer"></div>
+                    <div class="data-label">充电电量(kw)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="sifang-charge-progress">
+                            <div class="progress-fill" id="sifang-charge-fill"></div>
+                        </div>
+                        <span class="progress-value" id="sifang-charge-value">0</span>
+                    </div>
+                </div>
+                
+                <div class="data-item">
+                    <div class="site-name">四方坪站</div>
+                    <div class="data-label">充电服务费(元)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="sifang-service-progress">
+                            <div class="progress-fill" id="sifang-service-fill"></div>
+                        </div>
+                        <span class="progress-value" id="sifang-service-value">0</span>
+                    </div>
+                </div>
+                
+                <div class="data-item">
+                    <div class="site-name-spacer"></div>
+                    <div class="data-label">充电总收入(元)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="sifang-total-progress">
+                            <div class="progress-fill" id="sifang-total-fill"></div>
+                        </div>
+                        <span class="progress-value" id="sifang-total-value">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 高岭站数据 -->
+            <div class="site-data-section">
+                <div class="data-item">
+                    <div class="site-name-spacer"></div>
+                    <div class="data-label">充电电量(kw)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="gaoling-charge-progress">
+                            <div class="progress-fill" id="gaoling-charge-fill"></div>
+                        </div>
+                        <span class="progress-value" id="gaoling-charge-value">0</span>
+                    </div>
+                </div>
+                
+                <div class="data-item">
+                    <div class="site-name">高岭站</div>
+                    <div class="data-label">充电服务费(元)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="gaoling-service-progress">
+                            <div class="progress-fill" id="gaoling-service-fill"></div>
+                        </div>
+                        <span class="progress-value" id="gaoling-service-value">0</span>
+                    </div>
+                </div>
+                
+                <div class="data-item">
+                    <div class="site-name-spacer"></div>
+                    <div class="data-label">充电总收入(元)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="gaoling-total-progress">
+                            <div class="progress-fill" id="gaoling-total-fill"></div>
+                        </div>
+                        <span class="progress-value" id="gaoling-total-value">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 两站共计数据 -->
+            <div class="site-data-section">
+                <div class="data-item">
+                    <div class="site-name-spacer"></div>
+                    <div class="data-label">充电电量(kw)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="total-charge-progress">
+                            <div class="progress-fill" id="total-charge-fill"></div>
+                        </div>
+                        <span class="progress-value" id="total-charge-value">0</span>
+                    </div>
+                </div>
+                
+                <div class="data-item">
+                    <div class="site-name">两站共计</div>
+                    <div class="data-label">充电服务费(元)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="total-service-progress">
+                            <div class="progress-fill" id="total-service-fill"></div>
+                        </div>
+                        <span class="progress-value" id="total-service-value">0</span>
+                    </div>
+                </div>
+                
+                <div class="data-item">
+                    <div class="site-name-spacer"></div>
+                    <div class="data-label">充电总收入(元)</div>
+                    <div class="data-content">
+                        <div class="progress-bar" id="total-total-progress">
+                            <div class="progress-fill" id="total-total-fill"></div>
+                        </div>
+                        <span class="progress-value" id="total-total-value">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
                <!-- 充电数据看板 -->
 <h2 class="section-title"><i class="fas fa-charging-station"></i> 充电数据看板</h2>
 <div class="metrics-section">
@@ -3578,6 +3936,9 @@
             // 加载综合收入看板数据
             loadIncomeDashboardData();
 
+            // 加载站点数据统计
+            loadSiteStatsData();
+            
             // 加载充电数据看板
             loadChargingBoardData();
             initChargingBoardExport();
@@ -4511,6 +4872,348 @@ revenueBySectorChart = new Chart(revenueBySectorCtx, {
                 });
             });
         }
+
+        // 站点数据统计相关函数
+let siteStatsData = [];
+let currentMode = 'month';
+let currentPage = 0;
+let availablePages = [];
+
+// 加载站点统计数据
+function loadSiteStatsData() {
+    fetch('https://www.csfhcdz.cn/data/hzsj.xlsx')
+        .then(response => response.arrayBuffer())
+        .then(arrayBuffer => {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // 获取Sheet1工作表
+            const sheet = workbook.Sheets['Sheet1'];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            
+            // 处理数据
+            siteStatsData = [];
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (row && row.length >= 7) {
+                    const record = {
+                        '充电时间': row[0],
+                        '站点': row[1],
+                        '充电量(kw)': row[2] || 0,
+                        '充电电费(元)': row[3] || 0,
+                        '充电服务费(元)': row[4] || 0,
+                        '充电总收入(元)': row[5] || 0,
+                        '总订单数量': row[6] || 0
+                    };
+                    siteStatsData.push(record);
+                }
+            }
+            
+            console.log('站点统计数据加载完成:', siteStatsData);
+            
+            // 初始化页面
+            initSiteStatsPage();
+            updateAvailablePages();
+            loadCurrentPageData();
+        })
+        .catch(error => {
+            console.error('加载站点统计数据失败:', error);
+        });
+}
+
+// 初始化站点统计页面
+function initSiteStatsPage() {
+    // 绑定模式切换按钮事件
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 移除所有active类
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            // 添加active类到当前按钮
+            this.classList.add('active');
+            
+            currentMode = this.getAttribute('data-mode');
+            currentPage = 0;
+            
+            updateAvailablePages();
+            loadCurrentPageData();
+        });
+    });
+    
+    // 绑定翻页按钮事件
+    document.getElementById('prev-btn').addEventListener('click', function() {
+        if (currentPage > 0) {
+            currentPage--;
+            loadCurrentPageData();
+        }
+    });
+    
+    document.getElementById('next-btn').addEventListener('click', function() {
+        if (currentPage < availablePages.length - 1) {
+            currentPage++;
+            loadCurrentPageData();
+        }
+    });
+}
+
+// 更新可用页面列表
+function updateAvailablePages() {
+    availablePages = [];
+    
+    if (currentMode === 'total') {
+        availablePages = ['总数据'];
+    } else {
+        // 获取所有唯一的年月组合
+        const dateMap = new Map();
+        
+        siteStatsData.forEach(item => {
+            if (item['充电时间']) {
+                let dateStr = item['充电时间'];
+                if (typeof dateStr === 'string') {
+                    // 处理yyyy-mm格式
+                    const match = dateStr.match(/^(\d{4})-(\d{1,2})$/);
+                    if (match) {
+                        const year = parseInt(match[1]);
+                        const month = parseInt(match[2]);
+                        const key = `${year}-${month.toString().padStart(2, '0')}`;
+                        
+                        if (currentMode === 'year') {
+                            const yearKey = year.toString();
+                            if (!dateMap.has(yearKey)) {
+                                dateMap.set(yearKey, []);
+                            }
+                            dateMap.get(yearKey).push(item);
+                        } else if (currentMode === 'month') {
+                            if (!dateMap.has(key)) {
+                                dateMap.set(key, []);
+                            }
+                            dateMap.get(key).push(item);
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 排序并生成页面列表
+        const sortedKeys = Array.from(dateMap.keys()).sort();
+        availablePages = sortedKeys;
+    }
+    
+    // 更新翻页按钮状态
+    updatePaginationButtons();
+}
+
+// 更新翻页按钮状态
+function updatePaginationButtons() {
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const pageInfo = document.getElementById('page-info');
+    
+    prevBtn.disabled = currentPage <= 0;
+    nextBtn.disabled = currentPage >= availablePages.length - 1;
+    
+    if (availablePages.length > 0) {
+        pageInfo.textContent = availablePages[currentPage] || '无数据';
+    } else {
+        pageInfo.textContent = '无数据';
+    }
+}
+
+// 加载当前页面数据
+function loadCurrentPageData() {
+    if (availablePages.length === 0) {
+        // 显示空数据
+        displayEmptyData();
+        return;
+    }
+    
+    const currentPageKey = availablePages[currentPage];
+    let filteredData = [];
+    
+    if (currentMode === 'total') {
+        filteredData = siteStatsData;
+    } else {
+        filteredData = siteStatsData.filter(item => {
+            if (!item['充电时间']) return false;
+            
+            let dateStr = item['充电时间'];
+            if (typeof dateStr === 'string') {
+                const match = dateStr.match(/^(\d{4})-(\d{1,2})$/);
+                if (match) {
+                    const year = parseInt(match[1]);
+                    const month = parseInt(match[2]);
+                    
+                    if (currentMode === 'year') {
+                        return year.toString() === currentPageKey;
+                    } else if (currentMode === 'month') {
+                        return `${year}-${month.toString().padStart(2, '0')}` === currentPageKey;
+                    }
+                }
+            }
+            return false;
+        });
+    }
+    
+    // 计算统计数据
+    const stats = calculateSiteStats(filteredData);
+    
+    // 显示数据
+    displaySiteStats(stats);
+    updatePaginationButtons();
+}
+
+// 计算站点统计数据
+function calculateSiteStats(data) {
+    const sifangData = data.filter(item => item['站点'] === '四方坪站');
+    const gaolingData = data.filter(item => item['站点'] === '高岭站');
+    
+    const sifangStats = {
+        charge: sifangData.reduce((sum, item) => sum + (parseFloat(item['充电量(kw)']) || 0), 0),
+        service: sifangData.reduce((sum, item) => sum + (parseFloat(item['充电服务费(元)']) || 0), 0),
+        total: sifangData.reduce((sum, item) => sum + (parseFloat(item['充电总收入(元)']) || 0), 0)
+    };
+    
+    const gaolingStats = {
+        charge: gaolingData.reduce((sum, item) => sum + (parseFloat(item['充电量(kw)']) || 0), 0),
+        service: gaolingData.reduce((sum, item) => sum + (parseFloat(item['充电服务费(元)']) || 0), 0),
+        total: gaolingData.reduce((sum, item) => sum + (parseFloat(item['充电总收入(元)']) || 0), 0)
+    };
+    
+    const totalStats = {
+        charge: sifangStats.charge + gaolingStats.charge,
+        service: sifangStats.service + gaolingStats.service,
+        total: sifangStats.total + gaolingStats.total
+    };
+    
+    return {
+        sifang: sifangStats,
+        gaoling: gaolingStats,
+        total: totalStats
+    };
+}
+
+// 显示站点统计数据
+function displaySiteStats(stats) {
+    // 更新四方坪站数据
+    updateSiteData('sifang', stats.sifang);
+    
+    // 更新高岭站数据
+    updateSiteData('gaoling', stats.gaoling);
+    
+    // 更新两站共计数据
+    updateSiteData('total', stats.total);
+}
+
+// 更新单个站点数据
+function updateSiteData(site, stats) {
+    const prefix = site === 'sifang' ? 'sifang' : site === 'gaoling' ? 'gaoling' : 'total';
+    
+    // 更新数值显示
+    document.getElementById(`${prefix}-charge-value`).textContent = stats.charge.toFixed(2);
+    document.getElementById(`${prefix}-service-value`).textContent = stats.service.toFixed(2);
+    document.getElementById(`${prefix}-total-value`).textContent = stats.total.toFixed(2);
+    
+    // 根据当前数据模式设置不同的最大值
+    let maxValues;
+    if (currentMode === 'month') {
+        // 月份数据：最大值800000
+        maxValues = {
+            charge: 800000,
+            service: 800000,
+            total: 800000
+        };
+    } else if (currentMode === 'year') {
+        // 年份数据：最大值10000000
+        maxValues = {
+            charge: 10000000,
+            service: 10000000,
+            total: 10000000
+        };
+    } else if (currentMode === 'total') {
+        // 总数据：最大值150000000
+        maxValues = {
+            charge: 150000000,
+            service: 150000000,
+            total: 150000000
+        };
+    } else {
+        // 默认值
+        maxValues = {
+            charge: 35000000,
+            service: 35000000,
+            total: 35000000
+        };
+    }
+    
+    // 更新进度条
+    updateProgressBar(`${prefix}-charge-fill`, stats.charge, maxValues.charge);
+    updateProgressBar(`${prefix}-service-fill`, stats.service, maxValues.service);
+    updateProgressBar(`${prefix}-total-fill`, stats.total, maxValues.total);
+}
+
+// 更新进度条
+function updateProgressBar(elementId, value, maxValue) {
+    const fillElement = document.getElementById(elementId);
+    if (fillElement) {
+        const percentage = Math.min((value / maxValue) * 100, 100);
+        fillElement.style.width = `${percentage}%`;
+    }
+}
+
+// 显示空数据
+function displayEmptyData() {
+    const sites = ['sifang', 'gaoling', 'total'];
+    
+    // 根据当前数据模式设置不同的最大值
+    let maxValues;
+    if (currentMode === 'month') {
+        // 月份数据：最大值800000
+        maxValues = {
+            charge: 800000,
+            service: 800000,
+            total: 800000
+        };
+    } else if (currentMode === 'year') {
+        // 年份数据：最大值10000000
+        maxValues = {
+            charge: 10000000,
+            service: 10000000,
+            total: 10000000
+        };
+    } else if (currentMode === 'total') {
+        // 总数据：最大值150000000
+        maxValues = {
+            charge: 150000000,
+            service: 150000000,
+            total: 150000000
+        };
+    } else {
+        // 默认值
+        maxValues = {
+            charge: 35000000,
+            service: 35000000,
+            total: 35000000
+        };
+    }
+    
+    sites.forEach(site => {
+        document.getElementById(`${site}-charge-value`).textContent = '0.00';
+        document.getElementById(`${site}-service-value`).textContent = '0.00';
+        document.getElementById(`${site}-total-value`).textContent = '0.00';
+        
+        updateProgressBar(`${site}-charge-fill`, 0, maxValues.charge);
+        updateProgressBar(`${site}-service-fill`, 0, maxValues.service);
+        updateProgressBar(`${site}-total-fill`, 0, maxValues.total);
+    });
+}
+
+// 刷新站点统计数据
+function refreshSiteStatsData() {
+    console.log('刷新站点统计数据...');
+    loadSiteStatsData();
+}
+
+// 设置定时刷新（每5分钟刷新一次数据）
+setInterval(refreshSiteStatsData, 5 * 60 * 1000);
 
         // 充电数据看板相关函数
 let chargingBoardData = [];
