@@ -3145,54 +3145,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>2025-07-01</td>
-                                    <td>四方坪站</td>
-                                    <td>1,250</td>
-                                    <td>85</td>
-                                    <td>2,345.50</td>
-                                </tr>
-                                <tr>
-                                    <td>2025-07-01</td>
-                                    <td>高岭站</td>
-                                    <td>980</td>
-                                    <td>62</td>
-                                    <td>1,845.20</td>
-                                </tr>
-                                <tr>
-                                    <td>2025-07-02</td>
-                                    <td>四方坪站</td>
-                                    <td>1,340</td>
-                                    <td>92</td>
-                                    <td>2,520.80</td>
-                                </tr>
-                                <tr>
-                                    <td>2025-07-02</td>
-                                    <td>高岭站</td>
-                                    <td>1,120</td>
-                                    <td>75</td>
-                                    <td>2,112.40</td>
-                                </tr>
-                                <tr>
-                                    <td>2025-07-03</td>
-                                    <td>四方坪站</td>
-                                    <td>1,450</td>
-                                    <td>98</td>
-                                    <td>2,730.60</td>
-                                </tr>
-                                <tr>
-                                    <td>2025-07-03</td>
-                                    <td>高岭站</td>
-                                    <td>1,050</td>
-                                    <td>70</td>
-                                    <td>1,980.20</td>
-                                </tr>
+                                <!-- 数据将通过JavaScript动态加载 -->
                             </tbody>
                         </table>
                     </div>
                     
                     <div class="data-info">
-                        <div id="row-count">共加载 6 行数据</div>
+                        <div id="row-count">共加载 0 行数据</div>
                         <div id="last-update">最后更新时间: 2025-08-10 14:30:25</div>
                     </div>
                 </div>
@@ -3221,47 +3180,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>充电量(kwh)</td>
-                                    <td>42,580</td>
-                                    <td>32,150</td>
-                                    <td>74,730</td>
-                                    <td>+12.5%</td>
-                                </tr>
-                                <tr>
-                                    <td>服务车辆(辆)</td>
-                                    <td>2,850</td>
-                                    <td>2,150</td>
-                                    <td>5,000</td>
-                                    <td>+8.3%</td>
-                                </tr>
-                                <tr>
-                                    <td>总收入(元)</td>
-                                    <td>80,240.50</td>
-                                    <td>60,520.80</td>
-                                    <td>140,761.30</td>
-                                    <td>+15.2%</td>
-                                </tr>
-                                <tr>
-                                    <td>设备利用率</td>
-                                    <td>78.4%</td>
-                                    <td>65.2%</td>
-                                    <td>71.8%</td>
-                                    <td>+5.3%</td>
-                                </tr>
-                                <tr>
-                                    <td>平均充电时长</td>
-                                    <td>45分钟</td>
-                                    <td>52分钟</td>
-                                    <td>48.5分钟</td>
-                                    <td>-2.1%</td>
-                                </tr>
+                                <!-- 数据将通过JavaScript动态加载 -->
                             </tbody>
                         </table>
                     </div>
                     
                     <div class="data-info">
-                        <div id="comprehensive-row-count">共加载 5 行数据</div>
+                        <div id="comprehensive-row-count">共加载 0 行数据</div>
                         <div id="comprehensive-last-update">最后更新时间: 2025-08-10 14:30:25</div>
                     </div>
                 </div>
@@ -4496,39 +4421,64 @@
                 .catch(error => {
                     console.error('加载Excel文件失败:', error);
                     
-                    // 显示具体日期范围的错误信息
-                    const startDate = startDateInput.value;
-                    const endDate = endDateInput.value;
-                    queryInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 没有找到${startDate}至${endDate}之间的数据`;
-                    queryInfo.className = 'query-info error';
+                    // 从文件名中提取年月信息
+                    const fileNameWithoutExt = fileName.replace('.xlsx', '');
+                    // 处理格式如 "202412-202412" 的文件名
+                    const dateMatch = fileNameWithoutExt.match(/(\d{4})(\d{2})-\d{4}\d{2}/);
+                    let year = '未知';
+                    let month = '未知';
                     
-                    // 15秒后恢复默认提示
-                    setTimeout(() => {
-                        queryInfo.innerHTML = '<i class="fas fa-info-circle"></i> 请选择日期和数据类型来查询数据';
-                        queryInfo.className = 'query-info';
-                    }, 15000);
+                    if (dateMatch) {
+                        year = dateMatch[1];
+                        month = dateMatch[2];
+                    }
+                    
+                    // 显示具体年月错误信息
+                    if (isUserQuery) {
+                        const startDate = startDateInput.value;
+                        const endDate = endDateInput.value;
+                        queryInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 没有找到${startDate}至${endDate}之间的数据`;
+                        queryInfo.className = 'query-info error';
+                        
+                        // 更新"当前显示"信息
+                        const errorMessage = `没有找到${year}年${month}月的数据`;
+                        infoElement.textContent = errorMessage;
+                        infoElement.style.color = '#e74c3c';
+                        
+                        // 更新行数和更新时间信息
+                        rowCountElement.textContent = '共加载 0 行数据';
+                        lastUpdateElement.textContent = `最后更新时间: ${new Date().toLocaleString()}`;
+                        
+                        // 15秒后恢复默认提示
+                        setTimeout(() => {
+                            queryInfo.innerHTML = '<i class="fas fa-info-circle"></i> 请选择日期和数据类型来查询数据';
+                            queryInfo.className = 'query-info';
+                        }, 15000);
+                    } else {
+                        // 默认加载失败时显示年月信息
+                        const errorMessage = `没有找到${year}年${month}月的数据`;
+                        if (isCharging) {
+                            fileInfo.textContent = errorMessage;
+                            fileInfo.style.color = '#e74c3c';
+                            // 更新行数和更新时间信息
+                            rowCount.textContent = '共加载 0 行数据';
+                            lastUpdate.textContent = `最后更新时间: ${new Date().toLocaleString()}`;
+                        } else {
+                            comprehensiveInfo.textContent = errorMessage;
+                            comprehensiveInfo.style.color = '#e74c3c';
+                            // 更新行数和更新时间信息
+                            comprehensiveRowCount.textContent = '共加载 0 行数据';
+                            comprehensiveLastUpdate.textContent = `最后更新时间: ${new Date().toLocaleString()}`;
+                        }
+                    }
+                    
+                    // 清空表格内容
+                    tableElement.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;"><i class="fas fa-exclamation-triangle"></i> 暂无数据</div>';
                     
                     // 如果是用户查询，重置导出数据
                     if (isUserQuery) {
                         currentExportData = null;
                         exportBtn.disabled = true;
-                    }
-                    
-                    // 恢复默认数据
-                    if (isCharging && defaultChargingData) {
-                        renderExcelFromData(defaultChargingData, tableContainer);
-                        fileInfo.textContent = `当前显示: ${defaultChargingFileName.replace('.xlsx', '')}数据`;
-                        const table = tableContainer.querySelector('table');
-                        const rowCountValue = table.rows.length - 1;
-                        rowCount.textContent = `共加载 ${rowCountValue} 行数据`;
-                        lastUpdate.textContent = `最后更新时间: ${new Date().toLocaleString()}`;
-                    } else if (!isCharging && defaultComprehensiveData) {
-                        renderExcelFromData(defaultComprehensiveData, comprehensiveTableContainer);
-                        comprehensiveInfo.textContent = `当前显示: ${defaultComprehensiveFileName.replace('.xlsx', '')}数据`;
-                        const table = comprehensiveTableContainer.querySelector('table');
-                        const rowCountValue = table.rows.length - 1;
-                        comprehensiveRowCount.textContent = `共加载 ${rowCountValue} 行数据`;
-                        comprehensiveLastUpdate.textContent = `最后更新时间: ${new Date().toLocaleString()}`;
                     }
                 })
                 .finally(() => {
