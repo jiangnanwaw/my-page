@@ -139,7 +139,7 @@
         }
         
         .form-container {
-            padding: 30px;
+            padding: 25px;
             transition: transform 0.6s ease-in-out;
         }
         
@@ -496,20 +496,20 @@
         /* 主内容区 */
         .main-content {
             flex: 1;
-            padding: 30px;
+            padding: 20px;
             background: #f0f5ff;
             overflow-y: auto;
         }
         
         .section-title {
             font-size: 22px;
-            margin-top: 40px;
-            margin-bottom: 20px;
+            margin-top: 20px;
+            margin-bottom: 15px;
             color: var(--dark);
             display: flex;
             align-items: center;
             gap: 10px;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 2px solid var(--primary);
         }
         
@@ -1640,23 +1640,23 @@
         }
 
         #metrics-container {
-            padding: 30px;
+            padding: 20px;
             background: #f0f5ff;
         }
 
         .metrics-section {
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 20px;
         }
 
         .metrics-section {
-            margin-bottom: 40px;
+            margin-bottom: 25px;
         }
         
         .metrics-section > .metrics-row {
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
 /* 调整指标卡片宽度 */
@@ -1805,14 +1805,14 @@
         .chart-container {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 25px;
+            padding: 20px;
             box-shadow: var(--shadow);
-            margin-bottom: 40px;
+            margin-bottom: 25px;
         }
 
         .chart-title {
             font-size: 18px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             color: var(--dark);
             display: flex;
             align-items: center;
@@ -3849,6 +3849,9 @@
                         // 隐藏登录页面的标题和版权信息
                         document.getElementById('login-header-title').style.display = 'none';
                         document.getElementById('login-footer-copyright').style.display = 'none';
+                        
+                        // 显示用户名（使用手机号作为显示名称）
+                        document.getElementById('user-display').textContent = phone;
                         
                         initMainSystem();
                     }, 1000);
