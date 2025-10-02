@@ -129,7 +129,7 @@
         .login-container {
             width: 100%;
             max-width: 330px;  /* 调整登录窗体宽度 */
-            background: rgba(255, 255, 255, 0.9);
+            background: transparent;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             overflow: hidden;
@@ -155,7 +155,7 @@
         }
         
         #login-container .logo h2 {
-            color: #333;
+            color: white;
             font-size: 28px;
         }
         
@@ -3580,6 +3580,8 @@
             hideMessage();
             // 修改标题为"密码重置"
             document.getElementById('form-title').textContent = '密码重置';
+            // 修改图标为钥匙图标
+            document.querySelector('#login-container .logo i').className = 'fas fa-key';
         });
         
         showRegister.addEventListener('click', (e) => {
@@ -3591,6 +3593,8 @@
             hideMessage();
             // 修改标题为"新用户注册"
             document.getElementById('form-title').textContent = '新用户注册';
+            // 修改图标为用户添加图标
+            document.querySelector('#login-container .logo i').className = 'fas fa-user-plus';
         });
         
         showSmsLogin.addEventListener('click', (e) => {
@@ -3602,6 +3606,8 @@
             hideMessage();
             // 修改标题为"短信验证码登录"
             document.getElementById('form-title').textContent = '短信验证码登录';
+            // 修改图标为手机图标
+            document.querySelector('#login-container .logo i').className = 'fas fa-mobile-alt';
         });
         
         backToLoginFromRegister.addEventListener('click', (e) => {
@@ -3613,6 +3619,8 @@
             hideMessage();
             // 修改标题为"用户登录"
             document.getElementById('form-title').textContent = '用户登录';
+            // 重置图标为登录图标
+            document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
         });
         
         backToLoginFromReset.addEventListener('click', (e) => {
@@ -3624,6 +3632,8 @@
             hideMessage();
             // 修改标题为"用户登录"
             document.getElementById('form-title').textContent = '用户登录';
+            // 重置图标为登录图标
+            document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
         });
         
         backToLoginFromSms.addEventListener('click', (e) => {
@@ -3635,6 +3645,8 @@
             hideMessage();
             // 修改标题为"用户登录"
             document.getElementById('form-title').textContent = '用户登录';
+            // 重置图标为登录图标
+            document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
         });
         
         // 显示消息
