@@ -7233,6 +7233,14 @@ function updateUnchargedTable() {
 
             // 初始化数据列表
             initializeDataLists();
+            
+            // 设置默认显示最新数据
+            if (dayDataList.length > 0) {
+                currentDayIndex = dayDataList.length - 1;
+            }
+            if (monthDataList.length > 0) {
+                currentMonthIndex = monthDataList.length - 1;
+            }
 
             // 数据模式切换事件
             dayDataBtn.addEventListener('click', function() {
@@ -7349,6 +7357,7 @@ function updateUnchargedTable() {
                 }
             } else {
                 if (monthDataList.length > 0 && currentMonthIndex < monthDataList.length) {
+                    // 月数据模式下，直接显示YYYY-MM格式
                     currentDataDisplay.textContent = monthDataList[currentMonthIndex].displayMonth;
                 } else {
                     currentDataDisplay.textContent = '无数据';
@@ -7790,6 +7799,19 @@ function updateUnchargedTable() {
 
             const hours = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00-${i.toString().padStart(2, '0')}:59`);
 
+            // 根据数据模式确定图表标题的日期格式
+            let chartTitleDate;
+            if (currentDataMode === 'day') {
+                chartTitleDate = data.displayDate; // 日数据模式：MM-DD格式
+            } else {
+                // 月数据模式：从monthDataList获取YYYY-MM格式
+                if (monthDataList.length > 0 && currentMonthIndex < monthDataList.length) {
+                    chartTitleDate = monthDataList[currentMonthIndex].displayMonth;
+                } else {
+                    chartTitleDate = data.displayDate; // 备用显示
+                }
+            }
+
             behaviorChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -7819,7 +7841,7 @@ function updateUnchargedTable() {
                     plugins: {
                         title: {
                             display: true,
-                            text: `${data.displayDate} 充电量趋势分析`
+                            text: `${chartTitleDate} 充电量趋势分析`
                         },
                         legend: {
                             display: true,
@@ -7979,6 +8001,14 @@ function updateUnchargedTable() {
 
             // 初始化数据列表
             initializeEfficiencyDataLists();
+            
+            // 设置默认显示最新数据
+            if (efficiencyDayDataList.length > 0) {
+                currentEfficiencyDayIndex = efficiencyDayDataList.length - 1;
+            }
+            if (efficiencyMonthDataList.length > 0) {
+                currentEfficiencyMonthIndex = efficiencyMonthDataList.length - 1;
+            }
 
             // 数据模式切换事件
             dayDataBtn.addEventListener('click', function() {
@@ -8095,6 +8125,7 @@ function updateUnchargedTable() {
                 }
             } else {
                 if (efficiencyMonthDataList.length > 0 && currentEfficiencyMonthIndex < efficiencyMonthDataList.length) {
+                    // 月数据模式下，直接显示YYYY-MM格式
                     currentDataDisplay.textContent = efficiencyMonthDataList[currentEfficiencyMonthIndex].displayMonth;
                 } else {
                     currentDataDisplay.textContent = '无数据';
@@ -8340,7 +8371,7 @@ function updateUnchargedTable() {
                     plugins: {
                         title: {
                             display: true,
-                            text: `${data.displayDate} 经营效率对比分析`,
+                            text: `${currentEfficiencyDataMode === 'day' ? data.displayDate : (efficiencyMonthDataList.length > 0 && currentEfficiencyMonthIndex < efficiencyMonthDataList.length ? efficiencyMonthDataList[currentEfficiencyMonthIndex].displayMonth : data.displayDate)} 经营效率对比分析`,
                             font: {
                                 size: 16,
                                 weight: 'bold'
