@@ -889,10 +889,10 @@
         }
         
         .site-data-section {
-            background: #f8f9fa;
-            border-radius: 6px;
+            background: transparent;
+            border-radius: 0;
             padding: 8px;
-            border: 1px solid #dee2e6;
+            border: none;
             margin-bottom: 0;
         }
         
@@ -909,9 +909,9 @@
         .data-item {
             margin-bottom: 4px;
             padding: 5px;
-            background: #fff;
-            border-radius: 4px;
-            border: 1px solid #e9ecef;
+            background: transparent;
+            border-radius: 0;
+            border: none;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -986,9 +986,20 @@
         .progress-value {
             min-width: 60px;
             text-align: right;
-            font-weight: 600;
+            font-weight: bold;
             color: #495057;
             font-size: 12px;
+        }
+        
+        /* 百分比颜色样式 */
+        .percentage-increase {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .percentage-decrease {
+            color: #dc3545;
+            font-weight: bold;
         }
         
         /* 响应式设计 */
@@ -5069,17 +5080,8 @@ function calculateSiteStats(data) {
     const sifangData = data.filter(item => item['站点'] === '四方坪站');
     const gaolingData = data.filter(item => item['站点'] === '高岭站');
     
-    const sifangStats = {
-        charge: sifangData.reduce((sum, item) => sum + (parseFloat(item['充电量(kw)']) || 0), 0),
-        service: sifangData.reduce((sum, item) => sum + (parseFloat(item['充电服务费(元)']) || 0), 0),
-        total: sifangData.reduce((sum, item) => sum + (parseFloat(item['充电总收入(元)']) || 0), 0)
-    };
-    
-    const gaolingStats = {
-        charge: gaolingData.reduce((sum, item) => sum + (parseFloat(item['充电量(kw)']) || 0), 0),
-        service: gaolingData.reduce((sum, item) => sum + (parseFloat(item['充电服务费(元)']) || 0), 0),
-        total: gaolingData.reduce((sum, item) => sum + (parseFloat(item['充电总收入(元)']) || 0), 0)
-    };
+    const sifangStats = calculateSingleSiteStats(sifangData);
+    const gaolingStats = calculateSingleSiteStats(gaolingData);
     
     const totalStats = {
         charge: sifangStats.charge + gaolingStats.charge,
@@ -5091,6 +5093,15 @@ function calculateSiteStats(data) {
         sifang: sifangStats,
         gaoling: gaolingStats,
         total: totalStats
+    };
+}
+
+// 计算单个站点的统计数据
+function calculateSingleSiteStats(data) {
+    return {
+        charge: data.reduce((sum, item) => sum + (parseFloat(item['充电量(kw)']) || 0), 0),
+        service: data.reduce((sum, item) => sum + (parseFloat(item['充电服务费(元)']) || 0), 0),
+        total: data.reduce((sum, item) => sum + (parseFloat(item['充电总收入(元)']) || 0), 0)
     };
 }
 
@@ -5111,9 +5122,54 @@ function updateSiteData(site, stats) {
     const prefix = site === 'sifang' ? 'sifang' : site === 'gaoling' ? 'gaoling' : 'total';
     
     // 更新数值显示
-    document.getElementById(`${prefix}-charge-value`).textContent = stats.charge.toFixed(2);
-    document.getElementById(`${prefix}-service-value`).textContent = stats.service.toFixed(2);
-    document.getElementById(`${prefix}-total-value`).textContent = stats.total.toFixed(2);
+    let chargeText = stats.charge.toFixed(2);
+    let serviceText = stats.service.toFixed(2);
+    let totalText = stats.total.toFixed(2);
+    
+    // 如果是年份数据模式，计算百分比
+    if (currentMode === 'year') {
+        const currentYear = parseInt(availablePages[currentPage]);
+        const prevYear = currentYear - 1;
+        
+        // 获取上一年的数据
+        const prevYearData = siteStatsData.filter(item => {
+            if (!item['充电时间']) return false;
+            const itemYear = parseInt(item['充电时间'].substring(0, 4));
+            return itemYear === prevYear;
+        });
+        
+        if (prevYearData && prevYearData.length > 0) {
+            // 根据站点类型过滤数据
+            let filteredPrevData;
+            if (site === 'sifang') {
+                filteredPrevData = prevYearData.filter(item => item['站点'] === '四方坪站');
+            } else if (site === 'gaoling') {
+                filteredPrevData = prevYearData.filter(item => item['站点'] === '高岭站');
+            } else {
+                filteredPrevData = prevYearData; // 总数据
+            }
+            
+            const prevStats = calculateSingleSiteStats(filteredPrevData);
+            
+            // 计算百分比
+            const chargePercent = prevStats.charge > 0 ? ((stats.charge - prevStats.charge) / prevStats.charge * 100) : 0;
+            const servicePercent = prevStats.service > 0 ? ((stats.service - prevStats.service) / prevStats.service * 100) : 0;
+            const totalPercent = prevStats.total > 0 ? ((stats.total - prevStats.total) / prevStats.total * 100) : 0;
+            
+            // 添加百分比显示（带颜色）
+            const chargePercentClass = chargePercent >= 0 ? 'percentage-increase' : 'percentage-decrease';
+            const servicePercentClass = servicePercent >= 0 ? 'percentage-increase' : 'percentage-decrease';
+            const totalPercentClass = totalPercent >= 0 ? 'percentage-increase' : 'percentage-decrease';
+            
+            chargeText += ` (<span class="${chargePercentClass}">${chargePercent >= 0 ? '+' : ''}${chargePercent.toFixed(1)}%</span>)`;
+            serviceText += ` (<span class="${servicePercentClass}">${servicePercent >= 0 ? '+' : ''}${servicePercent.toFixed(1)}%</span>)`;
+            totalText += ` (<span class="${totalPercentClass}">${totalPercent >= 0 ? '+' : ''}${totalPercent.toFixed(1)}%</span>)`;
+        }
+    }
+    
+    document.getElementById(`${prefix}-charge-value`).innerHTML = chargeText;
+    document.getElementById(`${prefix}-service-value`).innerHTML = serviceText;
+    document.getElementById(`${prefix}-total-value`).innerHTML = totalText;
     
     // 根据当前数据模式设置不同的最大值
     let maxValues;
