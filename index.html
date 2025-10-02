@@ -2627,16 +2627,22 @@
         </div>
         <div class="efficiency-controls" style="margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="efficiency-date-display" style="font-weight: bold; color: #333;">当前日期：加载中...</span>
-                <button id="efficiency-prev-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">上一页</button>
-                <button id="efficiency-next-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">下一页</button>
+                <!-- 数据模式选择按钮 -->
+                <button id="efficiency-day-data-btn" class="efficiency-data-mode-btn active" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px;">日数据</button>
+                <button id="efficiency-month-data-btn" class="efficiency-data-mode-btn" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">月数据</button>
             </div>
         </div>
         
         <!-- 经营效率分析内容 -->
         <div style="display: flex; gap: 20px; margin-top: 0px;">
             <!-- 经营效率分析表格 -->
-            <div class="efficiency-table-container" style="flex: 1;">
+            <div class="efficiency-table-container" style="flex: 1; position: relative;">
+                <!-- 翻页控件 -->
+                <div style="position: absolute; top: -40px; right: 0; z-index: 10; display: flex; align-items: center; gap: 10px;">
+                    <button id="efficiency-prev-data-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">&lt;</button>
+                    <span id="efficiency-current-data-display" style="padding: 8px 12px; background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px; min-width: 80px; text-align: center;">加载中...</span>
+                    <button id="efficiency-next-data-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">&gt;</button>
+                </div>
                 <table id="efficiency-table" style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
                     <thead>
                         <tr>
@@ -7844,6 +7850,11 @@ function updateUnchargedTable() {
         let currentEfficiencyDateIndex = 0;
         let efficiencyRefreshInterval = null; // 经营效率自动刷新定时器
         let efficiencyRadarChart = null; // 经营效率雷达图
+        let currentEfficiencyDataMode = 'day'; // 'day' 或 'month'
+        let currentEfficiencyDayIndex = 0; // 日数据模式下的当前日期索引
+        let currentEfficiencyMonthIndex = 0; // 月数据模式下的当前月份索引
+        let efficiencyDayDataList = []; // 日数据列表
+        let efficiencyMonthDataList = []; // 月数据列表
 
         // 初始化经营效率分析
         async function initEfficiencyAnalysis() {
@@ -7960,87 +7971,175 @@ function updateUnchargedTable() {
 
         // 设置经营效率分析控件
         function setupEfficiencyControls() {
-            const prevBtn = document.getElementById('efficiency-prev-btn');
-            const nextBtn = document.getElementById('efficiency-next-btn');
-            const currentDateDisplay = document.getElementById('efficiency-date-display');
+            const prevBtn = document.getElementById('efficiency-prev-data-btn');
+            const nextBtn = document.getElementById('efficiency-next-data-btn');
+            const currentDataDisplay = document.getElementById('efficiency-current-data-display');
+            const dayDataBtn = document.getElementById('efficiency-day-data-btn');
+            const monthDataBtn = document.getElementById('efficiency-month-data-btn');
 
-            // 更新按钮状态
+            // 初始化数据列表
+            initializeEfficiencyDataLists();
+
+            // 数据模式切换事件
+            dayDataBtn.addEventListener('click', function() {
+                currentEfficiencyDataMode = 'day';
+                updateEfficiencyDataModeButtons();
+                updateEfficiencyDataDisplay();
+                updateEfficiencyButtonStates();
+            });
+
+            monthDataBtn.addEventListener('click', function() {
+                currentEfficiencyDataMode = 'month';
+                updateEfficiencyDataModeButtons();
+                updateEfficiencyDataDisplay();
+                updateEfficiencyButtonStates();
+            });
+
+            // 翻页按钮事件
+            prevBtn.addEventListener('click', function() {
+                if (currentEfficiencyDataMode === 'day') {
+                    if (currentEfficiencyDayIndex > 0) {
+                        currentEfficiencyDayIndex--;
+                        updateEfficiencyDataDisplay();
+                        updateEfficiencyDisplay();
+                    }
+                } else {
+                    if (currentEfficiencyMonthIndex > 0) {
+                        currentEfficiencyMonthIndex--;
+                        updateEfficiencyDataDisplay();
+                        updateEfficiencyDisplay();
+                    }
+                }
+                updateEfficiencyButtonStates();
+            });
+
+            nextBtn.addEventListener('click', function() {
+                if (currentEfficiencyDataMode === 'day') {
+                    if (currentEfficiencyDayIndex < efficiencyDayDataList.length - 1) {
+                        currentEfficiencyDayIndex++;
+                        updateEfficiencyDataDisplay();
+                        updateEfficiencyDisplay();
+                    }
+                } else {
+                    if (currentEfficiencyMonthIndex < efficiencyMonthDataList.length - 1) {
+                        currentEfficiencyMonthIndex++;
+                        updateEfficiencyDataDisplay();
+                        updateEfficiencyDisplay();
+                    }
+                }
+                updateEfficiencyButtonStates();
+            });
+
+            // 初始化显示
+            updateEfficiencyDataModeButtons();
+            updateEfficiencyDataDisplay();
             updateEfficiencyButtonStates();
+        }
 
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    if (currentEfficiencyDateIndex > 0 && efficiencyData.length > 0) {
-                        currentEfficiencyDateIndex--;
-                        const currentData = efficiencyData[currentEfficiencyDateIndex];
-                        updateEfficiencyTable(currentData);
-                        updateEfficiencyRadarChart(currentData);
-                        updateEfficiencyDateDisplay(currentData);
-                        // 更新按钮状态
-                        updateEfficiencyButtonStates();
-                    }
-                });
+        // 初始化经营效率数据列表
+        function initializeEfficiencyDataLists() {
+            if (efficiencyData.length === 0) return;
+
+            // 初始化日数据列表
+            efficiencyDayDataList = efficiencyData.map(item => {
+                const date = new Date(item.date);
+                return {
+                    date: item.date,
+                    displayDate: formatEfficiencyDate(date).substring(5), // 只显示MM-DD
+                    data: item
+                };
+            });
+
+            // 初始化月数据列表
+            const monthMap = new Map();
+            efficiencyData.forEach(item => {
+                const date = new Date(item.date);
+                const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                
+                if (!monthMap.has(monthKey)) {
+                    monthMap.set(monthKey, {
+                        monthKey: monthKey,
+                        displayMonth: monthKey,
+                        data: []
+                    });
+                }
+                monthMap.get(monthKey).data.push(item);
+            });
+
+            efficiencyMonthDataList = Array.from(monthMap.values()).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+        }
+
+        // 更新经营效率数据模式按钮状态
+        function updateEfficiencyDataModeButtons() {
+            const dayDataBtn = document.getElementById('efficiency-day-data-btn');
+            const monthDataBtn = document.getElementById('efficiency-month-data-btn');
+
+            if (currentEfficiencyDataMode === 'day') {
+                dayDataBtn.style.background = '#007bff';
+                monthDataBtn.style.background = '#6c757d';
+            } else {
+                dayDataBtn.style.background = '#6c757d';
+                monthDataBtn.style.background = '#007bff';
             }
+        }
 
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    if (currentEfficiencyDateIndex < efficiencyData.length - 1 && efficiencyData.length > 0) {
-                        currentEfficiencyDateIndex++;
-                        const currentData = efficiencyData[currentEfficiencyDateIndex];
-                        updateEfficiencyTable(currentData);
-                        updateEfficiencyRadarChart(currentData);
-                        updateEfficiencyDateDisplay(currentData);
-                        // 更新按钮状态
-                        updateEfficiencyButtonStates();
-                    }
-                });
-            }
-
-            // 更新当前日期显示
-            if (efficiencyData.length > 0) {
-                const currentData = efficiencyData[currentEfficiencyDateIndex];
-                updateEfficiencyDateDisplay(currentData);
+        // 更新经营效率数据显示
+        function updateEfficiencyDataDisplay() {
+            const currentDataDisplay = document.getElementById('efficiency-current-data-display');
+            
+            if (currentEfficiencyDataMode === 'day') {
+                if (efficiencyDayDataList.length > 0 && currentEfficiencyDayIndex < efficiencyDayDataList.length) {
+                    currentDataDisplay.textContent = efficiencyDayDataList[currentEfficiencyDayIndex].displayDate;
+                } else {
+                    currentDataDisplay.textContent = '无数据';
+                }
+            } else {
+                if (efficiencyMonthDataList.length > 0 && currentEfficiencyMonthIndex < efficiencyMonthDataList.length) {
+                    currentDataDisplay.textContent = efficiencyMonthDataList[currentEfficiencyMonthIndex].displayMonth;
+                } else {
+                    currentDataDisplay.textContent = '无数据';
+                }
             }
         }
 
         // 更新经营效率分析按钮状态
         function updateEfficiencyButtonStates() {
-            const prevBtn = document.getElementById('efficiency-prev-btn');
-            const nextBtn = document.getElementById('efficiency-next-btn');
+            const prevBtn = document.getElementById('efficiency-prev-data-btn');
+            const nextBtn = document.getElementById('efficiency-next-data-btn');
             
             if (!prevBtn || !nextBtn) return;
 
-            // 检查是否有数据
-            if (efficiencyData.length === 0) {
-                // 没有数据时，按钮显示灰色且不可点击
+            let canGoPrev = false;
+            let canGoNext = false;
+
+            if (currentEfficiencyDataMode === 'day') {
+                canGoPrev = currentEfficiencyDayIndex > 0;
+                canGoNext = currentEfficiencyDayIndex < efficiencyDayDataList.length - 1;
+            } else {
+                canGoPrev = currentEfficiencyMonthIndex > 0;
+                canGoNext = currentEfficiencyMonthIndex < efficiencyMonthDataList.length - 1;
+            }
+
+            // 更新上一页按钮状态
+            if (canGoPrev) {
+                prevBtn.style.background = '#007bff';
+                prevBtn.style.cursor = 'pointer';
+                prevBtn.disabled = false;
+            } else {
                 prevBtn.style.background = '#ccc';
                 prevBtn.style.cursor = 'not-allowed';
                 prevBtn.disabled = true;
+            }
+            
+            // 更新下一页按钮状态
+            if (canGoNext) {
+                nextBtn.style.background = '#007bff';
+                nextBtn.style.cursor = 'pointer';
+                nextBtn.disabled = false;
+            } else {
                 nextBtn.style.background = '#ccc';
                 nextBtn.style.cursor = 'not-allowed';
                 nextBtn.disabled = true;
-            } else {
-                // 有数据时，根据当前位置更新按钮状态
-                // 上一页按钮
-                if (currentEfficiencyDateIndex > 0) {
-                    prevBtn.style.background = '#007bff';
-                    prevBtn.style.cursor = 'pointer';
-                    prevBtn.disabled = false;
-                } else {
-                    prevBtn.style.background = '#ccc';
-                    prevBtn.style.cursor = 'not-allowed';
-                    prevBtn.disabled = true;
-                }
-                
-                // 下一页按钮
-                if (currentEfficiencyDateIndex < efficiencyData.length - 1) {
-                    nextBtn.style.background = '#007bff';
-                    nextBtn.style.cursor = 'pointer';
-                    nextBtn.disabled = false;
-                } else {
-                    nextBtn.style.background = '#ccc';
-                    nextBtn.style.cursor = 'not-allowed';
-                    nextBtn.disabled = true;
-                }
             }
         }
 
@@ -8050,6 +8149,100 @@ function updateUnchargedTable() {
             if (currentDateDisplay && data) {
                 currentDateDisplay.textContent = `当前日期：${data.displayDate}`;
             }
+        }
+
+        // 更新经营效率分析显示
+        function updateEfficiencyDisplay() {
+            if (efficiencyData.length === 0) return;
+
+            let currentData = null;
+
+            if (currentEfficiencyDataMode === 'day') {
+                if (efficiencyDayDataList.length > 0 && currentEfficiencyDayIndex < efficiencyDayDataList.length) {
+                    currentData = efficiencyDayDataList[currentEfficiencyDayIndex].data;
+                }
+            } else {
+                if (efficiencyMonthDataList.length > 0 && currentEfficiencyMonthIndex < efficiencyMonthDataList.length) {
+                    // 月数据模式：计算该月所有日期的平均值
+                    const monthData = efficiencyMonthDataList[currentEfficiencyMonthIndex];
+                    currentData = calculateEfficiencyMonthAverage(monthData.data);
+                }
+            }
+
+            if (currentData) {
+                // 更新表格数据和雷达图
+                updateEfficiencyTable(currentData);
+                updateEfficiencyRadarChart(currentData);
+            }
+        }
+
+        // 计算经营效率月数据平均值
+        function calculateEfficiencyMonthAverage(monthDataArray) {
+            if (monthDataArray.length === 0) return null;
+
+            // 如果只有一天的数据，直接返回
+            if (monthDataArray.length === 1) {
+                return monthDataArray[0];
+            }
+
+            // 计算平均值
+            const averageData = {
+                date: monthDataArray[0].date, // 使用第一天的日期作为代表
+                displayDate: monthDataArray[0].displayDate,
+                sfpData: {
+                    duration: 0,
+                    utilization: 0,
+                    energy: 0,
+                    revenue: 0,
+                    power: 0,
+                    times: 0
+                },
+                glData: {
+                    duration: 0,
+                    utilization: 0,
+                    energy: 0,
+                    revenue: 0,
+                    power: 0,
+                    times: 0
+                }
+            };
+
+            // 累加所有数据
+            monthDataArray.forEach(dayData => {
+                // 四方坪站数据累加
+                averageData.sfpData.duration += dayData.sfpData.duration || 0;
+                averageData.sfpData.utilization += dayData.sfpData.utilization || 0;
+                averageData.sfpData.energy += dayData.sfpData.energy || 0;
+                averageData.sfpData.revenue += dayData.sfpData.revenue || 0;
+                averageData.sfpData.power += dayData.sfpData.power || 0;
+                averageData.sfpData.times += dayData.sfpData.times || 0;
+
+                // 高岭站数据累加
+                averageData.glData.duration += dayData.glData.duration || 0;
+                averageData.glData.utilization += dayData.glData.utilization || 0;
+                averageData.glData.energy += dayData.glData.energy || 0;
+                averageData.glData.revenue += dayData.glData.revenue || 0;
+                averageData.glData.power += dayData.glData.power || 0;
+                averageData.glData.times += dayData.glData.times || 0;
+            });
+
+            // 计算平均值（除以天数）
+            const dayCount = monthDataArray.length;
+            averageData.sfpData.duration /= dayCount;
+            averageData.sfpData.utilization /= dayCount;
+            averageData.sfpData.energy /= dayCount;
+            averageData.sfpData.revenue /= dayCount;
+            averageData.sfpData.power /= dayCount;
+            averageData.sfpData.times /= dayCount;
+
+            averageData.glData.duration /= dayCount;
+            averageData.glData.utilization /= dayCount;
+            averageData.glData.energy /= dayCount;
+            averageData.glData.revenue /= dayCount;
+            averageData.glData.power /= dayCount;
+            averageData.glData.times /= dayCount;
+
+            return averageData;
         }
 
         // 更新经营效率分析表格
