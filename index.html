@@ -2511,16 +2511,19 @@
         </div>
         <div class="user-behavior-controls" style="margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="current-date-display" style="font-weight: bold; color: #333;">当前日期：加载中...</span>
+                <!-- 数据模式选择按钮 -->
+                <button id="day-data-btn" class="data-mode-btn active" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px;">日数据</button>
+                <button id="month-data-btn" class="data-mode-btn" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">月数据</button>
             </div>
         </div>
         
         
         <!-- 可视化图表 -->
         <div class="chart-wrapper" style="position: relative;">
-            <div style="position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; gap: 10px;">
-                <button id="prev-day-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">上一页</button>
-                <button id="next-day-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">下一页</button>
+            <div style="position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; align-items: center; gap: 10px;">
+                <button id="prev-data-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">&lt;</button>
+                <span id="current-data-display" style="padding: 8px 12px; background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px; min-width: 80px; text-align: center;">加载中...</span>
+                <button id="next-data-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">&gt;</button>
             </div>
             <canvas id="behavior-chart"></canvas>
         </div>
@@ -7067,6 +7070,11 @@ function updateUnchargedTable() {
         let currentDateIndex = 0;
         let behaviorChart = null;
         let refreshInterval = null; // 自动刷新定时器
+        let currentDataMode = 'day'; // 'day' 或 'month'
+        let currentDayIndex = 0; // 日数据模式下的当前日期索引
+        let currentMonthIndex = 0; // 月数据模式下的当前月份索引
+        let dayDataList = []; // 日数据列表
+        let monthDataList = []; // 月数据列表
 
         // 初始化用户充电行为分析
         async function initUserBehaviorAnalysis() {
@@ -7211,84 +7219,175 @@ function updateUnchargedTable() {
 
         // 设置行为分析控件
         function setupBehaviorControls() {
-            const prevBtn = document.getElementById('prev-day-btn');
-            const nextBtn = document.getElementById('next-day-btn');
-            const currentDateDisplay = document.getElementById('current-date-display');
+            const prevBtn = document.getElementById('prev-data-btn');
+            const nextBtn = document.getElementById('next-data-btn');
+            const currentDataDisplay = document.getElementById('current-data-display');
+            const dayDataBtn = document.getElementById('day-data-btn');
+            const monthDataBtn = document.getElementById('month-data-btn');
 
-            // 更新当前日期显示
-            if (behaviorData.length > 0) {
-                const currentData = behaviorData[currentDateIndex];
-                currentDateDisplay.textContent = `当前日期：${currentData.displayDate}`;
-            }
+            // 初始化数据列表
+            initializeDataLists();
 
-            // 更新按钮状态
-            updateBehaviorButtonStates();
+            // 数据模式切换事件
+            dayDataBtn.addEventListener('click', function() {
+                currentDataMode = 'day';
+                updateDataModeButtons();
+                updateDataDisplay();
+                updateBehaviorButtonStates();
+            });
+
+            monthDataBtn.addEventListener('click', function() {
+                currentDataMode = 'month';
+                updateDataModeButtons();
+                updateDataDisplay();
+                updateBehaviorButtonStates();
+            });
 
             // 翻页按钮事件
             prevBtn.addEventListener('click', function() {
-                if (currentDateIndex > 0 && behaviorData.length > 0) {
-                    currentDateIndex--;
-                    updateBehaviorDisplay();
-                    // 更新当前日期显示
-                    const currentData = behaviorData[currentDateIndex];
-                    currentDateDisplay.textContent = `当前日期：${currentData.displayDate}`;
-                    // 更新按钮状态
-                    updateBehaviorButtonStates();
+                if (currentDataMode === 'day') {
+                    if (currentDayIndex > 0) {
+                        currentDayIndex--;
+                        updateDataDisplay();
+                        updateBehaviorDisplay();
+                    }
+                } else {
+                    if (currentMonthIndex > 0) {
+                        currentMonthIndex--;
+                        updateDataDisplay();
+                        updateBehaviorDisplay();
+                    }
                 }
+                updateBehaviorButtonStates();
             });
 
             nextBtn.addEventListener('click', function() {
-                if (currentDateIndex < behaviorData.length - 1 && behaviorData.length > 0) {
-                    currentDateIndex++;
-                    updateBehaviorDisplay();
-                    // 更新当前日期显示
-                    const currentData = behaviorData[currentDateIndex];
-                    currentDateDisplay.textContent = `当前日期：${currentData.displayDate}`;
-                    // 更新按钮状态
-                    updateBehaviorButtonStates();
+                if (currentDataMode === 'day') {
+                    if (currentDayIndex < dayDataList.length - 1) {
+                        currentDayIndex++;
+                        updateDataDisplay();
+                        updateBehaviorDisplay();
+                    }
+                } else {
+                    if (currentMonthIndex < monthDataList.length - 1) {
+                        currentMonthIndex++;
+                        updateDataDisplay();
+                        updateBehaviorDisplay();
+                    }
                 }
+                updateBehaviorButtonStates();
             });
+
+            // 初始化显示
+            updateDataModeButtons();
+            updateDataDisplay();
+            updateBehaviorButtonStates();
+        }
+
+        // 初始化数据列表
+        function initializeDataLists() {
+            if (behaviorData.length === 0) return;
+
+            // 初始化日数据列表
+            dayDataList = behaviorData.map(item => {
+                const date = new Date(item.date);
+                return {
+                    date: item.date,
+                    displayDate: formatDate(date),
+                    data: item
+                };
+            });
+
+            // 初始化月数据列表
+            const monthMap = new Map();
+            behaviorData.forEach(item => {
+                const date = new Date(item.date);
+                const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                
+                if (!monthMap.has(monthKey)) {
+                    monthMap.set(monthKey, {
+                        monthKey: monthKey,
+                        displayMonth: monthKey,
+                        data: []
+                    });
+                }
+                monthMap.get(monthKey).data.push(item);
+            });
+
+            monthDataList = Array.from(monthMap.values()).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+        }
+
+        // 更新数据模式按钮状态
+        function updateDataModeButtons() {
+            const dayDataBtn = document.getElementById('day-data-btn');
+            const monthDataBtn = document.getElementById('month-data-btn');
+
+            if (currentDataMode === 'day') {
+                dayDataBtn.style.background = '#007bff';
+                monthDataBtn.style.background = '#6c757d';
+            } else {
+                dayDataBtn.style.background = '#6c757d';
+                monthDataBtn.style.background = '#007bff';
+            }
+        }
+
+        // 更新数据显示
+        function updateDataDisplay() {
+            const currentDataDisplay = document.getElementById('current-data-display');
+            
+            if (currentDataMode === 'day') {
+                if (dayDataList.length > 0 && currentDayIndex < dayDataList.length) {
+                    currentDataDisplay.textContent = dayDataList[currentDayIndex].displayDate;
+                } else {
+                    currentDataDisplay.textContent = '无数据';
+                }
+            } else {
+                if (monthDataList.length > 0 && currentMonthIndex < monthDataList.length) {
+                    currentDataDisplay.textContent = monthDataList[currentMonthIndex].displayMonth;
+                } else {
+                    currentDataDisplay.textContent = '无数据';
+                }
+            }
         }
 
         // 更新行为分析按钮状态
         function updateBehaviorButtonStates() {
-            const prevBtn = document.getElementById('prev-day-btn');
-            const nextBtn = document.getElementById('next-day-btn');
+            const prevBtn = document.getElementById('prev-data-btn');
+            const nextBtn = document.getElementById('next-data-btn');
             
             if (!prevBtn || !nextBtn) return;
 
-            // 检查是否有数据
-            if (behaviorData.length === 0) {
-                // 没有数据时，按钮显示灰色且不可点击
+            let canGoPrev = false;
+            let canGoNext = false;
+
+            if (currentDataMode === 'day') {
+                canGoPrev = currentDayIndex > 0;
+                canGoNext = currentDayIndex < dayDataList.length - 1;
+            } else {
+                canGoPrev = currentMonthIndex > 0;
+                canGoNext = currentMonthIndex < monthDataList.length - 1;
+            }
+
+            // 更新上一页按钮状态
+            if (canGoPrev) {
+                prevBtn.style.background = '#007bff';
+                prevBtn.style.cursor = 'pointer';
+                prevBtn.disabled = false;
+            } else {
                 prevBtn.style.background = '#ccc';
                 prevBtn.style.cursor = 'not-allowed';
                 prevBtn.disabled = true;
+            }
+            
+            // 更新下一页按钮状态
+            if (canGoNext) {
+                nextBtn.style.background = '#007bff';
+                nextBtn.style.cursor = 'pointer';
+                nextBtn.disabled = false;
+            } else {
                 nextBtn.style.background = '#ccc';
                 nextBtn.style.cursor = 'not-allowed';
                 nextBtn.disabled = true;
-            } else {
-                // 有数据时，根据当前位置更新按钮状态
-                // 上一页按钮
-                if (currentDateIndex > 0) {
-                    prevBtn.style.background = '#007bff';
-                    prevBtn.style.cursor = 'pointer';
-                    prevBtn.disabled = false;
-                } else {
-                    prevBtn.style.background = '#ccc';
-                    prevBtn.style.cursor = 'not-allowed';
-                    prevBtn.disabled = true;
-                }
-                
-                // 下一页按钮
-                if (currentDateIndex < behaviorData.length - 1) {
-                    nextBtn.style.background = '#007bff';
-                    nextBtn.style.cursor = 'pointer';
-                    nextBtn.disabled = false;
-                } else {
-                    nextBtn.style.background = '#ccc';
-                    nextBtn.style.cursor = 'not-allowed';
-                    nextBtn.disabled = true;
-                }
             }
         }
 
@@ -7296,10 +7395,53 @@ function updateUnchargedTable() {
         function updateBehaviorDisplay() {
             if (behaviorData.length === 0) return;
 
-            const currentData = behaviorData[currentDateIndex];
-            // 更新图表和电费分析表格
-            updateBehaviorChart(currentData);
-            updateElectricityTable(currentData);
+            let currentData = null;
+
+            if (currentDataMode === 'day') {
+                if (dayDataList.length > 0 && currentDayIndex < dayDataList.length) {
+                    currentData = dayDataList[currentDayIndex].data;
+                }
+            } else {
+                if (monthDataList.length > 0 && currentMonthIndex < monthDataList.length) {
+                    // 月数据模式：合并该月所有日期的数据
+                    const monthData = monthDataList[currentMonthIndex];
+                    currentData = aggregateMonthData(monthData.data);
+                }
+            }
+
+            if (currentData) {
+                // 更新图表和电费分析表格
+                updateBehaviorChart(currentData);
+                updateElectricityTable(currentData);
+            }
+        }
+
+        // 聚合月数据
+        function aggregateMonthData(monthDataArray) {
+            if (monthDataArray.length === 0) return null;
+
+            // 如果只有一天的数据，直接返回
+            if (monthDataArray.length === 1) {
+                return monthDataArray[0];
+            }
+
+            // 聚合多天数据
+            const aggregatedData = {
+                date: monthDataArray[0].date, // 使用第一天的日期作为代表
+                displayDate: monthDataArray[0].displayDate,
+                sfpData: new Array(24).fill(0),
+                glData: new Array(24).fill(0)
+            };
+
+            // 累加24小时数据
+            monthDataArray.forEach(dayData => {
+                for (let i = 0; i < 24; i++) {
+                    aggregatedData.sfpData[i] += (dayData.sfpData[i] || 0);
+                    aggregatedData.glData[i] += (dayData.glData[i] || 0);
+                }
+            });
+
+            return aggregatedData;
         }
 
         // 计算电费分析数据
