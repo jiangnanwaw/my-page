@@ -5293,7 +5293,7 @@ function refreshSiteStatsData() {
 }
 
 // 设置定时刷新（每5分钟刷新一次数据）
-setInterval(refreshSiteStatsData, 5 * 60 * 1000);
+// setInterval(refreshSiteStatsData, 5 * 60 * 1000); // 已禁用自动刷新功能
 
         // 充电数据看板相关函数
 let chargingBoardData = [];
@@ -6181,7 +6181,7 @@ function drawRealtimeChart() {
         }
     });
 }
-setTimeout(loadRealtimeData, 5 * 60 * 1000); // 每5分钟刷新一次
+// setTimeout(loadRealtimeData, 5 * 60 * 1000); // 每5分钟刷新一次 - 已禁用自动刷新功能
 // 在页面加载完成后调用
 
 
@@ -7107,7 +7107,7 @@ function updateUnchargedTable() {
                 }
                 
                 // 启动自动刷新功能（每5分钟检查一次数据更新）
-                startAutoRefresh();
+                // startAutoRefresh(); // 已禁用自动刷新功能
             } catch (error) {
                 console.error('初始化用户充电行为分析失败:', error);
             }
@@ -7903,7 +7903,7 @@ function updateUnchargedTable() {
                 }
                 
                 // 启动自动刷新功能（每5分钟检查一次数据更新）
-                startEfficiencyAutoRefresh();
+                // startEfficiencyAutoRefresh(); // 已禁用自动刷新功能
             } catch (error) {
                 console.error('初始化经营效率分析失败:', error);
             }
