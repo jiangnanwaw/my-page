@@ -6003,8 +6003,25 @@ if (jsDate && jsDate.getFullYear() === currentYear && (jsDate.getMonth() + 1) ==
 
             // 只有当数据超过表格显示范围时才开始轮播
             if (realtimeData.length > 8) {
-    startRealtimeCarousel();
-}
+                startRealtimeCarousel();
+            }
+            
+            // 添加容器级别的鼠标事件处理
+            const tableContainer = document.getElementById('realtime-table-container');
+            if (tableContainer) {
+                tableContainer.addEventListener('mouseenter', () => {
+                    isRealtimePaused = true;
+                    clearInterval(realtimeInterval);
+                });
+                
+                tableContainer.addEventListener('mouseleave', () => {
+                    isRealtimePaused = false;
+                    // 只有当数据超过表格显示范围时才重新开始轮播
+                    if (realtimeData.length > 8) {
+                        startRealtimeCarousel();
+                    }
+                });
+            }
         })
         .catch(error => {
             console.error('加载实时数据失败:', error);
@@ -6047,7 +6064,7 @@ function updateRealtimeTable() {
         row.addEventListener('mouseleave', () => {
             isRealtimePaused = false;
             // 只有当数据超过表格显示范围时才重新开始轮播
-            if (realtimeData.length > 10) {
+            if (realtimeData.length > 8) {
                 startRealtimeCarousel();
             }
         });
