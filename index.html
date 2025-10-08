@@ -6626,6 +6626,7 @@ let currentUnchargedPage = 1;
 const rowsPerPage = 10;
 let filteredUnchargedData = [];
 let currentDurationFilter = 'all';
+let unchargedUpdateInterval = null; // 动态更新定时器
 
 // 加载未充电时长统计数据
 function loadUnchargedData() {
@@ -6657,23 +6658,26 @@ function loadUnchargedData() {
             unchargedData = [];
             for (let i = 1; i < jsonData.length; i++) {
                 const row = jsonData[i];
-                if (row && row.length >= 5) {
+                // 检查是否有有效数据（A、B、C列至少有一个不为空）
+                if (row && row.length >= 3 && (row[0] || row[1] || row[2])) {
                     // 确保日期格式正确
                     const lastEndTime = formatDateString(row[2]);
-                    const stillUnchargedTime = formatDateString(row[3]);
                     
                     unchargedData.push({
                         stationName: row[0] || '',
                         terminalName: row[1] || '',
                         lastEndTime: lastEndTime,
-                        stillUnchargedTime: stillUnchargedTime,
-                        duration: row[4] || 0
+                        stillUnchargedTime: '', // D列将动态计算
+                        duration: 0 // E列将动态计算
                     });
                 }
             }
             
             // 初始化筛选器
             initDurationFilter();
+            
+            // 启动动态时间更新
+            startUnchargedDynamicUpdate();
             
             // 更新表格
             updateUnchargedTable();
@@ -6739,6 +6743,82 @@ function excelDateToJSDate(serial) {
     const minutes = Math.floor(total_seconds / 60) % 60;
     
     return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
+}
+
+// 获取当前时间字符串（yyyy-mm-dd hh:mm:ss格式）
+function getCurrentTimeString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// 计算时间差（小时数）
+function calculateTimeDifference(startTimeStr, endTimeStr) {
+    if (!startTimeStr || !endTimeStr) return 0;
+    
+    try {
+        const startTime = new Date(startTimeStr);
+        const endTime = new Date(endTimeStr);
+        
+        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+            return 0;
+        }
+        
+        const diffMs = endTime.getTime() - startTime.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60); // 转换为小时
+        
+        return Math.max(0, diffHours); // 确保不为负数
+    } catch (error) {
+        console.error('计算时间差错误:', error);
+        return 0;
+    }
+}
+
+// 更新未充电数据的动态时间
+function updateUnchargedDynamicData() {
+    const currentTime = getCurrentTimeString();
+    
+    unchargedData.forEach(item => {
+        if (item.lastEndTime) {
+            item.stillUnchargedTime = currentTime;
+            item.duration = calculateTimeDifference(item.lastEndTime, currentTime);
+        }
+    });
+    
+    // 更新筛选后的数据
+    if (filteredUnchargedData.length > 0) {
+        filterUnchargedData();
+    }
+}
+
+// 启动未充电数据的动态更新
+function startUnchargedDynamicUpdate() {
+    // 清除之前的定时器
+    if (unchargedUpdateInterval) {
+        clearInterval(unchargedUpdateInterval);
+    }
+    
+    // 立即更新一次
+    updateUnchargedDynamicData();
+    
+    // 每秒更新一次
+    unchargedUpdateInterval = setInterval(() => {
+        updateUnchargedDynamicData();
+        updateUnchargedTable();
+    }, 1000);
+}
+
+// 停止未充电数据的动态更新
+function stopUnchargedDynamicUpdate() {
+    if (unchargedUpdateInterval) {
+        clearInterval(unchargedUpdateInterval);
+        unchargedUpdateInterval = null;
+    }
 }
 
 // 初始化时长筛选器
@@ -6831,7 +6911,7 @@ function updateUnchargedTable() {
         const row = document.createElement('tr');
         
         // 格式化时长数据，保留2位小数
-        const formattedDuration = parseFloat(item.duration).toFixed(2);
+        const formattedDuration = parseFloat(item.duration || 0).toFixed(2);
         
         row.innerHTML = `
             <td style="text-align: center; padding: 10px 8px; border: 1px solid #e0e0e0; color: black;">${item.stationName}</td>
