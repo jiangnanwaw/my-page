@@ -3505,6 +3505,9 @@
 					} catch (e) {
 						console.warn('清理lastLoginRecordId失败:', e);
 					}
+					
+					// 清除登录状态
+					clearLoginStatus();
                     
                     return {
                         success: true,
@@ -3740,19 +3743,11 @@
                 console.log('获取到的用户名:', user.getUsername());
                 console.log('用户对象详情:', user.toJSON());
                 
+                // 保存登录状态
+                saveLoginStatus(user.getUsername(), 'web_form');
+                
                 // 立即隐藏登录框并显示主页面
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('main-container').style.display = 'block';
-                
-                // 隐藏登录页面的标题和版权信息
-                document.getElementById('login-header-title').style.display = 'none';
-                document.getElementById('login-footer-copyright').style.display = 'none';
-                
-                // 显示用户名
-                document.getElementById('user-display').textContent = user.getUsername();
-                
-                // 初始化主页面系统
-                initMainSystem();
+                showMainPage(user.getUsername());
                 
                 // 在后台记录登录信息，不影响用户界面响应
                 try {
@@ -3923,6 +3918,17 @@
                 if (result.success) {
                     showMessage('登录成功！欢迎回来', 'success');
                     
+                    // 创建用户对象并设置为当前用户，确保登出记录能正常工作
+                    const user = new AV.User();
+                    user.set('username', phone);
+                    user.set('mobilePhoneNumber', phone);
+                    user.set('loginMethod', 'sms');
+                    // 设置用户为当前用户，这样登出时能正确获取用户信息
+                    AV.User.current = () => user;
+                    
+                    // 保存登录状态
+                    saveLoginStatus(phone, 'sms', phone);
+                    
                     // 记录登录
                     await recordUserLogin(phone, {
                         loginMethod: 'sms',
@@ -3931,17 +3937,7 @@
                     
                     // 隐藏登录容器，显示主页面
                     setTimeout(() => {
-                        document.getElementById('login-container').style.display = 'none';
-                        document.getElementById('main-container').style.display = 'block';
-                        
-                        // 隐藏登录页面的标题和版权信息
-                        document.getElementById('login-header-title').style.display = 'none';
-                        document.getElementById('login-footer-copyright').style.display = 'none';
-                        
-                        // 显示用户名（使用手机号作为显示名称）
-                        document.getElementById('user-display').textContent = phone;
-                        
-                        initMainSystem();
+                        showMainPage(phone);
                     }, 1000);
                     
                 } else {
@@ -4045,6 +4041,12 @@
         
         // 处理页面关闭事件
         async function handlePageUnload(event) {
+            // 清理会话超时计时器
+            if (sessionTimeoutTimer) {
+                clearTimeout(sessionTimeoutTimer);
+                sessionTimeoutTimer = null;
+            }
+            
             // 获取当前登录用户
             const currentUser = AV.User.current();
             if (currentUser) {
@@ -4751,11 +4753,188 @@
 
 
         
+        // 检查登录状态
+        function checkLoginStatus() {
+            try {
+                // 检查localStorage中是否有登录信息
+                const savedUserInfo = localStorage.getItem('userLoginInfo');
+                if (savedUserInfo) {
+                    const userInfo = JSON.parse(savedUserInfo);
+                    const currentTime = new Date().getTime();
+                    
+                    // 检查登录是否过期（24小时）
+                    if (currentTime - userInfo.loginTime < 24 * 60 * 60 * 1000) {
+                        console.log('发现有效的登录状态，自动登录:', userInfo.username);
+                        
+                        // 恢复用户状态
+                        const user = new AV.User();
+                        user.set('username', userInfo.username);
+                        user.set('mobilePhoneNumber', userInfo.mobilePhoneNumber);
+                        user.set('loginMethod', userInfo.loginMethod);
+                        AV.User.current = () => user;
+                        
+                        // 显示主页面
+                        showMainPage(userInfo.username);
+                        return true;
+                    } else {
+                        console.log('登录状态已过期，清除本地存储');
+                        localStorage.removeItem('userLoginInfo');
+                    }
+                }
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+                localStorage.removeItem('userLoginInfo');
+            }
+            return false;
+        }
+        
+        // 显示主页面
+        function showMainPage(username) {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('main-container').style.display = 'block';
+            document.getElementById('login-header-title').style.display = 'none';
+            document.getElementById('login-footer-copyright').style.display = 'none';
+            document.getElementById('user-display').textContent = username;
+            initMainSystem();
+            
+            // 启动用户活动跟踪
+            initActivityTracking();
+        }
+        
+        // 保存登录状态
+        function saveLoginStatus(username, loginMethod, mobilePhoneNumber = null) {
+            try {
+                const userInfo = {
+                    username: username,
+                    loginMethod: loginMethod,
+                    mobilePhoneNumber: mobilePhoneNumber,
+                    loginTime: new Date().getTime()
+                };
+                localStorage.setItem('userLoginInfo', JSON.stringify(userInfo));
+                console.log('登录状态已保存:', userInfo);
+            } catch (error) {
+                console.error('保存登录状态失败:', error);
+            }
+        }
+        
+        // 清除登录状态
+        function clearLoginStatus() {
+            try {
+                localStorage.removeItem('userLoginInfo');
+                localStorage.removeItem('lastLoginRecordId');
+                console.log('登录状态已清除');
+            } catch (error) {
+                console.error('清除登录状态失败:', error);
+            }
+        }
+        
+        // 会话超时管理
+        let sessionTimeoutTimer = null;
+        let lastActivityTime = Date.now();
+        const SESSION_TIMEOUT = 15 * 60 * 1000; // 15分钟
+        
+        // 重置会话超时计时器
+        function resetSessionTimeout() {
+            lastActivityTime = Date.now();
+            if (sessionTimeoutTimer) {
+                clearTimeout(sessionTimeoutTimer);
+            }
+            
+            sessionTimeoutTimer = setTimeout(() => {
+                handleSessionTimeout();
+            }, SESSION_TIMEOUT);
+            
+            console.log('会话超时计时器已重置，将在15分钟后自动登出');
+        }
+        
+        // 处理会话超时
+        async function handleSessionTimeout() {
+            console.log('会话超时，开始自动登出流程');
+            
+            // 记录登出信息
+            try {
+                const currentUser = AV.User.current();
+                if (currentUser) {
+                    await recordUserLogout(currentUser.getUsername());
+                }
+            } catch (error) {
+                console.error('记录登出信息失败:', error);
+            }
+            
+            // 清除登录状态
+            clearLoginStatus();
+            
+            // 显示会话超时提示
+            showSessionTimeoutMessage();
+        }
+        
+        // 显示会话超时提示
+        function showSessionTimeoutMessage() {
+            // 清理会话超时计时器
+            if (sessionTimeoutTimer) {
+                clearTimeout(sessionTimeoutTimer);
+                sessionTimeoutTimer = null;
+            }
+            
+            // 重置活动跟踪状态
+            activityTrackingInitialized = false;
+            
+            // 隐藏主页面，显示登录页面
+            document.getElementById('main-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('login-header-title').style.display = 'block';
+            document.getElementById('login-footer-copyright').style.display = 'block';
+            
+            // 显示会话超时消息
+            showMessage('会话超时，请重新登录', 'error');
+            
+            // 清空登录表单
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('smsPhone').value = '';
+            document.getElementById('smsCode').value = '';
+            
+            // 确保显示登录表单而不是其他表单
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('resetForm').style.display = 'none';
+            document.getElementById('smsLoginForm').style.display = 'none';
+            document.getElementById('form-title').textContent = '用户登录';
+            document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
+        }
+        
+        // 初始化用户活动监听
+        let activityTrackingInitialized = false;
+        function initActivityTracking() {
+            if (activityTrackingInitialized) {
+                // 如果已经初始化，只重置计时器
+                resetSessionTimeout();
+                return;
+            }
+            
+            // 监听各种用户活动
+            const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            
+            activityEvents.forEach(event => {
+                document.addEventListener(event, () => {
+                    resetSessionTimeout();
+                }, true);
+            });
+            
+            // 初始启动计时器
+            resetSessionTimeout();
+            activityTrackingInitialized = true;
+            console.log('用户活动跟踪已初始化');
+        }
+
         // 初始化系统
         window.addEventListener('DOMContentLoaded', function() {
-            // 显示登录界面
-            document.getElementById('login-container').style.display = 'flex';
-            document.getElementById('main-container').style.display = 'none';
+            // 首先检查登录状态
+            if (!checkLoginStatus()) {
+                // 如果没有有效登录状态，显示登录界面
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('main-container').style.display = 'none';
+            }
         });
         
         // 时间显示更新
