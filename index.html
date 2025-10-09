@@ -4757,7 +4757,7 @@
         function checkLoginStatus() {
             try {
                 // 检查localStorage中是否有登录信息
-                const savedUserInfo = localStorage.getItem('userLoginInfo');
+                const savedUserInfo = sessionStorage.getItem('userLoginInfo');
                 if (savedUserInfo) {
                     const userInfo = JSON.parse(savedUserInfo);
                     const currentTime = new Date().getTime();
@@ -4778,12 +4778,12 @@
                         return true;
                     } else {
                         console.log('登录状态已过期，清除本地存储');
-                        localStorage.removeItem('userLoginInfo');
+                        sessionStorage.removeItem('userLoginInfo');
                     }
                 }
             } catch (error) {
                 console.error('检查登录状态失败:', error);
-                localStorage.removeItem('userLoginInfo');
+                sessionStorage.removeItem('userLoginInfo');
             }
             return false;
         }
@@ -4810,7 +4810,7 @@
                     mobilePhoneNumber: mobilePhoneNumber,
                     loginTime: new Date().getTime()
                 };
-                localStorage.setItem('userLoginInfo', JSON.stringify(userInfo));
+                sessionStorage.setItem('userLoginInfo', JSON.stringify(userInfo));
                 console.log('登录状态已保存:', userInfo);
             } catch (error) {
                 console.error('保存登录状态失败:', error);
@@ -4820,7 +4820,7 @@
         // 清除登录状态
         function clearLoginStatus() {
             try {
-                localStorage.removeItem('userLoginInfo');
+                sessionStorage.removeItem('userLoginInfo');
                 localStorage.removeItem('lastLoginRecordId');
                 console.log('登录状态已清除');
             } catch (error) {
