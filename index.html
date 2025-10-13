@@ -4732,11 +4732,26 @@
         // 检查登录状态
         function checkLoginStatus() {
             try {
-                // 检查localStorage中是否有登录信息
-                const savedUserInfo = sessionStorage.getItem('userLoginInfo');
+                console.log('开始检查登录状态...');
+                
+                // 首先尝试从sessionStorage获取
+                let savedUserInfo = sessionStorage.getItem('userLoginInfo');
+                console.log('sessionStorage中的登录信息:', savedUserInfo);
+                
+                // 如果sessionStorage中没有，尝试从localStorage获取（作为备用）
+                if (!savedUserInfo) {
+                    savedUserInfo = localStorage.getItem('userLoginInfo');
+                    console.log('localStorage中的登录信息:', savedUserInfo);
+                }
+                
                 if (savedUserInfo) {
                     const userInfo = JSON.parse(savedUserInfo);
                     const currentTime = new Date().getTime();
+                    
+                    console.log('解析的用户信息:', userInfo);
+                    console.log('当前时间:', currentTime);
+                    console.log('登录时间:', userInfo.loginTime);
+                    console.log('时间差:', currentTime - userInfo.loginTime);
                     
                     // 检查登录是否过期（24小时）
                     if (currentTime - userInfo.loginTime < 24 * 60 * 60 * 1000) {
@@ -4755,11 +4770,15 @@
                     } else {
                         console.log('登录状态已过期，清除本地存储');
                         sessionStorage.removeItem('userLoginInfo');
+                        localStorage.removeItem('userLoginInfo');
                     }
+                } else {
+                    console.log('未找到任何登录信息');
                 }
             } catch (error) {
                 console.error('检查登录状态失败:', error);
                 sessionStorage.removeItem('userLoginInfo');
+                localStorage.removeItem('userLoginInfo');
             }
             return false;
         }
@@ -4786,8 +4805,13 @@
                     mobilePhoneNumber: mobilePhoneNumber,
                     loginTime: new Date().getTime()
                 };
-                sessionStorage.setItem('userLoginInfo', JSON.stringify(userInfo));
-                console.log('登录状态已保存:', userInfo);
+                
+                // 同时保存到sessionStorage和localStorage
+                const userInfoStr = JSON.stringify(userInfo);
+                sessionStorage.setItem('userLoginInfo', userInfoStr);
+                localStorage.setItem('userLoginInfo', userInfoStr);
+                
+                console.log('登录状态已保存到sessionStorage和localStorage:', userInfo);
             } catch (error) {
                 console.error('保存登录状态失败:', error);
             }
@@ -4903,13 +4927,35 @@
             console.log('用户活动跟踪已初始化');
         }
 
+        // 清理URL参数
+        function cleanURL() {
+            // 移除URL中多余的问号参数
+            if (window.location.href.includes('?')) {
+                const cleanUrl = window.location.href.split('?')[0];
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            }
+        }
+
         // 初始化系统
         window.addEventListener('DOMContentLoaded', function() {
+            // 清理URL
+            cleanURL();
+            
+            // 添加调试信息
+            console.log('页面加载完成，当前URL:', window.location.href);
+            console.log('协议:', window.location.protocol);
+            console.log('域名:', window.location.hostname);
+            
             // 首先检查登录状态
             if (!checkLoginStatus()) {
                 // 如果没有有效登录状态，显示登录界面
                 document.getElementById('login-container').style.display = 'flex';
                 document.getElementById('main-container').style.display = 'none';
+                console.log('未找到有效登录状态，显示登录界面');
+            } else {
+                console.log('找到有效登录状态，显示主页面');
             }
         });
         
