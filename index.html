@@ -4,11 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>长沙飞狐智能数据平台</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E📊%3C/text%3E%3C/svg%3E">
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" onerror="this.onerror=null;this.src='https://staticfile.org/Chart.js/4.4.1/chart.umd.min.js'"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 引入 LeanCloud SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/leancloud-storage/4.13.2/av-min.js" onerror="this.onerror=null;this.src='https://unpkg.com/leancloud-storage@4.13.2/dist/av-min.js'"></script>
+    <script>
+        (function ensureVendorsLoaded() {
+            function loadScriptSequentially(urls, globalCheck, timeoutMs = 5000) {
+                return new Promise((resolve, reject) => {
+                    let index = 0;
+                    const tryNext = () => {
+                        if (index >= urls.length) {
+                            reject(new Error('All sources failed: ' + urls.join(', ')));
+                            return;
+                        }
+                        const url = urls[index++];
+                        const script = document.createElement('script');
+                        let timedOut = false;
+                        const timer = setTimeout(() => {
+                            timedOut = true;
+                            cleanup();
+                            tryNext();
+                        }, timeoutMs);
+                        function cleanup() {
+                            script.onerror = null;
+                            script.onload = null;
+                            clearTimeout(timer);
+                        }
+                        script.src = url;
+                        script.async = true;
+                        script.onload = () => {
+                            if (timedOut) return; // already moved on
+                            cleanup();
+                            if (globalCheck()) {
+                                resolve(true);
+                            } else {
+                                tryNext();
+                            }
+                        };
+                        script.onerror = () => {
+                            if (timedOut) return;
+                            cleanup();
+                            tryNext();
+                        };
+                        document.head.appendChild(script);
+                    };
+                    tryNext();
+                });
+            }
+
+            // If Chart.js not loaded, try additional mirrors
+            if (!window.Chart) {
+                loadScriptSequentially([
+                    'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+                    'https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js',
+                    'https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/Chart.js/4.4.1/chart.umd.min.js'
+                ], () => !!window.Chart, 5000).catch(() => {
+                    console.error('Chart.js 加载失败，图表相关功能将不可用');
+                });
+            }
+
+            // If LeanCloud SDK not loaded, try multiple mirrors
+            if (!window.AV) {
+                loadScriptSequentially([
+                    'https://cdn.bootcdn.net/ajax/libs/leancloud-storage/4.13.2/av-min.js',
+                    'https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js',
+                    'https://unpkg.com/leancloud-storage@4.13.2/dist/av-min.js',
+                    'https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/leancloud-storage/4.13.2/av-min.js'
+                ], () => !!window.AV, 5000).then(() => {
+                    try {
+                        // 若先前初始化因未加载而跳过，这里补做一次初始化
+                        if (!window.__leancloudInitialized && window.AV) {
+                            window.AV.init({ appId: 'YTZnYJZLrOLM1iUgi3hyF3LX-gzGzoHsz', appKey: 'gd1zSY9FVQdpBwdmNhn91RUT', serverURL: 'https://api.leancloud.cn' });
+                            window.__leancloudInitialized = true;
+                            console.log('LeanCloud SDK 已通过备用源加载并完成初始化');
+                        }
+                    } catch (e) {
+                        console.error('LeanCloud 初始化失败: ', e);
+                    }
+                }).catch(() => {
+                    console.error('LeanCloud SDK 加载失败，相关功能不可用');
+                });
+            }
+        })();
+    </script>
     <style>
         * {
             margin: 0;
@@ -3289,12 +3370,17 @@
         
         // 删除旧的LEANCLOUD_APP_URL配置
         
-        // 初始化 LeanCloud
-        AV.init({
-            appId: APP_ID,
-            appKey: APP_KEY,
-            serverURL: SERVER_URL
-        });
+        // 初始化 LeanCloud（若 SDK 未加载则跳过并给出提示）
+        if (window.AV) {
+            AV.init({
+                appId: APP_ID,
+                appKey: APP_KEY,
+                serverURL: SERVER_URL
+            });
+        } else {
+            console.error('LeanCloud SDK 未加载，已跳过初始化。请检查网络或CDN。');
+            window.__leancloudLoadError = true;
+        }
         
         console.log('LeanCloud 初始化完成:', {
             appId: APP_ID,
@@ -3736,6 +3822,10 @@
                 }
                 
                 // 如果用户被授权，尝试登录
+                if (!window.AV) {
+                    showMessage('登录失败: 服务暂不可用（SDK未加载）', 'error');
+                    return;
+                }
                 const user = await AV.User.logIn(username, password);
                 showMessage(`登录成功！欢迎回来，${user.getUsername()}`, 'success');
                 
@@ -3796,6 +3886,10 @@
                 }
                 
                 // 如果用户被授权，则尝试创建账户
+                if (!window.AV) {
+                    showMessage('注册失败: 服务暂不可用（SDK未加载）', 'error');
+                    return;
+                }
                 const user = new AV.User();
                 user.setUsername(username);
                 user.setPassword(password);
@@ -3873,6 +3967,12 @@
                 sendSmsCodeBtn.textContent = '发送中...';
                 
                 // 调用LeanCloud云函数发送短信
+                if (!window.AV) {
+                    showMessage('发送失败: 服务暂不可用（SDK未加载）', 'error');
+                    sendSmsCodeBtn.disabled = false;
+                    sendSmsCodeBtn.textContent = '发送验证码';
+                    return;
+                }
                 const result = await AV.Cloud.run('sendSmsCode', {
                     phone: phone
                 });
@@ -3910,6 +4010,10 @@
                 showMessage('正在验证...', 'info');
                 
                 // 调用LeanCloud云函数验证短信验证码
+                if (!window.AV) {
+                    showMessage('验证失败: 服务暂不可用（SDK未加载）', 'error');
+                    return;
+                }
                 const result = await AV.Cloud.run('verifySmsCode', {
                     phone: phone,
                     code: code
@@ -3919,6 +4023,10 @@
                     showMessage('登录成功！欢迎回来', 'success');
                     
                     // 创建用户对象并设置为当前用户，确保登出记录能正常工作
+                    if (!window.AV) {
+                        showMessage('登录失败: 服务暂不可用（SDK未加载）', 'error');
+                        return;
+                    }
                     const user = new AV.User();
                     user.set('username', phone);
                     user.set('mobilePhoneNumber', phone);
