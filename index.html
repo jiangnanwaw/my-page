@@ -3500,7 +3500,7 @@
             maxRetries: 3
         };
         
-        // 初始化 LeanCloud 并添加连接检测
+        // 简化的 LeanCloud 初始化（移除连接检测）
         async function initializeLeanCloud() {
             try {
                 // 检查LeanCloud SDK是否已加载
@@ -3518,29 +3518,12 @@
                 // 设置请求超时
                 AV._config.requestTimeout = 10000; // 10秒超时
                 
-                // 使用快速连接检测进行初始化
-                const isQuickConnected = await quickConnectionCheck();
-                if (isQuickConnected) {
-                    console.log('✅ LeanCloud 快速连接检测通过');
-                    window.leancloudStatus.initialized = true;
-                    window.leancloudStatus.connected = true;
-                    window.leancloudStatus.retryCount = 0;
-                } else {
-                    // 如果快速检测失败，尝试完整检测
-                    try {
-                        await testLeanCloudConnection();
-                        window.leancloudStatus.initialized = true;
-                        window.leancloudStatus.connected = true;
-                        window.leancloudStatus.retryCount = 0;
-                        console.log('✅ LeanCloud 完整连接检测通过');
-                    } catch (error) {
-                        // 即使连接检测失败，也标记为已初始化，让用户尝试登录
-                        console.warn('⚠️ LeanCloud 连接检测失败，但允许用户尝试登录:', error);
-                        window.leancloudStatus.initialized = true;
-                        window.leancloudStatus.connected = false; // 标记为未连接，登录时会重新检测
-                        window.leancloudStatus.retryCount = 0;
-                    }
-                }
+                // 直接标记为已初始化，不进行连接检测
+                window.leancloudStatus.initialized = true;
+                window.leancloudStatus.connected = true; // 假设连接正常
+                window.leancloudStatus.retryCount = 0;
+                
+                console.log('✅ LeanCloud 初始化完成（跳过连接检测）');
                 
             } catch (error) {
                 console.error('❌ LeanCloud 初始化失败:', error);
@@ -3562,6 +3545,12 @@
         // 优化的 LeanCloud 连接测试
         async function testLeanCloudConnection() {
             return new Promise((resolve, reject) => {
+                // 首先检查AV是否已定义
+                if (typeof AV === 'undefined') {
+                    reject(new Error('AV未定义，无法进行连接测试'));
+                    return;
+                }
+                
                 const timeout = setTimeout(() => {
                     reject(new Error('连接超时'));
                 }, 5000); // 减少超时时间到5秒
@@ -3621,6 +3610,12 @@
         }
         async function quickConnectionCheck() {
             try {
+                // 首先检查AV是否已定义
+                if (typeof AV === 'undefined') {
+                    console.warn('⚠️ AV未定义，跳过连接检测');
+                    return false;
+                }
+                
                 // 简单的ping测试，不创建对象
                 const response = await fetch('https://api.leancloud.cn/1.1/ping', {
                     method: 'GET',
@@ -4141,33 +4136,7 @@
                 }
             }
             
-            // 检查LeanCloud连接状态
-            if (!window.leancloudStatus.connected) {
-                showMessage('正在检查网络连接...', 'info');
-                
-                // 使用优化的连接检测
-                const isConnected = await performConnectionCheck();
-                if (!isConnected) {
-                    console.warn('⚠️ 连接检测失败，尝试降级模式');
-                    showMessage('网络连接不稳定，尝试降级模式...', 'warning');
-                    
-                    // 尝试降级登录
-                    const fallbackResult = fallbackLogin(username, password);
-                    if (fallbackResult.success) {
-                        showFallbackMode();
-                        showMessage(`降级模式登录成功！欢迎，${fallbackResult.username}`, 'success');
-                        saveLoginStatus(fallbackResult.username, 'fallback_mode');
-                        showMainPage(fallbackResult.username);
-                        return;
-                    } else {
-                        showMessage('登录失败，请检查网络连接后重试', 'error');
-                        return;
-                    }
-                } else {
-                    console.log('✅ 连接检测通过，继续正常登录流程');
-                }
-            }
-            
+            // 直接尝试登录，不进行连接检测
             try {
                 showMessage('正在登录...', 'info');
                 
@@ -4210,14 +4179,16 @@
             } catch (error) {
                 console.error('登录错误:', error);
                 // 根据错误类型提供更友好的提示
-                if (error.code === 211) {
+                if (error.message && error.message.includes('AV is not defined')) {
+                    showMessage('系统正在加载，请稍候片刻后重试', 'warning');
+                } else if (error.code === 211) {
                     showMessage('登录失败: 用户名或密码错误', 'error');
                 } else if (error.code === 210) {
                     showMessage('登录失败: 用户名或密码错误', 'error');
                 } else if (error.code === 219) {
                     showMessage('登录失败: 登录信息无效', 'error');
                 } else {
-                    showMessage(`登录失败: ${error.message}`, 'error');
+                    showMessage(`登录失败: ${error.message || '未知错误'}`, 'error');
                 }
             }
         });
