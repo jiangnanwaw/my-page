@@ -3327,6 +3327,22 @@
             }
         })();
         
+        // 通用数据获取（含 CORS/防盗链 兜底）
+        async function fetchArrayBufferWithFallback(url) {
+            try {
+                const resp = await fetch(url, { referrerPolicy: 'no-referrer' });
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return await resp.arrayBuffer();
+            } catch (e) {
+                console.warn('直接获取失败，尝试代理:', url, e);
+                const proxy = 'https://cors.isomorphic-git.org/';
+                const proxied = proxy + url;
+                const resp2 = await fetch(proxied, { referrerPolicy: 'no-referrer' });
+                if (!resp2.ok) throw new Error('代理HTTP ' + resp2.status);
+                return await resp2.arrayBuffer();
+            }
+        }
+
         // 登录记录相关函数
         // 记录用户登录
         async function recordUserLogin(username, additionalData = {}) {
@@ -5223,8 +5239,8 @@ let availablePages = [];
 
 // 加载站点统计数据
 function loadSiteStatsData() {
-    fetch('https://www.csfhcdz.cn/data/hzsj.xlsx')
-        .then(response => response.arrayBuffer())
+    fetchArrayBufferWithFallback('https://www.csfhcdz.cn/data/hzsj.xlsx')
+        .then(arrayBuffer => arrayBuffer)
         .then(arrayBuffer => {
             const data = new Uint8Array(arrayBuffer);
             const workbook = XLSX.read(data, { type: 'array' });
@@ -5607,8 +5623,8 @@ let chargingBoardData = [];
 
 // 加载充电数据看板数据
 function loadChargingBoardData() {
-    fetch('https://www.csfhcdz.cn/data/homepage.xlsx')
-        .then(response => response.arrayBuffer())
+    fetchArrayBufferWithFallback('https://www.csfhcdz.cn/data/homepage.xlsx')
+        .then(arrayBuffer => arrayBuffer)
         .then(arrayBuffer => {
             const data = new Uint8Array(arrayBuffer);
             const workbook = XLSX.read(data, { type: 'array' });
@@ -6122,8 +6138,8 @@ function loadRealtimeData() {
     const loadingElement = document.getElementById('realtime-loading');
     loadingElement.style.display = 'block';
     
-     fetch('https://www.csfhcdz.cn/data/daydata.xlsx?t=' + new Date().getTime())
-        .then(response => response.arrayBuffer())
+     fetchArrayBufferWithFallback('https://www.csfhcdz.cn/data/daydata.xlsx?t=' + new Date().getTime())
+        .then(arrayBuffer => arrayBuffer)
         .then(arrayBuffer => {
             const data = new Uint8Array(arrayBuffer);
             const workbook = XLSX.read(data, { type: 'array' });
@@ -6516,8 +6532,7 @@ let incomeDashboardChart = null;
 // 加载综合收入数据
 async function loadIncomeDashboardData() {
     try {
-        const response = await fetch('https://www.csfhcdz.cn/data/homepage.xlsx');
-        const arrayBuffer = await response.arrayBuffer();
+        const arrayBuffer = await fetchArrayBufferWithFallback('https://www.csfhcdz.cn/data/homepage.xlsx');
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         
         // 查找zgmysj工作表
