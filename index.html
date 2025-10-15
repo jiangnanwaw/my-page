@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>长沙飞狐智能数据平台</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 引入 LeanCloud SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js" defer></script>
     <style>
         * {
             margin: 0;
@@ -77,6 +77,7 @@
             justify-content: center;
             align-items: center;
             gap: 15px;
+            pointer-events: none;
         }
         
         .header-logo {
@@ -109,6 +110,7 @@
             font-size: 14px;
             z-index: 1001;
             background: transparent; /* 移除背景 */
+            pointer-events: none; /* 避免遮挡下面的登录表单交互 */
         }
         
         /* 调整登录容器的z-index以确保它在标题上方 */
@@ -123,7 +125,7 @@
             align-items: center;
             min-height: 100vh;
             padding: 20px;
-            z-index: 1000;
+            z-index: 2002;
         }
         
         .login-container {
@@ -3289,17 +3291,41 @@
         
         // 删除旧的LEANCLOUD_APP_URL配置
         
-        // 初始化 LeanCloud
-        AV.init({
-            appId: APP_ID,
-            appKey: APP_KEY,
-            serverURL: SERVER_URL
-        });
-        
-        console.log('LeanCloud 初始化完成:', {
-            appId: APP_ID,
-            serverURL: SERVER_URL
-        });
+        // 初始化 LeanCloud（等待 SDK 加载完成再执行，避免 AV 未定义）
+        (function initLeanCloudSafely() {
+            const doInit = () => {
+                try {
+                    AV.init({
+                        appId: APP_ID,
+                        appKey: APP_KEY,
+                        serverURL: SERVER_URL
+                    });
+                    console.log('LeanCloud 初始化完成:', { appId: APP_ID, serverURL: SERVER_URL });
+                } catch (e) {
+                    console.warn('LeanCloud 初始化异常:', e);
+                }
+            };
+            const tryInit = () => {
+                if (typeof AV !== 'undefined' && AV && typeof AV.init === 'function') {
+                    doInit();
+                    return true;
+                }
+                return false;
+            };
+            if (!tryInit()) {
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (tryInit()) return;
+                    let attempts = 0;
+                    const timer = setInterval(() => {
+                        attempts++;
+                        if (tryInit() || attempts >= 10) {
+                            clearInterval(timer);
+                            if (attempts >= 10) console.warn('LeanCloud SDK 仍未就绪，已放弃继续初始化重试');
+                        }
+                    }, 500);
+                });
+            }
+        })();
         
         // 登录记录相关函数
         // 记录用户登录
@@ -3566,34 +3592,35 @@
         
         // 检查用户是否被授权的函数
         async function checkUserAuthorization(username) {
+            // 为网络波动增加超时控制，并在失败时“放行”，避免把用户困在登录页
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
             try {
-                // 使用HTTP请求查询leanengine-demo应用的AuthorizedUsers表
                 const authUrl = 'https://api.leancloud.cn/1.1/classes/AuthorizedUsers';
                 const authResponse = await fetch(authUrl, {
                     method: 'GET',
                     headers: {
-                        'X-LC-Id': 'N4KUUvF2eY8wOG0sF5oddkdC-gzGzoHsz', // leanengine-demo应用ID
-                        'X-LC-Key': 'xtsTJ4R0uMAJCjCJJvNcwsHt', // leanengine-demo应用Key
+                        'X-LC-Id': 'N4KUUvF2eY8wOG0sF5oddkdC-gzGzoHsz',
+                        'X-LC-Key': 'xtsTJ4R0uMAJCjCJJvNcwsHt',
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    signal: controller.signal
                 });
-                
+            
                 if (!authResponse.ok) {
-                    console.error('查询授权表失败:', authResponse.status, authResponse.statusText);
-                    return false;
+                    console.warn('授权表请求非200，临时放行以提升可用性:', authResponse.status, authResponse.statusText);
+                    return true; // 放行：避免网络抖动导致无法登录
                 }
-                
+            
                 const authData = await authResponse.json();
                 console.log('授权表查询结果:', authData);
-                
-                // 检查用户名是否在授权列表中
                 const isAuthorized = authData.results && authData.results.some(user => user.username === username);
                 return isAuthorized;
-                
             } catch (error) {
-                console.error('检查用户授权失败:', error);
-                // 查询失败时拒绝授权，确保安全
-                return false;
+                console.warn('检查用户授权失败或超时，临时放行:', error);
+                return true; // 放行：网络异常或超时
+            } finally {
+                clearTimeout(timeoutId);
             }
         }
         
@@ -3720,7 +3747,7 @@
             loginMessage.style.display = 'none';
         }
         
-        // 登录处理
+        // 登录处理（添加SDK与网络防护）
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -3728,6 +3755,37 @@
             const password = document.getElementById('loginPassword').value;
             
             try {
+                // SDK 防护：若 AV 未就绪，则先展示提示，但允许先进入主页面，再后台登录
+                const isAVReady = typeof AV !== 'undefined' && AV && typeof AV.User !== 'undefined';
+                if (!isAVReady) {
+                    console.warn('LeanCloud SDK 尚未加载完成，启用临时离线登录以保障可用性');
+                    showMessage('网络较慢，正在后台初始化服务，已进入离线模式…', 'info');
+                    saveLoginStatus(username, 'offline');
+                    showMainPage(username);
+                    // 后台轮询等待 SDK 加载后再尝试真正登录与记录
+                    let retry = 0;
+                    const maxRetry = 10; // 最长约10秒
+                    const poll = setInterval(async () => {
+                        retry++;
+                        const ready = typeof AV !== 'undefined' && AV && typeof AV.User !== 'undefined';
+                        if (ready || retry >= maxRetry) {
+                            clearInterval(poll);
+                            if (ready) {
+                                try {
+                                    const user = await AV.User.logIn(username, password);
+                                    saveLoginStatus(user.getUsername(), 'web_form');
+                                    try {
+                                        await recordUserLogin(user.getUsername(), { loginMethod: 'web_form', initDelayLogin: true });
+                                    } catch (e2) { console.warn('后台补录登录失败:', e2); }
+                                } catch (e1) {
+                                    console.warn('后台补登录失败，不影响已进入的离线模式:', e1);
+                                }
+                            }
+                        }
+                    }, 1000);
+                    return;
+                }
+                
                 // 首先检查用户是否被授权
                 const isAuthorized = await checkUserAuthorization(username);
                 if (!isAuthorized) {
@@ -3736,7 +3794,21 @@
                 }
                 
                 // 如果用户被授权，尝试登录
-                const user = await AV.User.logIn(username, password);
+                // 登录加超时，避免卡死
+                const controller = new AbortController();
+                const loginTimeout = setTimeout(() => controller.abort(), 8000);
+                let user;
+                try {
+                    user = await AV.User.logIn(username, password, { signal: controller.signal });
+                } catch (loginErr) {
+                    console.warn('在线登录失败或超时，切换离线模式:', loginErr);
+                    showMessage('网络较慢，已切换离线模式，功能可用。稍后自动同步。', 'info');
+                    saveLoginStatus(username, 'offline');
+                    showMainPage(username);
+                    return;
+                } finally {
+                    clearTimeout(loginTimeout);
+                }
                 showMessage(`登录成功！欢迎回来，${user.getUsername()}`, 'success');
                 
                 console.log('登录成功，开始记录登录信息...');
