@@ -3518,14 +3518,29 @@
                 // 设置请求超时
                 AV._config.requestTimeout = 10000; // 10秒超时
                 
-                // 测试连接
-                await testLeanCloudConnection();
-                
-                window.leancloudStatus.initialized = true;
-                window.leancloudStatus.connected = true;
-                window.leancloudStatus.retryCount = 0;
-                
-                console.log('✅ LeanCloud 初始化成功');
+                // 使用快速连接检测进行初始化
+                const isQuickConnected = await quickConnectionCheck();
+                if (isQuickConnected) {
+                    console.log('✅ LeanCloud 快速连接检测通过');
+                    window.leancloudStatus.initialized = true;
+                    window.leancloudStatus.connected = true;
+                    window.leancloudStatus.retryCount = 0;
+                } else {
+                    // 如果快速检测失败，尝试完整检测
+                    try {
+                        await testLeanCloudConnection();
+                        window.leancloudStatus.initialized = true;
+                        window.leancloudStatus.connected = true;
+                        window.leancloudStatus.retryCount = 0;
+                        console.log('✅ LeanCloud 完整连接检测通过');
+                    } catch (error) {
+                        // 即使连接检测失败，也标记为已初始化，让用户尝试登录
+                        console.warn('⚠️ LeanCloud 连接检测失败，但允许用户尝试登录:', error);
+                        window.leancloudStatus.initialized = true;
+                        window.leancloudStatus.connected = false; // 标记为未连接，登录时会重新检测
+                        window.leancloudStatus.retryCount = 0;
+                    }
+                }
                 
             } catch (error) {
                 console.error('❌ LeanCloud 初始化失败:', error);
@@ -3544,26 +3559,78 @@
             }
         }
         
-        // 测试 LeanCloud 连接
+        // 优化的 LeanCloud 连接测试
         async function testLeanCloudConnection() {
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
                     reject(new Error('连接超时'));
-                }, 8000);
+                }, 5000); // 减少超时时间到5秒
                 
                 // 尝试创建一个测试对象
                 const TestObject = AV.Object.extend('TestConnection');
                 const testObj = new TestObject();
                 testObj.set('test', 'connection');
+                testObj.set('timestamp', new Date().toISOString());
                 
                 testObj.save().then(() => {
                     clearTimeout(timeout);
                     resolve();
                 }).catch((error) => {
                     clearTimeout(timeout);
-                    reject(error);
+                    // 如果是权限错误，说明连接是正常的，只是测试对象没有权限
+                    if (error.code === 119 || error.code === 403) {
+                        console.log('✅ LeanCloud 连接正常（权限限制）');
+                        resolve();
+                    } else {
+                        reject(error);
+                    }
                 });
             });
+        }
+        
+        // 智能连接状态管理
+        function updateConnectionStatus(isConnected, reason = '') {
+            const wasConnected = window.leancloudStatus.connected;
+            window.leancloudStatus.connected = isConnected;
+            window.leancloudStatus.lastCheck = Date.now();
+            
+            if (wasConnected !== isConnected) {
+                console.log(`🔄 连接状态变化: ${wasConnected ? '已连接' : '未连接'} → ${isConnected ? '已连接' : '未连接'} ${reason}`);
+            }
+            
+            return isConnected;
+        }
+        
+        // 优化的连接检测（用于定期检查）
+        async function performConnectionCheck() {
+            try {
+                // 先尝试快速检测
+                const isQuickConnected = await quickConnectionCheck();
+                if (isQuickConnected) {
+                    return updateConnectionStatus(true, '(快速检测)');
+                }
+                
+                // 如果快速检测失败，尝试完整检测
+                await testLeanCloudConnection();
+                return updateConnectionStatus(true, '(完整检测)');
+                
+            } catch (error) {
+                console.warn('⚠️ 连接检查失败:', error.message);
+                return updateConnectionStatus(false, `(${error.message})`);
+            }
+        }
+        async function quickConnectionCheck() {
+            try {
+                // 简单的ping测试，不创建对象
+                const response = await fetch('https://api.leancloud.cn/1.1/ping', {
+                    method: 'GET',
+                    timeout: 3000
+                });
+                return response.ok;
+            } catch (error) {
+                console.warn('快速连接检测失败:', error);
+                return false;
+            }
         }
         
         // 显示连接错误
@@ -3628,15 +3695,7 @@
                 const now = Date.now();
                 if (now - window.leancloudStatus.lastCheck < 30000) return; // 30秒检查一次
                 
-                try {
-                    await testLeanCloudConnection();
-                    window.leancloudStatus.connected = true;
-                    window.leancloudStatus.lastCheck = now;
-                } catch (error) {
-                    console.warn('⚠️ LeanCloud 连接检查失败:', error);
-                    window.leancloudStatus.connected = false;
-                    showConnectionError('网络连接不稳定，部分功能可能受影响');
-                }
+                await performConnectionCheck();
             }, 30000);
         }
         
@@ -4084,12 +4143,14 @@
             
             // 检查LeanCloud连接状态
             if (!window.leancloudStatus.connected) {
-                showMessage('网络连接异常，正在重试...', 'info');
-                try {
-                    await testLeanCloudConnection();
-                    window.leancloudStatus.connected = true;
-                } catch (error) {
-                    showMessage('网络连接失败，尝试降级模式...', 'warning');
+                showMessage('正在检查网络连接...', 'info');
+                
+                // 使用优化的连接检测
+                const isConnected = await performConnectionCheck();
+                if (!isConnected) {
+                    console.warn('⚠️ 连接检测失败，尝试降级模式');
+                    showMessage('网络连接不稳定，尝试降级模式...', 'warning');
+                    
                     // 尝试降级登录
                     const fallbackResult = fallbackLogin(username, password);
                     if (fallbackResult.success) {
@@ -4102,6 +4163,8 @@
                         showMessage('登录失败，请检查网络连接后重试', 'error');
                         return;
                     }
+                } else {
+                    console.log('✅ 连接检测通过，继续正常登录流程');
                 }
             }
             
@@ -10284,4 +10347,5 @@ function updateUnchargedTable() {
     
     <!-- 版权信息已移除 -->
 </body>
+</html>
 </html>
