@@ -4,215 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>长沙飞狐智能数据平台</title>
-    <!-- 优化外部资源加载，添加错误处理和降级方案 -->
-    <script>
-        // 资源加载状态跟踪
-        window.resourceLoadStatus = {
-            chartjs: false,
-            xlsx: false,
-            fontawesome: false,
-            leancloud: false
-        };
-        
-        // 资源加载超时处理
-        function loadResourceWithTimeout(url, timeout = 10000) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = url;
-                script.onload = () => resolve();
-                script.onerror = () => reject(new Error(`Failed to load ${url}`));
-                
-                const timeoutId = setTimeout(() => {
-                    reject(new Error(`Timeout loading ${url}`));
-                }, timeout);
-                
-                script.onload = () => {
-                    clearTimeout(timeoutId);
-                    resolve();
-                };
-                
-                document.head.appendChild(script);
-            });
-        }
-        
-        // 优化的外部资源加载，支持多个CDN源
-        async function loadExternalResources() {
-            const resources = [
-                { 
-                    key: 'chartjs',
-                    urls: [
-                        'https://cdn.jsdelivr.net/npm/chart.js',
-                        'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js',
-                        'https://unpkg.com/chart.js@3.9.1/dist/chart.min.js'
-                    ]
-                },
-                { 
-                    key: 'xlsx',
-                    urls: [
-                        'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-                        'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-                        'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
-                    ]
-                },
-                { 
-                    key: 'leancloud',
-                    urls: [
-                        'https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js',
-                        'https://cdnjs.cloudflare.com/ajax/libs/leancloud-storage/4.13.2/av-min.js',
-                        'https://unpkg.com/leancloud-storage@4.13.2/dist/av-min.js'
-                    ]
-                }
-            ];
-            
-            // 并行加载所有资源，每个资源尝试多个CDN源
-            const loadPromises = resources.map(async (resource) => {
-                for (let i = 0; i < resource.urls.length; i++) {
-                    try {
-                        console.log(`🔄 尝试加载 ${resource.key} (源 ${i + 1}/${resource.urls.length}): ${resource.urls[i]}`);
-                        await loadResourceWithTimeout(resource.urls[i], 6000); // 减少超时时间到6秒
-                        window.resourceLoadStatus[resource.key] = true;
-                        console.log(`✅ ${resource.key} 加载成功 (使用源 ${i + 1})`);
-                        return; // 成功加载后跳出循环
-                    } catch (error) {
-                        console.warn(`⚠️ ${resource.key} 源 ${i + 1} 加载失败:`, error.message);
-                        if (i === resource.urls.length - 1) {
-                            // 所有源都失败了
-                            console.error(`❌ ${resource.key} 所有CDN源都加载失败`);
-                            window.resourceLoadStatus[resource.key] = false;
-                        }
-                    }
-                }
-            });
-            
-            await Promise.allSettled(loadPromises);
-            
-            // 检查关键资源是否加载成功
-            if (!window.resourceLoadStatus.leancloud) {
-                console.error('❌ LeanCloud SDK 所有CDN源都加载失败');
-                showResourceError('LeanCloud SDK 加载失败，请检查网络连接或尝试刷新页面');
-            } else {
-                console.log('✅ 所有关键资源加载完成');
-            }
-        }
-        
-        // 显示资源加载错误
-        function showResourceError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(220, 53, 69, 0.9);
-                color: white;
-                padding: 20px;
-                border-radius: 8px;
-                z-index: 10000;
-                text-align: center;
-                max-width: 400px;
-            `;
-            errorDiv.innerHTML = `
-                <h3>⚠️ 资源加载失败</h3>
-                <p>${message}</p>
-                <div style="margin-top: 15px;">
-                    <button onclick="retryResourceLoading()" style="margin: 5px; padding: 8px 16px; background: white; color: #dc3545; border: none; border-radius: 4px; cursor: pointer;">重新加载资源</button>
-                    <button onclick="location.reload()" style="margin: 5px; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">刷新页面</button>
-                </div>
-                <div style="margin-top: 10px; font-size: 12px; opacity: 0.8;">
-                    如果问题持续存在，请检查网络连接或联系管理员
-                </div>
-            `;
-            document.body.appendChild(errorDiv);
-            
-            // 自动添加诊断按钮
-            setTimeout(addDiagnosisToError, 100);
-        }
-        
-        // 页面加载完成后开始加载外部资源
-        document.addEventListener('DOMContentLoaded', loadExternalResources);
-        
-        // 添加网络状态检测
-        function checkNetworkStatus() {
-            if (!navigator.onLine) {
-                showNetworkError('网络连接已断开，请检查网络设置');
-                return false;
-            }
-            return true;
-        }
-        
-        // 显示网络错误
-        function showNetworkError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.id = 'network-error';
-            errorDiv.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                background: rgba(220, 53, 69, 0.95);
-                color: white;
-                padding: 10px;
-                text-align: center;
-                z-index: 10001;
-                font-size: 14px;
-            `;
-            errorDiv.innerHTML = `
-                <i class="fas fa-wifi"></i> ${message}
-                <button onclick="location.reload()" style="margin-left: 10px; padding: 4px 8px; background: white; color: #dc3545; border: none; border-radius: 4px; cursor: pointer;">刷新页面</button>
-            `;
-            
-            // 移除已存在的网络错误提示
-            const existingError = document.getElementById('network-error');
-            if (existingError) {
-                existingError.remove();
-            }
-            
-            document.body.appendChild(errorDiv);
-        }
-        
-        // 监听网络状态变化
-        window.addEventListener('online', () => {
-            const errorDiv = document.getElementById('network-error');
-            if (errorDiv) {
-                errorDiv.remove();
-            }
-            console.log('✅ 网络连接已恢复');
-        });
-        
-        window.addEventListener('offline', () => {
-            showNetworkError('网络连接已断开，请检查网络设置');
-        });
-        
-        // 添加页面性能监控
-        function monitorPerformance() {
-            // 监控页面加载性能
-            window.addEventListener('load', () => {
-                setTimeout(() => {
-                    const perfData = performance.getEntriesByType('navigation')[0];
-                    const loadTime = perfData.loadEventEnd - perfData.loadEventStart;
-                    
-                    if (loadTime > 5000) {
-                        console.warn('⚠️ 页面加载时间较长:', loadTime + 'ms');
-                    }
-                    
-                    // 监控内存使用
-                    if (performance.memory) {
-                        const memoryUsage = performance.memory.usedJSHeapSize / 1024 / 1024;
-                        if (memoryUsage > 100) {
-                            console.warn('⚠️ 内存使用较高:', memoryUsage.toFixed(2) + 'MB');
-                        }
-                    }
-                }, 1000);
-            });
-        }
-        
-        // 启动性能监控
-        monitorPerformance();
-    </script>
-    
-    <!-- Font Awesome CSS 异步加载 -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 LeanCloud SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js"></script>
     <style>
         * {
             margin: 0;
@@ -3486,215 +3282,21 @@
     </div>
 
     <script>
-        // 优化的 LeanCloud 配置
+        // LeanCloud 配置
         const APP_ID = 'YTZnYJZLrOLM1iUgi3hyF3LX-gzGzoHsz';
         const APP_KEY = 'gd1zSY9FVQdpBwdmNhn91RUT';
         const SERVER_URL = 'https://api.leancloud.cn';
         
-        // LeanCloud 连接状态跟踪
-        window.leancloudStatus = {
-            initialized: false,
-            connected: false,
-            lastCheck: 0,
-            retryCount: 0,
-            maxRetries: 3
-        };
+        // 删除旧的LEANCLOUD_APP_URL配置
         
-        // 简化的 LeanCloud 初始化（移除连接检测）
-        async function initializeLeanCloud() {
-            try {
-                // 检查LeanCloud SDK是否已加载
-                if (typeof AV === 'undefined') {
-                    throw new Error('LeanCloud SDK 未加载');
-                }
-                
-                // 初始化 LeanCloud
-                AV.init({
-                    appId: APP_ID,
-                    appKey: APP_KEY,
-                    serverURL: SERVER_URL
-                });
-                
-                // 设置请求超时
-                AV._config.requestTimeout = 10000; // 10秒超时
-                
-                // 直接标记为已初始化，不进行连接检测
-                window.leancloudStatus.initialized = true;
-                window.leancloudStatus.connected = true; // 假设连接正常
-                window.leancloudStatus.retryCount = 0;
-                
-                console.log('✅ LeanCloud 初始化完成（跳过连接检测）');
-                
-            } catch (error) {
-                console.error('❌ LeanCloud 初始化失败:', error);
-                window.leancloudStatus.initialized = false;
-                window.leancloudStatus.connected = false;
-                
-                // 显示连接错误
-                showConnectionError('LeanCloud 服务连接失败，请检查网络连接');
-                
-                // 重试机制
-                if (window.leancloudStatus.retryCount < window.leancloudStatus.maxRetries) {
-                    window.leancloudStatus.retryCount++;
-                    console.log(`🔄 第 ${window.leancloudStatus.retryCount} 次重试 LeanCloud 连接...`);
-                    setTimeout(initializeLeanCloud, 3000 * window.leancloudStatus.retryCount);
-                }
-            }
-        }
+        // 初始化 LeanCloud
+        AV.init({
+            appId: APP_ID,
+            appKey: APP_KEY,
+            serverURL: SERVER_URL
+        });
         
-        // 优化的 LeanCloud 连接测试
-        async function testLeanCloudConnection() {
-            return new Promise((resolve, reject) => {
-                // 首先检查AV是否已定义
-                if (typeof AV === 'undefined') {
-                    reject(new Error('AV未定义，无法进行连接测试'));
-                    return;
-                }
-                
-                const timeout = setTimeout(() => {
-                    reject(new Error('连接超时'));
-                }, 5000); // 减少超时时间到5秒
-                
-                // 尝试创建一个测试对象
-                const TestObject = AV.Object.extend('TestConnection');
-                const testObj = new TestObject();
-                testObj.set('test', 'connection');
-                testObj.set('timestamp', new Date().toISOString());
-                
-                testObj.save().then(() => {
-                    clearTimeout(timeout);
-                    resolve();
-                }).catch((error) => {
-                    clearTimeout(timeout);
-                    // 如果是权限错误，说明连接是正常的，只是测试对象没有权限
-                    if (error.code === 119 || error.code === 403) {
-                        console.log('✅ LeanCloud 连接正常（权限限制）');
-                        resolve();
-                    } else {
-                        reject(error);
-                    }
-                });
-            });
-        }
-        
-        // 智能连接状态管理
-        function updateConnectionStatus(isConnected, reason = '') {
-            const wasConnected = window.leancloudStatus.connected;
-            window.leancloudStatus.connected = isConnected;
-            window.leancloudStatus.lastCheck = Date.now();
-            
-            if (wasConnected !== isConnected) {
-                console.log(`🔄 连接状态变化: ${wasConnected ? '已连接' : '未连接'} → ${isConnected ? '已连接' : '未连接'} ${reason}`);
-            }
-            
-            return isConnected;
-        }
-        
-        // 优化的连接检测（用于定期检查）
-        async function performConnectionCheck() {
-            try {
-                // 先尝试快速检测
-                const isQuickConnected = await quickConnectionCheck();
-                if (isQuickConnected) {
-                    return updateConnectionStatus(true, '(快速检测)');
-                }
-                
-                // 如果快速检测失败，尝试完整检测
-                await testLeanCloudConnection();
-                return updateConnectionStatus(true, '(完整检测)');
-                
-            } catch (error) {
-                console.warn('⚠️ 连接检查失败:', error.message);
-                return updateConnectionStatus(false, `(${error.message})`);
-            }
-        }
-        async function quickConnectionCheck() {
-            try {
-                // 首先检查AV是否已定义
-                if (typeof AV === 'undefined') {
-                    console.warn('⚠️ AV未定义，跳过连接检测');
-                    return false;
-                }
-                
-                // 简单的ping测试，不创建对象
-                const response = await fetch('https://api.leancloud.cn/1.1/ping', {
-                    method: 'GET',
-                    timeout: 3000
-                });
-                return response.ok;
-            } catch (error) {
-                console.warn('快速连接检测失败:', error);
-                return false;
-            }
-        }
-        
-        // 显示连接错误
-        function showConnectionError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.id = 'connection-error';
-            errorDiv.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: rgba(220, 53, 69, 0.9);
-                color: white;
-                padding: 15px;
-                border-radius: 8px;
-                z-index: 10000;
-                max-width: 300px;
-                font-size: 14px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            `;
-            errorDiv.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <div>
-                        <strong>连接问题</strong>
-                        <div style="margin-top: 5px;">${message}</div>
-                        <button onclick="retryConnection()" style="margin-top: 8px; padding: 4px 8px; background: white; color: #dc3545; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">重试连接</button>
-                    </div>
-                </div>
-            `;
-            
-            // 移除已存在的错误提示
-            const existingError = document.getElementById('connection-error');
-            if (existingError) {
-                existingError.remove();
-            }
-            
-            document.body.appendChild(errorDiv);
-            
-            // 5秒后自动隐藏
-            setTimeout(() => {
-                if (errorDiv.parentNode) {
-                    errorDiv.remove();
-                }
-            }, 5000);
-        }
-        
-        // 重试连接函数
-        window.retryConnection = function() {
-            const errorDiv = document.getElementById('connection-error');
-            if (errorDiv) {
-                errorDiv.remove();
-            }
-            window.leancloudStatus.retryCount = 0;
-            initializeLeanCloud();
-        };
-        
-        // 定期检查连接状态
-        function startConnectionMonitor() {
-            setInterval(async () => {
-                if (!window.leancloudStatus.initialized) return;
-                
-                const now = Date.now();
-                if (now - window.leancloudStatus.lastCheck < 30000) return; // 30秒检查一次
-                
-                await performConnectionCheck();
-            }, 30000);
-        }
-        
-        console.log('LeanCloud 配置完成:', {
+        console.log('LeanCloud 初始化完成:', {
             appId: APP_ID,
             serverURL: SERVER_URL
         });
@@ -4118,28 +3720,14 @@
             loginMessage.style.display = 'none';
         }
         
-        // 优化的登录处理
+        // 登录处理
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             
-            // 检查LeanCloud是否已初始化
-            if (!window.leancloudStatus.initialized) {
-                showMessage('系统正在初始化，请稍候...', 'info');
-                try {
-                    await initializeLeanCloud();
-                } catch (error) {
-                    showMessage('系统初始化失败，请检查网络连接后重试', 'error');
-                    return;
-                }
-            }
-            
-            // 直接尝试登录，不进行连接检测
             try {
-                showMessage('正在登录...', 'info');
-                
                 // 首先检查用户是否被授权
                 const isAuthorized = await checkUserAuthorization(username);
                 if (!isAuthorized) {
@@ -4179,16 +3767,14 @@
             } catch (error) {
                 console.error('登录错误:', error);
                 // 根据错误类型提供更友好的提示
-                if (error.message && error.message.includes('AV is not defined')) {
-                    showMessage('系统正在加载，请稍候片刻后重试', 'warning');
-                } else if (error.code === 211) {
+                if (error.code === 211) {
                     showMessage('登录失败: 用户名或密码错误', 'error');
                 } else if (error.code === 210) {
                     showMessage('登录失败: 用户名或密码错误', 'error');
                 } else if (error.code === 219) {
                     showMessage('登录失败: 登录信息无效', 'error');
                 } else {
-                    showMessage(`登录失败: ${error.message || '未知错误'}`, 'error');
+                    showMessage(`登录失败: ${error.message}`, 'error');
                 }
             }
         });
@@ -7817,112 +7403,20 @@ function updateUnchargedTable() {
 
         // 页面加载完成后加载整体情况概要数据
         document.addEventListener('DOMContentLoaded', function() {
-            // 等待外部资源加载完成后初始化LeanCloud
-            setTimeout(async () => {
-                if (window.resourceLoadStatus.leancloud) {
-                    await initializeLeanCloud();
-                    startConnectionMonitor();
-                } else {
-                    console.warn('⚠️ LeanCloud SDK 未加载，将在用户尝试登录时重试');
-                }
-            }, 1000);
-            
             loadOverviewData();
             
             // 初始化星空背景
             initStarfield();
             
-            // 等待外部资源加载完成后再初始化数据模块
-            setTimeout(async () => {
-                console.log('🔄 开始初始化数据模块...');
-                console.log('资源加载状态:', window.resourceLoadStatus);
-                
-                // 检查关键资源是否已加载
-                if (window.resourceLoadStatus.xlsx && window.resourceLoadStatus.chartjs) {
-                    console.log('✅ 关键资源已加载，开始初始化数据模块');
-                    
-                    // 初始化数据可视化分析
-                    try {
-                        await initVisualizationAnalysis();
-                        console.log('✅ 数据可视化分析初始化完成');
-                    } catch (error) {
-                        console.error('❌ 数据可视化分析初始化失败:', error);
-                    }
-                    
-                    // 初始化用户充电行为分析
-                    try {
-                        await initUserBehaviorAnalysis();
-                        console.log('✅ 用户充电行为分析初始化完成');
-                    } catch (error) {
-                        console.error('❌ 用户充电行为分析初始化失败:', error);
-                    }
-                    
-                    // 初始化经营效率分析
-                    try {
-                        await initEfficiencyAnalysis();
-                        console.log('✅ 经营效率分析初始化完成');
-                    } catch (error) {
-                        console.error('❌ 经营效率分析初始化失败:', error);
-                    }
-                } else {
-                    console.warn('⚠️ 关键资源未完全加载，延迟初始化数据模块');
-                    // 如果资源未加载完成，再等待一段时间后重试
-                    setTimeout(async () => {
-                        if (window.resourceLoadStatus.xlsx && window.resourceLoadStatus.chartjs) {
-                            console.log('🔄 延迟初始化数据模块...');
-                            await initVisualizationAnalysis();
-                            await initUserBehaviorAnalysis();
-                            await initEfficiencyAnalysis();
-                        } else {
-                            console.error('❌ 关键资源加载失败，数据模块无法初始化');
-                        }
-                    }, 5000);
-                }
-            }, 2000);
+            // 初始化数据可视化分析
+            initVisualizationAnalysis();
+            
+            // 初始化用户充电行为分析
+            initUserBehaviorAnalysis();
+            
+            // 初始化经营效率分析
+            initEfficiencyAnalysis();
         });
-        
-        // 手动重新初始化数据模块
-        window.reinitializeDataModules = async function() {
-            console.log('🔄 手动重新初始化数据模块...');
-            
-            // 检查资源状态
-            if (!window.resourceLoadStatus.xlsx) {
-                console.warn('⚠️ XLSX库未加载，尝试重新加载...');
-                await loadExternalResources();
-            }
-            
-            if (!window.resourceLoadStatus.chartjs) {
-                console.warn('⚠️ Chart.js库未加载，尝试重新加载...');
-                await loadExternalResources();
-            }
-            
-            // 重新初始化所有数据模块
-            try {
-                console.log('🔄 重新初始化数据可视化分析...');
-                await initVisualizationAnalysis();
-                console.log('✅ 数据可视化分析重新初始化完成');
-            } catch (error) {
-                console.error('❌ 数据可视化分析重新初始化失败:', error);
-            }
-            
-            try {
-                console.log('🔄 重新初始化用户充电行为分析...');
-                await initUserBehaviorAnalysis();
-                console.log('✅ 用户充电行为分析重新初始化完成');
-            } catch (error) {
-                console.error('❌ 用户充电行为分析重新初始化失败:', error);
-            }
-            
-            try {
-                console.log('🔄 重新初始化经营效率分析...');
-                await initEfficiencyAnalysis();
-                console.log('✅ 经营效率分析重新初始化完成');
-            } catch (error) {
-                console.error('❌ 经营效率分析重新初始化失败:', error);
-            }
-            
-            console.log('✅ 数据模块重新初始化完成');
-        };
 
         // 数据可视化分析相关变量
         let visualizationData = {
@@ -8005,22 +7499,6 @@ function updateUnchargedTable() {
         // 加载可视化数据
         async function loadVisualizationData() {
             try {
-                // 检查XLSX库是否已加载
-                if (typeof XLSX === 'undefined') {
-                    console.warn('⚠️ XLSX库未加载，等待加载...');
-                    // 等待XLSX库加载
-                    let retryCount = 0;
-                    while (typeof XLSX === 'undefined' && retryCount < 30) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        retryCount++;
-                    }
-                    
-                    if (typeof XLSX === 'undefined') {
-                        throw new Error('XLSX库加载超时，请刷新页面重试');
-                    }
-                }
-                
-                console.log('🔄 开始加载可视化数据...');
                 const response = await fetch('https://www.csfhcdz.cn/data/hzsj.xlsx');
                 if (!response.ok) {
                     throw new Error('数据加载失败');
@@ -8727,22 +8205,6 @@ function updateUnchargedTable() {
         // 加载行为数据
         async function loadBehaviorData() {
             try {
-                // 检查XLSX库是否已加载
-                if (typeof XLSX === 'undefined') {
-                    console.warn('⚠️ XLSX库未加载，等待加载...');
-                    // 等待XLSX库加载
-                    let retryCount = 0;
-                    while (typeof XLSX === 'undefined' && retryCount < 30) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        retryCount++;
-                    }
-                    
-                    if (typeof XLSX === 'undefined') {
-                        throw new Error('XLSX库加载超时，请刷新页面重试');
-                    }
-                }
-                
-                console.log('🔄 开始加载用户行为数据...');
                 const response = await fetch('https://www.csfhcdz.cn/data/yhxw.xlsx?t=' + new Date().getTime());
                 const data = await response.arrayBuffer();
                 const workbook = XLSX.read(data, { type: 'array' });
@@ -9495,22 +8957,6 @@ function updateUnchargedTable() {
         // 加载经营效率数据
         async function loadEfficiencyData() {
             try {
-                // 检查XLSX库是否已加载
-                if (typeof XLSX === 'undefined') {
-                    console.warn('⚠️ XLSX库未加载，等待加载...');
-                    // 等待XLSX库加载
-                    let retryCount = 0;
-                    while (typeof XLSX === 'undefined' && retryCount < 30) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        retryCount++;
-                    }
-                    
-                    if (typeof XLSX === 'undefined') {
-                        throw new Error('XLSX库加载超时，请刷新页面重试');
-                    }
-                }
-                
-                console.log('🔄 开始加载经营效率数据...');
                 const response = await fetch('https://www.csfhcdz.cn/data/yyxl.xlsx?t=' + new Date().getTime());
                 const data = await response.arrayBuffer();
                 const workbook = XLSX.read(data, { type: 'array' });
@@ -10106,7 +9552,7 @@ function updateUnchargedTable() {
             }
         }
         
-        // 优化的星空背景动画
+        // 星空背景动画
         function initStarfield() {
             const canvas = document.getElementById('starfield');
             if (!canvas) return;
@@ -10114,29 +9560,6 @@ function updateUnchargedTable() {
             const ctx = canvas.getContext('2d');
             let stars = [];
             let mouse = {x: null, y: null, radius: 50};
-            let animationId = null;
-            let isVisible = true;
-            let lastFrameTime = 0;
-            const targetFPS = 30; // 限制帧率到30FPS
-            const frameInterval = 1000 / targetFPS;
-
-            // 性能检测
-            function getPerformanceLevel() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const start = performance.now();
-                
-                // 简单性能测试
-                for (let i = 0; i < 1000; i++) {
-                    ctx.fillRect(i % 10, i % 10, 1, 1);
-                }
-                
-                const duration = performance.now() - start;
-                return duration < 10 ? 'high' : duration < 50 ? 'medium' : 'low';
-            }
-
-            const performanceLevel = getPerformanceLevel();
-            console.log('设备性能等级:', performanceLevel);
 
             function resize() {
                 canvas.width = window.innerWidth;
@@ -10150,20 +9573,21 @@ function updateUnchargedTable() {
                 constructor() {
                     this.x = Math.random() * canvas.width;
                     this.y = Math.random() * canvas.height;
-                    this.baseSize = Math.random() * 1.2 + 0.2; // 减小星星大小
+                    this.baseSize = Math.random() * 1.5 + 0.3;
                     this.size = this.baseSize;
-                    this.vx = (Math.random() - 0.5) * 0.3; // 减慢移动速度
-                    this.vy = (Math.random() - 0.5) * 0.3;
-                    this.flickerSpeed = Math.random() * 0.03 + 0.01; // 减慢闪烁速度
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.flickerSpeed = Math.random() * 0.05 + 0.01;
                     this.angle = Math.random() * Math.PI * 2;
-                    // 简化颜色
-                    this.baseColor = 'rgba(200,220,255,';
+                    // 随机冷暖色调（微蓝/微黄）
+                    const colors = ['rgba(200,220,255,', 'rgba(255,245,200,'];
+                    this.baseColor = colors[Math.floor(Math.random() * colors.length)];
                 }
 
                 draw() {
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.fillStyle = this.baseColor + (0.6 + 0.2 * Math.sin(this.angle)) + ')';
+                    ctx.fillStyle = this.baseColor + (0.7 + 0.3 * Math.sin(this.angle)) + ')';
                     ctx.fill();
                 }
 
@@ -10173,20 +9597,17 @@ function updateUnchargedTable() {
                     if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
                     if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
 
-                    // 只在鼠标移动时计算交互
-                    if (mouse.x !== null && mouse.y !== null) {
-                        const dx = mouse.x - this.x;
-                        const dy = mouse.y - this.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < mouse.radius) {
-                            this.x -= dx / 20; // 减慢交互响应
-                            this.y -= dy / 20;
-                        }
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < mouse.radius) {
+                        this.x -= dx / 15;
+                        this.y -= dy / 15;
                     }
 
                     // 星星闪烁效果
                     this.angle += this.flickerSpeed;
-                    this.size = this.baseSize + Math.sin(this.angle) * 0.2; // 减小闪烁幅度
+                    this.size = this.baseSize + Math.sin(this.angle) * 0.3;
 
                     this.draw();
                 }
@@ -10194,44 +9615,24 @@ function updateUnchargedTable() {
 
             function init() {
                 stars = [];
-                // 根据性能等级调整星星数量
-                let starCount;
-                switch (performanceLevel) {
-                    case 'high':
-                        starCount = window.innerWidth < 600 ? 80 : 150;
-                        break;
-                    case 'medium':
-                        starCount = window.innerWidth < 600 ? 40 : 80;
-                        break;
-                    case 'low':
-                        starCount = window.innerWidth < 600 ? 20 : 40;
-                        break;
-                    default:
-                        starCount = window.innerWidth < 600 ? 30 : 60;
+                var starCount = 200;
+                if (window.innerWidth < 600) {
+                    starCount = 50;
                 }
-                
-                console.log('星星数量:', starCount);
-                
                 for (let i = 0; i < starCount; i++) {
                     stars.push(new Star());
                 }
             }
 
-            // 优化的连接线绘制
             function connect() {
-                if (performanceLevel === 'low') return; // 低性能设备跳过连接线
-                
-                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-                ctx.lineWidth = 0.3;
-                
-                // 减少连接线计算量
-                const maxConnections = Math.min(stars.length, 50);
-                for (let a = 0; a < maxConnections; a++) {
-                    for (let b = a + 1; b < Math.min(a + 5, maxConnections); b++) { // 限制每个星星的连接数
+                for (let a = 0; a < stars.length; a++) {
+                    for (let b = a + 1; b < stars.length; b++) {
                         const dx = stars[a].x - stars[b].x;
                         const dy = stars[a].y - stars[b].y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 80) { // 减小连接距离
+                        if (dist < 100) {
+                            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                            ctx.lineWidth = 0.5;
                             ctx.beginPath();
                             ctx.moveTo(stars[a].x, stars[a].y);
                             ctx.lineTo(stars[b].x, stars[b].y);
@@ -10241,82 +9642,30 @@ function updateUnchargedTable() {
                 }
             }
 
-            function animate(currentTime) {
-                if (!isVisible) return;
-                
-                // 帧率控制
-                if (currentTime - lastFrameTime < frameInterval) {
-                    animationId = requestAnimationFrame(animate);
-                    return;
-                }
-                lastFrameTime = currentTime;
-                
+            function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // 分批更新星星以减少单帧计算量
-                const batchSize = Math.ceil(stars.length / 3);
-                const startIndex = Math.floor((currentTime / 100) % 3) * batchSize;
-                const endIndex = Math.min(startIndex + batchSize, stars.length);
-                
-                for (let i = startIndex; i < endIndex; i++) {
-                    stars[i].update();
+                for (let star of stars) {
+                    star.update();
                 }
-                
-                // 只在中等以上性能设备上绘制连接线
-                if (performanceLevel !== 'low') {
-                    connect();
-                }
-                
-                animationId = requestAnimationFrame(animate);
+                connect();
+                requestAnimationFrame(animate);
             }
 
-            // 页面可见性检测
-            document.addEventListener('visibilitychange', () => {
-                isVisible = !document.hidden;
-                if (isVisible && !animationId) {
-                    animationId = requestAnimationFrame(animate);
-                } else if (!isVisible && animationId) {
-                    cancelAnimationFrame(animationId);
-                    animationId = null;
-                }
-            });
-
-            // 鼠标移动事件（节流）
-            let mouseMoveTimeout;
             window.addEventListener('mousemove', (e) => {
-                if (mouseMoveTimeout) return;
-                mouseMoveTimeout = setTimeout(() => {
-                    mouse.x = e.x;
-                    mouse.y = e.y;
-                    mouseMoveTimeout = null;
-                }, 16); // 约60FPS的鼠标更新频率
+                mouse.x = e.x;
+                mouse.y = e.y;
             });
-            
-            // 移动端触控支持（节流）
+            // 移动端触控支持
             window.addEventListener('touchmove', (e) => {
-                if (mouseMoveTimeout) return;
-                mouseMoveTimeout = setTimeout(() => {
-                    const touch = e.touches[0];
-                    mouse.x = touch.clientX;
-                    mouse.y = touch.clientY;
-                    mouseMoveTimeout = null;
-                }, 16);
+                const touch = e.touches[0];
+                mouse.x = touch.clientX;
+                mouse.y = touch.clientY;
             });
-            
             init();
-            animationId = requestAnimationFrame(animate);
-            
-            // 返回停止动画的函数
-            return () => {
-                if (animationId) {
-                    cancelAnimationFrame(animationId);
-                    animationId = null;
-                }
-            };
+            animate();
         }
     </script>
     
     <!-- 版权信息已移除 -->
 </body>
-</html>
 </html>
