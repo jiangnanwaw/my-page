@@ -4,83 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>长沙飞狐智能数据平台</title>
-    <script>
-        // 动态加载脚本，按顺序尝试多个镜像源
-        (function() {
-            function loadScriptSequential(urls, isReady, onDone) {
-                var index = 0;
-                function tryNext() {
-                    if (isReady && isReady()) {
-                        onDone && onDone();
-                        return;
-                    }
-                    if (index >= urls.length) {
-                        console.error('所有脚本源均加载失败:', urls);
-                        onDone && onDone(new Error('All sources failed'));
-                        return;
-                    }
-                    var url = urls[index++];
-                    var s = document.createElement('script');
-                    s.src = url;
-                    s.defer = true;
-                    s.onload = function() {
-                        if (!isReady || isReady()) {
-                            onDone && onDone();
-                        } else {
-                            // 有些 UMD 需要一点时间挂载全局
-                            setTimeout(function(){
-                                if (isReady && isReady()) onDone && onDone();
-                                else tryNext();
-                            }, 50);
-                        }
-                    };
-                    s.onerror = function() {
-                        console.warn('加载失败，尝试下一个源:', url);
-                        tryNext();
-                    };
-                    document.head.appendChild(s);
-                }
-                tryNext();
-            }
-
-            // Chart.js 多源加载（优先国内镜像）
-            loadScriptSequential([
-                'https://cdn.staticfile.org/Chart.js/4.4.1/chart.umd.min.js',
-                'https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js',
-                'https://cdn.jsdelivr.net/npm/chart.js'
-            ], function(){ return !!window.Chart; });
-
-            // XLSX 仍用原 CDN，若需要也可切换镜像
-            loadScriptSequential([
-                'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-                'https://cdn.staticfile.org/xlsx/0.18.5/xlsx.full.min.js',
-                'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
-            ], function(){ return !!window.XLSX; });
-
-            // Font Awesome 样式保留原链接（网络不通时不影响 JS 执行）
-            var fa = document.createElement('link');
-            fa.rel = 'stylesheet';
-            fa.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
-            fa.onerror = function(){
-                // 备用样式源
-                var fa2 = document.createElement('link');
-                fa2.rel = 'stylesheet';
-                fa2.href = 'https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css';
-                document.head.appendChild(fa2);
-            };
-            document.head.appendChild(fa);
-
-            // LeanCloud SDK 多源加载，供后续 AV.init 使用
-            window.__ensureAVReady = function(cb){
-                if (window.AV) { cb && cb(); return; }
-                loadScriptSequential([
-                    'https://cdn.staticfile.org/leancloud-storage/4.14.0/av-min.js',
-                    'https://unpkg.com/leancloud-storage@4.14.0/dist/av-min.js',
-                    'https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js'
-                ], function(){ return !!window.AV; }, function(){ cb && cb(); });
-            };
-        })();
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 LeanCloud SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js"></script>
     <style>
         * {
             margin: 0;
@@ -3362,37 +3290,16 @@
         // 删除旧的LEANCLOUD_APP_URL配置
         
         // 初始化 LeanCloud
-        if (window.__ensureAVReady) {
-            __ensureAVReady(function(){
-                try {
-                    AV.init({
-                        appId: APP_ID,
-                        appKey: APP_KEY,
-                        serverURL: SERVER_URL
-                    });
-                } catch (e) {
-                    console.error('AV.init 失败:', e);
-                }
-            });
-        } else {
-            // 兜底：如果前面 loader 未注入，直接尝试初始化（可能失败）
-            try {
-                AV && AV.init({ appId: APP_ID, appKey: APP_KEY, serverURL: SERVER_URL });
-            } catch (e) {
-                console.error('LeanCloud SDK 未加载，稍后再试:', e);
-                window.addEventListener('load', function(){
-                    if (window.__ensureAVReady) {
-                        __ensureAVReady(function(){
-                            try {
-                                AV.init({ appId: APP_ID, appKey: APP_KEY, serverURL: SERVER_URL });
-                            } catch (e2) { console.error('AV.init 重试失败:', e2); }
-                        });
-                    }
-                });
-            }
-        }
+        AV.init({
+            appId: APP_ID,
+            appKey: APP_KEY,
+            serverURL: SERVER_URL
+        });
         
-        console.log('LeanCloud 初始化流程触发');
+        console.log('LeanCloud 初始化完成:', {
+            appId: APP_ID,
+            serverURL: SERVER_URL
+        });
         
         // 登录记录相关函数
         // 记录用户登录
