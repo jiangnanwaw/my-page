@@ -6846,12 +6846,14 @@ function loadUnchargedData() {
                 if (row && row.length >= 3 && (row[0] || row[1] || row[2])) {
                     // 确保日期格式正确
                     const lastEndTime = formatDateString(row[2]);
+                    // 从Excel第四列加载截止一直未充电时间数据
+                    const stillUnchargedTime = row[3] ? formatDateString(row[3]) : '';
                     
                     unchargedData.push({
                         stationName: row[0] || '',
                         terminalName: row[1] || '',
                         lastEndTime: lastEndTime,
-                        stillUnchargedTime: '', // D列将动态计算
+                        stillUnchargedTime: stillUnchargedTime, // 从Excel D列加载数据
                         duration: 0 // E列将动态计算
                     });
                 }
@@ -6968,9 +6970,9 @@ function updateUnchargedDynamicData() {
     const currentTime = getCurrentTimeString();
     
     unchargedData.forEach(item => {
-        if (item.lastEndTime) {
-            item.stillUnchargedTime = currentTime;
-            item.duration = calculateTimeDifference(item.lastEndTime, currentTime);
+        if (item.lastEndTime && item.stillUnchargedTime) {
+            // item.stillUnchargedTime = currentTime; // 已删除动态时间赋值
+            item.duration = calculateTimeDifference(item.lastEndTime, item.stillUnchargedTime);
         }
     });
     
@@ -6990,11 +6992,11 @@ function startUnchargedDynamicUpdate() {
     // 立即更新一次
     updateUnchargedDynamicData();
     
-    // 每秒更新一次
-    unchargedUpdateInterval = setInterval(() => {
-        updateUnchargedDynamicData();
-        updateUnchargedTable();
-    }, 1000);
+    // 每秒更新一次 - 已禁用：动态时间更新已删除
+    // unchargedUpdateInterval = setInterval(() => {
+    //     updateUnchargedDynamicData();
+    //     updateUnchargedTable();
+    // }, 1000);
 }
 
 // 停止未充电数据的动态更新
