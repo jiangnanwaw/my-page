@@ -34,7 +34,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            background: #ffffff;
             color: #333;
             min-height: 100vh;
             overflow-x: hidden;
@@ -43,17 +43,15 @@
             flex-direction: column;
         }
         
-        /* 星空背景样式 */
+        /* 星空背景样式 - 只在登录页面显示 */
         #nebula {
-            position: absolute;
-            width: 100%;
-            height: 100%;
+            position: fixed;
             top: 0;
             left: 0;
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.05), transparent 40%),
-            radial-gradient(circle at 70% 60%, rgba(200, 200, 255, 0.06), transparent 40%),
-            radial-gradient(circle at 40% 80%, rgba(255, 200, 200, 0.05), transparent 40%);
-            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(ellipse at center, #1B2735 0%, #090A0F 100%);
         }
         
         #starfield {
@@ -63,6 +61,11 @@
             width: 100%;
             height: 100%;
             z-index: -1;
+        }
+        
+        /* 确保主页面有白色背景 */
+        #main-container {
+            background: #ffffff;
         }
         
         /* 添加头部标题样式 */
@@ -76,7 +79,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
+            gap: 5px;
         }
         
         .header-logo {
@@ -139,7 +142,7 @@
         }
         
         .form-container {
-            padding: 25px;
+            padding: 8px;
             transition: transform 0.6s ease-in-out;
         }
         
@@ -160,7 +163,7 @@
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 7px;
             position: relative;
         }
         
@@ -254,7 +257,7 @@
         .message {
             padding: 12px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 7px;
             text-align: center;
             display: none;
         }
@@ -349,13 +352,13 @@
         header .logo {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 5px;
         }
         
         .logo {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 5px;
         }
         
         .logo img {
@@ -428,7 +431,7 @@
             color: rgba(255, 255, 255, 0.8);
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 5px;
             transition: all 0.3s;
             cursor: pointer;
             position: relative;
@@ -508,14 +511,14 @@
         .main-content {
             flex: 1;
             padding: 20px;
-            background: #f0f5ff;
+            background: transparent;
             overflow-y: auto;
         }
         
         .section-title {
             font-size: 22px;
-            margin-top: 20px;
-            margin-bottom: 15px;
+            margin-top: 7px;
+            margin-bottom: 5px;
             color: var(--dark);
             display: flex;
             align-items: center;
@@ -535,11 +538,12 @@
         
         /* 数据查询区域 - 修改部分 */
         .query-section {
-            background: var(--card-bg);
+            background: transparent;
             border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 40px;
-            box-shadow: var(--shadow);
+            padding: 8px;
+            margin-bottom: 7px;
+            box-shadow: none;
+            border: none;
             width: 100%;
             height: auto;
         }
@@ -692,13 +696,13 @@
             font-size: 13px; /* 减小字体 */
             padding: 6px; /* 减小内边距 */
             border-radius: 8px;
-            background-color: rgba(0, 0, 0, 0.03);
-            border-left: 4px solid var(--accent);
+            background-color: transparent;
+            border-left: none;
         }
         
         .query-info.error {
-            background-color: rgba(220, 53, 69, 0.1);
-            border-left-color: var(--danger);
+            background-color: transparent;
+            border-left-color: none;
             color: var(--danger);
         }
         
@@ -707,8 +711,8 @@
         }
         
         .query-info.success {
-            background-color: rgba(40, 167, 69, 0.1);
-            border-left-color: var(--success);
+            background-color: transparent;
+            border-left-color: none;
             color: var(--success);
         }
         
@@ -718,18 +722,19 @@
         
         /* Excel 表格区域 */
         .excel-section {
-            background: var(--card-bg);
+            background: transparent;
             border-radius: 12px;
-            padding: 25px;
-            box-shadow: var(--shadow);
-            margin-bottom: 40px;
+            padding: 8px;
+            box-shadow: none;
+            border: none;
+            margin-bottom: 7px;
         }
         
         .excel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 7px;
         }
         
         .table-container {
@@ -787,6 +792,44 @@
             text-align: center !important;
         }
         
+        /* 综合数据报表表格样式 */
+        #comprehensive-table-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: auto;
+            max-height: 600px;
+            position: relative;
+        }
+        
+        #comprehensive-table-container table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+            table-layout: auto;
+        }
+        
+        #comprehensive-table-container th, #comprehensive-table-container td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+            min-width: 0;
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.5;
+            vertical-align: middle;
+            max-width: 300px;
+        }
+        
+        #comprehensive-table-container th {
+            background-color: var(--primary);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+        
         /* 单位信息左对齐 */
         .unit-info-cell {
             text-align: left !important;
@@ -806,11 +849,12 @@
         
         /* 站点数据统计板块样式 */
         .site-stats-section {
-            margin-bottom: 30px;
-            background: #fff;
+            margin-bottom: 7px;
+            background: transparent;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            padding: 25px;
+            box-shadow: none;
+            border: none;
+            padding: 8px;
         }
         
         .site-stats-container {
@@ -823,7 +867,7 @@
             align-items: center;
             margin-bottom: 25px;
             padding: 15px;
-            background: #f8f9fa;
+            background: transparent;
             border-radius: 8px;
         }
         
@@ -857,7 +901,7 @@
         .pagination-controls {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 5px;
         }
         
         .page-btn {
@@ -935,10 +979,10 @@
             min-width: 80px;
             flex-shrink: 0;
             text-align: center;
-            background: #e3f2fd;
+            background: transparent;
             padding: 2px 6px;
             border-radius: 4px;
-            border: 1px solid #bbdefb;
+            border: none;
         }
         
         .site-name-spacer {
@@ -1008,7 +1052,7 @@
         @media (max-width: 768px) {
             .stats-controls {
                 flex-direction: column;
-                gap: 15px;
+                gap: 5px;
             }
             
             .stats-data-container {
@@ -1058,18 +1102,19 @@
         
         /* 综合数据报表样式 */
         .comprehensive-section {
-            background: var(--card-bg);
+            background: transparent;
             border-radius: 12px;
-            padding: 25px;
-            box-shadow: var(--shadow);
-            margin-bottom: 40px;
+            padding: 8px;
+            box-shadow: none;
+            border: none;
+            margin-bottom: 7px;
         }
         
         .comprehensive-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 7px;
         }
         
         /* 页脚 */
@@ -1118,6 +1163,7 @@
                 display: block;
             }
             
+            
             .main-content {
                 order: 1;
                 width: 100%;
@@ -1149,12 +1195,12 @@
             
             .query-form {
                 flex-direction: column;
-                gap: 15px;
+                gap: 5px;
             }
             
             #data-query-container {
                 flex-direction: column;
-                gap: 15px;
+                gap: 5px;
             }
             
             #data-query-container .form-group {
@@ -1603,7 +1649,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            padding: 25px;
+            padding: 8px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             z-index: 3000;
@@ -1614,7 +1660,7 @@
         }
         
         .feature-popup h3 {
-            margin-bottom: 20px;
+            margin-bottom: 7px;
             color: var(--dark);
             display: flex;
             align-items: center;
@@ -1634,7 +1680,7 @@
         }
         
         .feature-popup .popup-content {
-            margin-bottom: 20px;
+            margin-bottom: 7px;
             font-size: 18px;
             color: #555;
         }
@@ -1727,10 +1773,11 @@
         }
 
         .metric-card {
-            background: var(--card-bg);
+            background: transparent;
             border-radius: 12px;
             padding: 12px;
-            box-shadow: var(--shadow);
+            box-shadow: none;
+            border: none;
             flex: 1;
             min-width: 300px;
         }
@@ -1778,7 +1825,7 @@
         .metric-item {
             padding: 8px;
             border-radius: 8px;
-            background: rgba(26, 115, 232, 0.05);
+            background: transparent;
             text-align: center;
             transition: all 0.3s;
         }
@@ -1820,11 +1867,12 @@
         }
 
         .chart-container {
-            background: var(--card-bg);
+            background: transparent;
             border-radius: 12px;
             padding: 20px;
-            box-shadow: var(--shadow);
-            margin-bottom: 25px;
+            box-shadow: none;
+            border: none;
+            margin-bottom: 7px;
         }
 
         .chart-title {
@@ -1867,8 +1915,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            gap: 15px;
+            margin-bottom: 7px;
+            gap: 5px;
         }
 
         .control-group {
@@ -1892,7 +1940,7 @@
         }
 
         .table-wrapper {
-            margin-bottom: 20px;
+            margin-bottom: 7px;
             overflow-x: auto;
         }
 
@@ -2062,7 +2110,7 @@
         .overview-section {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 25px;
+            padding: 8px;
             margin-bottom: 30px;
             box-shadow: var(--shadow);
         }
@@ -2070,7 +2118,7 @@
         .overview-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
+            gap: 5px;
         }
         
         .overview-card {
@@ -2282,7 +2330,7 @@
         <div class="layout">
             <!-- 左侧菜单 -->
             <div class="sidebar">
-                <div class="menu-item active">
+                <div class="menu-item active" id="menu-home">
                     <i class="fas fa-home"></i>
                     <span>平台首页</span>
                 </div>
@@ -2396,6 +2444,7 @@
                     </a>
                 </div>
 
+
                 <!-- 其他菜单项 -->
                 
                 <div class="menu-item" id="finance-management">
@@ -2414,7 +2463,7 @@
             </div>
             
             <!-- 主内容区 -->
-            <div class="main-content">
+            <div class="main-content" style="position: relative;">
             
             <!-- 整体情况概要 -->
             <div class="overview-section">
@@ -2571,15 +2620,15 @@
                 </select>
             </div>
         </div>
-        <div class="uncharged-table-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
-            <table id="uncharged-table" class="data-table" style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0;">
+        <div class="uncharged-table-container" style="max-height: 400px; overflow-y: auto; border: none; border-radius: 8px;">
+            <table id="uncharged-table" class="data-table" style="width: 100%; border-collapse: collapse; border: none;">
                 <thead>
                     <tr>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">电站名称</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">终端名称</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">上一次充电结束时间</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">截止一直未充电时间</th>
-                        <th style="text-align: center; padding: 12px 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0;">未充电时长(小时)</th>
+                        <th style="text-align: center; padding: 12px 8px; background-color: transparent; border: none;">电站名称</th>
+                        <th style="text-align: center; padding: 12px 8px; background-color: transparent; border: none;">终端名称</th>
+                        <th style="text-align: center; padding: 12px 8px; background-color: transparent; border: none;">上一次充电结束时间</th>
+                        <th style="text-align: center; padding: 12px 8px; background-color: transparent; border: none;">截止一直未充电时间</th>
+                        <th style="text-align: center; padding: 12px 8px; background-color: transparent; border: none;">未充电时长(小时)</th>
                     </tr>
                 </thead>
                 <tbody id="uncharged-table-body">
@@ -2608,14 +2657,14 @@
         <!-- 翻页控制 -->
         <div class="visualization-controls" style="margin-bottom: 20px; text-align: center;">
             <button id="prev-visualization-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px;">&lt;</button>
-            <span id="visualization-date-display" style="padding: 8px 16px; background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 4px; font-size: 14px; min-width: 120px; text-align: center; display: inline-block;">加载中...</span>
+            <span id="visualization-date-display" style="padding: 8px 16px; background: transparent; color: #333; border: none; border-radius: 4px; font-size: 14px; min-width: 120px; text-align: center; display: inline-block;">加载中...</span>
             <button id="next-visualization-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;">&gt;</button>
         </div>
         
         <!-- 四个可视化图表 -->
         <div class="visualization-charts" style="display: flex; gap: 15px; flex-wrap: wrap;">
             <!-- 柱状图 - 站点充电数据 -->
-            <div class="chart-item" style="flex: 1; min-width: 300px; max-width: 400px; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="chart-item" style="flex: 1; min-width: 300px; max-width: 400px; background: transparent; border-radius: 8px; padding: 15px; box-shadow: none;">
                 <div style="font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">站点充电数据分析</div>
                 <div style="position: relative; height: 300px; width: 100%;">
                     <canvas id="station-chart" style="max-width: 100%; max-height: 100%;"></canvas>
@@ -2623,7 +2672,7 @@
             </div>
             
             <!-- 折线图 - 电站终端数据 -->
-            <div class="chart-item" style="flex: 1; min-width: 300px; max-width: 400px; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="chart-item" style="flex: 1; min-width: 300px; max-width: 400px; background: transparent; border-radius: 8px; padding: 15px; box-shadow: none;">
                 <div style="font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">电站终端数据分析</div>
                 <div style="position: relative; height: 300px; width: 100%;">
                     <canvas id="terminal-chart" style="max-width: 100%; max-height: 100%;"></canvas>
@@ -2631,7 +2680,7 @@
             </div>
             
             <!-- 饼图 - 车辆分类数据 -->
-            <div class="chart-item" style="flex: 1; min-width: 300px; max-width: 400px; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="chart-item" style="flex: 1; min-width: 300px; max-width: 400px; background: transparent; border-radius: 8px; padding: 15px; box-shadow: none;">
                 <div style="font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">车辆分类数据分析</div>
                 <div style="position: relative; height: 300px; width: 100%;">
                     <canvas id="vehicle-chart" style="max-width: 100%; max-height: 100%;"></canvas>
@@ -2639,7 +2688,7 @@
             </div>
             
             <!-- 散点图 - 用户分类数据 -->
-            <div class="chart-item" style="flex: 1; min-width: 300px; max-width: 400px; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="chart-item" style="flex: 1; min-width: 300px; max-width: 400px; background: transparent; border-radius: 8px; padding: 15px; box-shadow: none;">
                 <div style="font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">用户分类数据分析</div>
                 <div style="position: relative; height: 300px; width: 100%;">
                     <canvas id="user-chart" style="max-width: 100%; max-height: 100%;"></canvas>
@@ -2667,7 +2716,7 @@
         <div class="chart-wrapper" style="position: relative;">
             <div style="position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; align-items: center; gap: 10px;">
                 <button id="prev-data-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">&lt;</button>
-                <span id="current-data-display" style="padding: 8px 12px; background: #f8f9fa; color: #333; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px; min-width: 80px; text-align: center;">加载中...</span>
+                <span id="current-data-display" style="padding: 8px 12px; background: transparent; color: #333; border: none; border-radius: 4px; font-size: 12px; min-width: 80px; text-align: center;">加载中...</span>
                 <button id="next-data-btn" style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">&gt;</button>
             </div>
             <canvas id="behavior-chart"></canvas>
@@ -2678,15 +2727,15 @@
             <!-- 表格部分 - 缩小到一半 -->
             <div class="electricity-analysis-table" style="flex: 1;">
                 <div style="margin-bottom: 10px; font-weight: bold; color: #333;">尖峰平谷充电记录</div>
-                <table id="electricity-table" style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                <table id="electricity-table" style="width: 100%; border-collapse: collapse; border: none;">
                     <thead>
                         <tr>
-                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">站点</th>
-                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">尖</th>
-                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">峰</th>
-                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">平</th>
-                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">谷</th>
-                            <th style="text-align: center; padding: 12px 8px; background-color: #007bff; color: white; border: 1px solid #e0e0e0;">小计</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: transparent; color: #333; border: none;">站点</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: transparent; color: #333; border: none;">尖</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: transparent; color: #333; border: none;">峰</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: transparent; color: #333; border: none;">平</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: transparent; color: #333; border: none;">谷</th>
+                            <th style="text-align: center; padding: 12px 8px; background-color: transparent; color: #333; border: none;">小计</th>
                         </tr>
                     </thead>
                     <tbody id="electricity-table-body">
@@ -4794,6 +4843,9 @@
             document.getElementById('main-container').style.display = 'block';
             document.getElementById('login-header-title').style.display = 'none';
             document.getElementById('login-footer-copyright').style.display = 'none';
+            // 隐藏星空背景
+            document.getElementById('nebula').style.display = 'none';
+            document.getElementById('starfield').style.display = 'none';
             document.getElementById('user-display').textContent = username;
             initMainSystem();
             
@@ -4884,6 +4936,9 @@
             document.getElementById('login-container').style.display = 'flex';
             document.getElementById('login-header-title').style.display = 'block';
             document.getElementById('login-footer-copyright').style.display = 'block';
+            // 显示星空背景
+            document.getElementById('nebula').style.display = 'block';
+            document.getElementById('starfield').style.display = 'block';
             
             // 显示会话超时消息
             showMessage('会话超时，请重新登录', 'error');
@@ -4934,6 +4989,9 @@
                 // 如果没有有效登录状态，显示登录界面
                 document.getElementById('login-container').style.display = 'flex';
                 document.getElementById('main-container').style.display = 'none';
+                // 显示星空背景
+                document.getElementById('nebula').style.display = 'block';
+                document.getElementById('starfield').style.display = 'block';
             }
         });
         
@@ -9666,6 +9724,7 @@ function updateUnchargedTable() {
             init();
             animate();
         }
+
     </script>
     
     <!-- 版权信息已移除 -->
