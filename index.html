@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -494,6 +494,7 @@
         .submenu .submenu .submenu-item {
             padding-left: 80px;
         }
+        
         .menu-toggle {
             position: absolute;
             right: 15px;
@@ -566,6 +567,7 @@
     margin-bottom: 20px;
     position: relative;
 }
+        
         .form-group label {
             font-weight: 500;
             color: #555;
@@ -987,6 +989,7 @@
             min-width: 80px;
             flex-shrink: 0;
         }
+        
         .data-label {
             font-size: 14px;
             color: #495057;
@@ -994,6 +997,7 @@
             min-width: 120px;
             flex-shrink: 0;
         }
+        
         .data-content {
             display: flex;
             align-items: center;
@@ -1139,6 +1143,7 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+        
         @media (max-width: 900px) {
             .layout {
                 margin-left: 0;
@@ -1158,11 +1163,6 @@
                 display: block;
             }
             
-            /* 移动端空白页调整 */
-            #page-cd-data, #page-zh-data {
-                left: 0 !important;
-                top: 60px !important;
-            }
             
             .main-content {
                 order: 1;
@@ -1295,6 +1295,7 @@
                 font-size: 12px;
             }
         }
+        
         @media (max-width: 480px) {
             .login-container {
                 width: 95%;
@@ -1365,6 +1366,7 @@
                 height: 250px;
             }
         }
+        
         /* 移动端日期选择器优化 */
         @media (max-width: 768px) {
             .custom-picker {
@@ -1484,6 +1486,7 @@
 #smsCode {
     padding: 12px 15px 12px 45px !important;
 }
+        
         /* 图表加载指示器 */
         .chart-loading {
             position: absolute;
@@ -1761,6 +1764,8 @@
 .metrics-section > .metrics-row:nth-child(4) .metric-value {
     color: #ff9800 !important;
 }
+
+
         .metrics-row {
             display: flex;
             gap: 20px;
@@ -2054,6 +2059,7 @@
     background-color: #f1f7ff;
     cursor: pointer;
 }
+
  /* 未充电时长统计表格表头样式 */
         #uncharged-table th {
             background-color: #1a73e8 !important; /* 深蓝色背景 */
@@ -2438,22 +2444,6 @@
                     </a>
                 </div>
 
-                <!-- 数据查询（带子菜单） -->
-                <div class="menu-item">
-                    <i class="fas fa-search"></i>
-                    <span>数据查询</span>
-                    <i class="fas fa-chevron-right menu-toggle"></i>
-                </div>
-                <div class="submenu">
-                    <a href="#" class="submenu-item" id="menu-cd-data">
-                        <i class="fas fa-bolt"></i>
-                        <span>充电数据</span>
-                    </a>
-                    <a href="#" class="submenu-item" id="menu-zh-data">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>综合数据</span>
-                    </a>
-                </div>
 
                 <!-- 其他菜单项 -->
                 
@@ -2474,78 +2464,6 @@
             
             <!-- 主内容区 -->
             <div class="main-content" style="position: relative;">
-                <!-- 覆盖式空白页面：充电数据（正式查询页） -->
-                <div id="page-cd-data" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
-                    <!-- 面包屑导航 -->
-                    <div style="font-size:14px; color:#666; margin-bottom:12px;">
-                        <a href="#" onclick="navigateHome()" style="color:#007bff; text-decoration:none;">首页</a>
-                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
-                        <span>数据分析</span>
-                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
-                        <strong style="color:#333;">充电数据</strong>
-                    </div>
-
-                        
-                    <!-- 查询条件栏 -->
-                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;">
-                        <!-- 电站选择（1.jpg风格简化） -->
-                        <div id="station-box" style="width:220px; border:1px solid #e5e5e5; border-radius:8px; padding:8px; position:relative; height:36px; display:flex; align-items:center; justify-content:space-between;">
-                            <div style="font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px;" id="station-display">电站</div>
-                            <button id="station-menu-btn" onclick="toggleStationMenu()" title="选择电站" style="background:transparent; border:none; cursor:pointer; font-size:18px; line-height:1; color:#666;">⋯</button>
-                            <div id="station-menu" style="position:absolute; top:44px; right:10px; background:#fff; border:1px solid #ddd; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,0.08); padding:10px; width:200px; z-index:1100; display:none;">
-                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                                    <input type="checkbox" id="station-all" checked onchange="onToggleAllStations()"> 全选
-                                </label>
-                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                                    <input type="checkbox" class="station-group" data-group="east" checked> 长沙飞狐东区站
-                                </label>
-                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                                    <input type="checkbox" class="station-group" data-group="west" checked> 长沙飞狐西区站
-                                </label>
-                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                                    <input type="checkbox" class="station-group" data-group="south" checked> 长沙飞狐南区站
-                                </label>
-                                <label style="display:flex; align-items:center; gap:8px;">
-                                    <input type="checkbox" class="station-group" data-group="gaoling" checked> 长沙飞狐高岭充电站
-                                </label>
-                                <div style="text-align:right; margin-top:8px;">
-                                    <button onclick="applyStationSelection()" style="background:#007bff; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">确定</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 时间字段选择 -->
-                        <select id="time-field-select" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px;">
-                            <option value="充电结束时间" selected>充电结束时间</option>
-                            <option value="充电开始时间">充电开始时间</option>
-                        </select>
-
-                        <!-- 开始时间 -->
-                        <input id="start-datetime" type="text" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px;" />
-
-                        <!-- 结束时间 -->
-                        <input id="end-datetime" type="text" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px;" />
-
-                        <!-- 操作按钮 -->
-                        <div style="display:flex; gap:10px; align-items:flex-end;">
-                            <button onclick="runStationQuery()" style="background:#28a745; color:#fff; border:none; padding:10px 16px; border-radius:6px; cursor:pointer;">查询</button>
-                            <button id="export-btn" onclick="exportQueryToExcel()" disabled style="background:#adb5bd; color:#fff; border:none; padding:10px 16px; border-radius:6px; cursor:not-allowed;">导出 Excel</button>
-                        </div>
-                            </div>
-                            
-                    <!-- 查询结果 -->
-                    <div id="query-result" style="margin-top: 16px; height: calc(100vh - 200px); display: flex; flex-direction: column;">
-                        <h4 style="margin: 0 0 12px 0;">查询结果</h4>
-                        <div id="query-result-content" style="flex: 1; overflow: auto; border: 1px solid #ddd; border-radius: 6px;">
-                                    <p>执行查询后结果将显示在这里</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- 覆盖式空白页面：综合数据 -->
-                <div id="page-zh-data" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:hidden; padding:20px; z-index:1000;">
-                    <h2 style="margin: 0 0 10px 0;">综合数据（空白页）</h2>
-                    <p>这里是综合数据查询页面，后续可以在这里添加具体的查询功能。</p>
-                </div>
             
             <!-- 整体情况概要 -->
             <div class="overview-section">
@@ -2644,6 +2562,7 @@
     </div>
                     
                <!-- 站点数据统计板块 -->
+
 <!-- 本月实时数据板块 -->
 <h2 class="section-title"><i class="fas fa-chart-line"></i> 本月实时数据</h2>
 <div class="metrics-section">
@@ -3579,6 +3498,7 @@
                 }
             }
         }
+
 		// 添加记录用户登出信息的函数
 		async function recordUserLogout(username) {
             try {
@@ -3634,6 +3554,7 @@
 					} catch (e) {
 						console.warn('清理lastLoginRecordId失败:', e);
 					}
+					
 					// 清除登录状态
 					clearLoginStatus();
                     
@@ -4077,6 +3998,7 @@
                 showMessage('登录失败，请重试', 'error');
             }
         });
+        
         // 倒计时功能
         function startCountdown() {
             let countdown = 60;
@@ -4538,6 +4460,7 @@
                 : 'https://www.csfhcdz.cn/comprehensivedata/';
             return `${basePath}${fileName}`;
         }
+        
         // 加载并显示Excel数据
         function loadExcelData(filePath, fileName, dataType, isUserQuery = false) {
             const isCharging = dataType === 'charging';
@@ -4792,6 +4715,7 @@
                 URL.revokeObjectURL(url);
             }, 100);
         }
+        
         // 查询按钮点击事件
         queryBtn.addEventListener('click', function() {
             const startDate = startDateInput.value;
@@ -4955,10 +4879,12 @@
                 console.error('清除登录状态失败:', error);
             }
         }
+        
         // 会话超时管理
         let sessionTimeoutTimer = null;
         let lastActivityTime = Date.now();
         const SESSION_TIMEOUT = 15 * 60 * 1000; // 15分钟
+        
         // 重置会话超时计时器
         function resetSessionTimeout() {
             lastActivityTime = Date.now();
@@ -5031,6 +4957,7 @@
             document.getElementById('form-title').textContent = '用户登录';
             document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
         }
+        
         // 初始化用户活动监听
         let activityTrackingInitialized = false;
         function initActivityTracking() {
@@ -5418,6 +5345,7 @@ function updatePaginationButtons() {
         pageInfo.textContent = '无数据';
     }
 }
+
 // 加载当前页面数据
 function loadCurrentPageData() {
     if (availablePages.length === 0) {
@@ -5502,6 +5430,7 @@ function displaySiteStats(stats) {
     // 更新两站共计数据
     updateSiteData('total', stats.total);
 }
+
 // 更新单个站点数据
 function updateSiteData(site, stats) {
     const prefix = site === 'sifang' ? 'sifang' : site === 'gaoling' ? 'gaoling' : 'total';
@@ -5745,6 +5674,7 @@ function initYearSelect() {
         renderChargingBoardTable(selectedYear);
     });
 }
+
 // 渲染充电数据看板表格
 function renderChargingBoardTable(year) {
     const tableBody = document.getElementById('charging-board-table-body');
@@ -5966,6 +5896,7 @@ function exportChargingBoardData() {
 function initChargingBoardExport() {
     document.getElementById('export-board-btn').addEventListener('click', exportChargingBoardData);
 }
+        
         // 从GitHub加载指标数据
         function loadMetricsData() {
             // 显示加载状态
@@ -6562,9 +6493,12 @@ function drawRealtimeChart() {
 }
 // setTimeout(loadRealtimeData, 5 * 60 * 1000); // 每5分钟刷新一次 - 已禁用自动刷新功能
 // 在页面加载完成后调用
+
+
 // 综合收入看板功能
 let incomeDashboardData = [];
 let incomeDashboardChart = null;
+
 // 加载综合收入数据
 async function loadIncomeDashboardData() {
     try {
@@ -6882,6 +6816,7 @@ function updateIncomeChart(data) {
         }
     });
 }
+
 // 导出数据功能
 function exportIncomeData() {
     // 获取当前选择的年份
@@ -7199,6 +7134,7 @@ function updatePagination() {
         currentUnchargedPage = totalPages;
     }
 }
+
 // 更新未充电时长统计表格
 function updateUnchargedTable() {
     // 先筛选数据
@@ -7235,6 +7171,7 @@ function updateUnchargedTable() {
     // 更新数据信息
     document.getElementById('uncharged-data-info').textContent = `共加载 ${filteredUnchargedData.length} 条数据`;
 }
+
         function startClock() {
             const el = document.getElementById('time-display');
             if (!el) return;
@@ -7723,6 +7660,7 @@ function updateUnchargedTable() {
                 orderCount: parseInt(row[5]) || 0
             })).filter(item => item.time && item.userType);
         }
+
         // 设置可视化控制按钮
         function setupVisualizationControls() {
             document.getElementById('prev-visualization-btn').addEventListener('click', () => {
@@ -7805,6 +7743,7 @@ function updateUnchargedTable() {
             renderVehicleChart();
             renderUserChart();
         }
+
         // 渲染站点柱状图
         function renderStationChart() {
             const ctx = document.getElementById('station-chart').getContext('2d');
@@ -7923,6 +7862,7 @@ function updateUnchargedTable() {
                 }
             });
         }
+
         // 渲染电站终端折线图
         function renderTerminalChart() {
             const ctx = document.getElementById('terminal-chart').getContext('2d');
@@ -8121,6 +8061,7 @@ function updateUnchargedTable() {
                 }
             });
         }
+
         // 渲染用户分类散点图
         function renderUserChart() {
             const ctx = document.getElementById('user-chart').getContext('2d');
@@ -8271,7 +8212,7 @@ function updateUnchargedTable() {
                 }
                 
                 // 启动自动刷新功能（每5分钟检查一次数据更新）
-                startAutoRefresh();
+                // startAutoRefresh(); // 已禁用自动刷新功能
             } catch (error) {
                 console.error('初始化用户充电行为分析失败:', error);
             }
@@ -8398,6 +8339,7 @@ function updateUnchargedTable() {
             const day = date.getDate().toString().padStart(2, '0');
             return `${month}-${day}`;
         }
+
         // 设置行为分析控件
         function setupBehaviorControls() {
             const prevBtn = document.getElementById('prev-data-btn');
@@ -8605,6 +8547,7 @@ function updateUnchargedTable() {
                 updateElectricityTable(currentData);
             }
         }
+
         // 聚合月数据
         function aggregateMonthData(monthDataArray) {
             if (monthDataArray.length === 0) return null;
@@ -8632,6 +8575,7 @@ function updateUnchargedTable() {
 
             return aggregatedData;
         }
+
         // 计算电费分析数据
         function calculateElectricityData(data) {
             const currentDate = new Date(data.date);
@@ -9039,6 +8983,7 @@ function updateUnchargedTable() {
                 }
             });
         }
+
         // 经营效率分析相关变量
         let efficiencyData = [];
         let currentEfficiencyDateIndex = 0;
@@ -9063,11 +9008,12 @@ function updateUnchargedTable() {
                 }
                 
                 // 启动自动刷新功能（每5分钟检查一次数据更新）
-                startEfficiencyAutoRefresh();
+                // startEfficiencyAutoRefresh(); // 已禁用自动刷新功能
             } catch (error) {
                 console.error('初始化经营效率分析失败:', error);
             }
         }
+
         // 加载经营效率数据
         async function loadEfficiencyData() {
             try {
@@ -9377,6 +9323,7 @@ function updateUnchargedTable() {
                 updateEfficiencyRadarChart(currentData);
             }
         }
+
         // 计算经营效率月数据平均值
         function calculateEfficiencyMonthAverage(monthDataArray) {
             if (monthDataArray.length === 0) return null;
@@ -9466,6 +9413,7 @@ function updateUnchargedTable() {
             document.getElementById('gaoling-power').textContent = data.glData.power.toFixed(2);
             document.getElementById('gaoling-times').textContent = data.glData.times.toFixed(2);
         }
+
         // 更新经营效率雷达图
         function updateEfficiencyRadarChart(data) {
             const ctx = document.getElementById('efficiency-radar-chart');
@@ -9663,6 +9611,7 @@ function updateUnchargedTable() {
                 efficiencyRefreshInterval = null;
             }
         }
+        
         // 星空背景动画
         function initStarfield() {
             const canvas = document.getElementById('starfield');
@@ -9776,1051 +9725,6 @@ function updateUnchargedTable() {
             animate();
         }
 
-        // 左侧"数据查询"二级菜单与"平台首页"点击逻辑：显示/隐藏空白覆盖页
-        (function() {
-            function setupDataQueryPages() {
-                var btnCd = document.getElementById('menu-cd-data');
-                var btnZh = document.getElementById('menu-zh-data');
-                var btnHome = document.getElementById('menu-home');
-                var pageCd = document.getElementById('page-cd-data');
-                var pageZh = document.getElementById('page-zh-data');
-
-                if (!btnCd || !btnZh || !btnHome || !pageCd || !pageZh) return;
-
-                function showCd() {
-                    pageCd.style.display = 'block';
-                    pageZh.style.display = 'none';
-                    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
-                }
-
-                function showZh() {
-                    pageCd.style.display = 'none';
-                    pageZh.style.display = 'block';
-                    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
-                }
-
-                function showHome() {
-                    pageCd.style.display = 'none';
-                    pageZh.style.display = 'none';
-                }
-
-                btnCd.addEventListener('click', function(e) { e.preventDefault(); showCd(); });
-                btnZh.addEventListener('click', function(e) { e.preventDefault(); showZh(); });
-                btnHome.addEventListener('click', function() { showHome(); });
-            }
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', setupDataQueryPages);
-            } else {
-                setupDataQueryPages();
-            }
-        })();
-
-        // SQL Server数据库连接和查询功能
-        // 数据库连接配置（从LeanCloud环境变量获取）
-        const DB_CONFIG = {
-            server: 'csfhcdz.f3322.net',
-            port: 1433,
-            user: 'csfh',
-            password: 'fh123456',
-            database: 'chargingdata',
-            options: {
-                encrypt: false, // 根据服务器配置调整
-                trustServerCertificate: true // 仅用于开发环境
-            }
-        };
-
-        // 更新连接状态显示
-        function updateConnectionStatus(status, message) {
-            const statusText = document.getElementById('status-text');
-            if (status === 'connected') {
-                statusText.textContent = '已连接 - ' + message;
-                statusText.style.color = 'green';
-            } else if (status === 'connecting') {
-                statusText.textContent = '连接中...';
-                statusText.style.color = 'orange';
-            } else {
-                statusText.textContent = '连接失败 - ' + message;
-                statusText.style.color = 'red';
-            }
-        }
-        // 执行SQL查询
-        function executeSQLQuery() {
-            const queryInput = document.getElementById('sql-query-input');
-            const query = queryInput.value.trim();
-            
-            if (!query) {
-                alert('请输入SQL查询语句');
-                return;
-            }
-            
-            console.log('=== 开始执行SQL查询 ===');
-            console.log('查询语句:', query);
-            console.log('时间:', new Date().toISOString());
-            
-            const resultContent = document.getElementById('query-result-content');
-            resultContent.innerHTML = '<p>正在执行查询...</p>';
-            
-            // 使用fetch直接调用SQL Server应用的云函数
-            const queryOptions = {
-                method: 'POST',
-                headers: {
-                    'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
-                    'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query: query })
-            };
-            console.log('查询请求配置:', queryOptions);
-            
-            fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery', queryOptions)
-                .then(response => {
-                    console.log('=== SQL查询HTTP响应 ===');
-                    console.log('状态码:', response.status);
-                    console.log('状态文本:', response.statusText);
-                    console.log('响应头:', response.headers);
-                    console.log('响应类型:', response.type);
-                    
-                    if (!response.ok) {
-                        console.error('SQL查询HTTP错误:', response.status, response.statusText);
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    
-                    console.log('SQL查询响应正常，开始解析JSON...');
-                    return response.json();
-                })
-                .then(function(result) {
-                    console.log('=== SQL查询JSON解析成功 ===');
-                    console.log('完整结果:', result);
-                    console.log('结果类型:', typeof result);
-                    console.log('success字段:', result.success);
-                    console.log('message字段:', result.message);
-                    console.log('result.result字段:', result.result);
-                    
-                    // 优先检查result.result字段（LeanCloud云函数的标准返回格式）
-                    if (result.result && typeof result.result === 'object' && result.result.success !== undefined) {
-                        console.log('✅ 在SQL查询result.result中找到success字段:', result.result.success);
-                        console.log('查询结果消息:', result.result.message);
-                        
-                        if (result.result.success) {
-                            console.log('✅ SQL查询成功!');
-                            displayQueryResult(result.result);
-                        } else {
-                            console.log('❌ SQL查询失败:', result.result.message);
-                            resultContent.innerHTML = `
-                                <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; color: #721c24;">
-                                    <h4>查询失败</h4>
-                                    <p>${result.result.message || '未知错误'}</p>
-                                </div>
-                            `;
-                        }
-                        return;
-                    }
-                    
-                    // 如果result.result是字符串，尝试解析
-                    if (result.result && typeof result.result === 'string') {
-                        try {
-                            const parsedResult = JSON.parse(result.result);
-                            console.log('解析后的SQL查询result.result:', parsedResult);
-                            if (parsedResult.success !== undefined) {
-                                console.log('✅ 在解析后的SQL查询result.result中找到success字段:', parsedResult.success);
-                                if (parsedResult.success) {
-                                    console.log('✅ SQL查询成功!');
-                                    displayQueryResult(parsedResult);
-                                } else {
-                                    console.log('❌ SQL查询失败:', parsedResult.message);
-                                    resultContent.innerHTML = `
-                                        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; color: #721c24;">
-                                            <h4>查询失败</h4>
-                                            <p>${parsedResult.message || '未知错误'}</p>
-                                        </div>
-                                    `;
-                                }
-                                return;
-                            }
-                        } catch (e) {
-                            console.log('无法解析SQL查询result.result:', e);
-                        }
-                    }
-                    
-                    // 检查直接返回的success字段
-                    if (result.success !== undefined) {
-                    if (result.success) {
-                            console.log('✅ SQL查询成功!');
-                        displayQueryResult(result);
-                    } else {
-                            console.log('❌ SQL查询失败，但收到了响应');
-                        resultContent.innerHTML = `
-                            <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; color: #721c24;">
-                                <h4>查询失败</h4>
-                                <p>${result.message || '未知错误'}</p>
-                            </div>
-                        `;
-                        }
-                    } else {
-                        console.log('❌ SQL查询失败，但收到了响应');
-                        resultContent.innerHTML = `
-                            <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; color: #721c24;">
-                                <h4>查询失败</h4>
-                                <p>云函数没有返回success字段</p>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(function(error) {
-                    console.error('=== SQL查询失败 ===');
-                    console.error('错误对象:', error);
-                    console.error('错误名称:', error.name);
-                    console.error('错误消息:', error.message);
-                    console.error('错误堆栈:', error.stack);
-                    
-                    resultContent.innerHTML = `
-                        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; color: #721c24;">
-                            <h4>查询失败</h4>
-                            <p>错误代码: ${error.code || 'N/A'}</p>
-                            <p>错误信息: ${error.message || '未知错误'}</p>
-                        </div>
-                    `;
-                });
-        }
-
-        // 显示查询结果（4.jpg样式 + 统计信息）
-        function displayQueryResult(result) {
-            const resultContent = document.getElementById('query-result-content');
-            
-            if (!result.results || result.results.length === 0) {
-                resultContent.innerHTML = `
-                    <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 4px; color: #0c5460;">
-                        <h4>查询成功</h4>
-                        <p>查询语句: ${result.query}</p>
-                        <p>结果: 无数据返回</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            const data = result.results;
-            
-            // 优先使用全量统计（__statsTotals），否则退化为当前页汇总
-            const total = (__statsTotals && typeof __statsTotals.total === 'number') ? __statsTotals.total : data.length;
-            const totalElectricityFee = (__statsTotals && __statsTotals.electricityFee) || data.reduce((s, r) => s + (parseFloat(r['充电电费(元)']) || 0), 0);
-            const totalServiceFee = (__statsTotals && __statsTotals.serviceFee) || data.reduce((s, r) => s + (parseFloat(r['充电服务费(元)']) || 0), 0);
-            const totalChargingFee = (__statsTotals && __statsTotals.chargingFee) || data.reduce((s, r) => s + (parseFloat(r['充电费用(元)']) || 0), 0);
-            const totalElectricity = (__statsTotals && __statsTotals.electricity) || data.reduce((s, r) => s + (parseFloat(r['充电电量(度)']) || 0), 0);
-            const totalDuration = (__statsTotals && __statsTotals.duration) || data.reduce((s, r) => s + (parseFloat(r['充电时长(分钟)']) || 0), 0);
-            
-            let tableHTML = `
-                <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-                    <h4 style="margin: 0 0 12px 0; color: #495057;">查询统计</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-                        <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">总计</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #495057;">${total} 条</div>
-                        </div>
-                        <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">充电电费</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #28a745;">¥${Number(totalElectricityFee).toFixed(2)}</div>
-                        </div>
-                        <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">充电服务费</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #17a2b8;">¥${Number(totalServiceFee).toFixed(2)}</div>
-                        </div>
-                        <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">充电收入</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #dc3545;">¥${Number(totalChargingFee).toFixed(2)}</div>
-                        </div>
-                        <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">充电电量</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #6f42c1;">${Number(totalElectricity).toFixed(2)} 度</div>
-                        </div>
-                        <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">充电时长</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #fd7e14;">${Number(totalDuration).toFixed(0)} 分钟</div>
-                        </div>
-                    </div>
-                </div>
-                <div style="overflow-x: auto; height: 100%;">
-                    <table style="width: 100%; border-collapse: collapse; margin: 0; min-width: 1200px;">
-                        <thead>
-                            <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-            `;
-            
-            // 仅显示固定的12列
-            DISPLAY_COLUMNS.forEach(col => {
-                tableHTML += `<th style="border: 1px solid #dee2e6; padding: 12px 8px; text-align: left; font-weight: 600; color: #495057; white-space: nowrap; min-width: 120px;">${col}</th>`;
-            });
-            tableHTML += `</tr></thead><tbody>`;
-            
-            // 数据行（只渲染12列，SOC字段容错）
-            data.forEach((row, index) => {
-                const rowClass = index % 2 === 0 ? 'background-color: #fff;' : 'background-color: #f8f9fa;';
-                tableHTML += `<tr style="${rowClass}">`;
-                DISPLAY_COLUMNS.forEach(col => {
-                    let value;
-                    if (col === '充电前soc') {
-                        value = getFirstDefined(row, ['充电前soc', '充电前SOC', '充电前Soc', '开始SOC', '起始SOC']);
-                    } else if (col === '充电后soc') {
-                        value = getFirstDefined(row, ['充电后soc', '充电后SOC', '充电后Soc', '结束SOC', '终止SOC']);
-                    } else {
-                        value = (row[col] !== null && row[col] !== undefined && row[col] !== 'NULL') ? row[col] : '';
-                    }
-                    tableHTML += `<td style="border: 1px solid #dee2e6; padding: 12px 8px; color: #495057; white-space: nowrap; min-width: 120px;">${value}</td>`;
-                });
-                tableHTML += `</tr>`;
-            });
-            
-            tableHTML += `</tbody></table></div>`;
-            resultContent.innerHTML = tableHTML;
-        }
-
-        // 清空查询结果
-        function clearQueryResult() {
-            document.getElementById('sql-query-input').value = '';
-            document.getElementById('query-result-content').innerHTML = '<p>执行查询后结果将显示在这里</p>';
-        }
-
-        // 简单的网络连接测试
-        function testBasicConnection() {
-            console.log('=== 测试基本网络连接 ===');
-            return fetch('https://httpbin.org/get')
-                .then(response => {
-                    console.log('基本网络测试成功:', response.status);
-                    return true;
-                })
-                .catch(error => {
-                    console.error('基本网络测试失败:', error);
-                    return false;
-                });
-        }
-        // 测试LeanCloud服务器连接
-        function testLeanCloudConnection() {
-            console.log('=== 测试LeanCloud服务器连接 ===');
-            console.log('AppID:', '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz');
-            console.log('AppKey:', 'KAQ3Lzo5ZR44VPkqs7NGYLWB');
-            console.log('MasterKey:', 'w5k7ze9JvM7JGUY7O5DVeLVA');
-            console.log('直接测试云函数，跳过数据表测试...');
-            
-            // 直接测试云函数，跳过数据表测试
-            return fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/testDatabaseConnection', {
-                method: 'POST',
-                headers: {
-                    'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
-                    'X-LC-Key': 'KAQ3Lzo5ZR44VPkqs7NGYLWB',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => {
-                console.log('云函数测试响应:', response.status, response.statusText);
-                console.log('响应头:', response.headers);
-                console.log('响应类型:', response.type);
-                
-                if (!response.ok) {
-                    console.error('云函数调用失败:', response.status, response.statusText);
-                    return false;
-                }
-                
-                // 解析云函数响应
-                return response.json().then(result => {
-                    console.log('=== 云函数返回结果详情 ===');
-                    console.log('原始响应文本:', JSON.stringify(result, null, 2));
-                    console.log('完整结果对象:', result);
-                    console.log('结果类型:', typeof result);
-                    console.log('success字段:', result.success);
-                    console.log('message字段:', result.message);
-                    console.log('config字段:', result.config);
-                    console.log('result.result字段:', result.result);
-                    console.log('所有字段:', Object.keys(result));
-                    
-                    // 检查结果是否为空或异常
-                    if (!result || typeof result !== 'object') {
-                        console.error('❌ 云函数返回了无效的结果:', result);
-                        return false;
-                    }
-                    
-                    // 优先检查result.result字段（LeanCloud云函数的标准返回格式）
-                    if (result.result && typeof result.result === 'object' && result.result.success !== undefined) {
-                        console.log('✅ 在result.result中找到success字段:', result.result.success);
-                        console.log('数据库连接消息:', result.result.message);
-                        console.log('数据库配置:', result.result.config);
-                        
-                        if (result.result.success) {
-                            console.log('✅ SQL Server数据库连接成功!');
-                            return true;
-                        } else {
-                            console.log('❌ SQL Server数据库连接失败:', result.result.message);
-                            return false;
-                        }
-                    }
-                    
-                    // 如果result.result是字符串，尝试解析
-                    if (result.result && typeof result.result === 'string') {
-                        try {
-                            const parsedResult = JSON.parse(result.result);
-                            console.log('解析后的result.result:', parsedResult);
-                            if (parsedResult.success !== undefined) {
-                                console.log('✅ 在解析后的result.result中找到success字段:', parsedResult.success);
-                                if (parsedResult.success) {
-                                    console.log('✅ SQL Server数据库连接成功!');
-                                    return true;
-                                } else {
-                                    console.log('❌ SQL Server数据库连接失败:', parsedResult.message);
-                                    return false;
-                                }
-                            }
-                        } catch (e) {
-                            console.log('无法解析result.result:', e);
-                        }
-                    }
-                    
-                    // 检查直接返回的success字段
-                    if (result.success !== undefined) {
-                        if (result.success) {
-                            console.log('✅ SQL Server数据库连接成功!');
-                            console.log('数据库信息:', result.config);
-                            return true;
-                        } else {
-                            console.log('❌ SQL Server数据库连接失败');
-                            console.log('错误消息:', result.message);
-                            return false;
-                        }
-                    }
-                    
-                    // 如果都没有找到success字段
-                    console.error('❌ 云函数没有返回success字段');
-                    console.log('可能的原因:');
-                    console.log('1. 云函数代码有错误');
-                    console.log('2. 云函数没有正确返回结果');
-                    console.log('3. 云函数权限不足');
-                    console.log('4. 数据库连接配置错误');
-                    return false;
-                });
-            })
-            .catch(error => {
-                console.error('=== AppKey云函数测试失败，尝试MasterKey ===');
-                console.error('AppKey错误:', error);
-                
-                // 尝试使用MasterKey
-                console.log('尝试使用MasterKey测试云函数...');
-                return fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/testDatabaseConnection', {
-                    method: 'POST',
-                    headers: {
-                        'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
-                        'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => {
-                    console.log('MasterKey云函数测试响应:', response.status, response.statusText);
-                    console.log('响应头:', response.headers);
-                    
-                    if (!response.ok) {
-                        console.error('MasterKey云函数调用失败:', response.status, response.statusText);
-                        return false;
-                    }
-                    
-                    // 解析MasterKey云函数响应
-                    return response.json().then(result => {
-                        console.log('=== MasterKey云函数返回结果详情 ===');
-                        console.log('原始响应文本:', JSON.stringify(result, null, 2));
-                        console.log('完整结果对象:', result);
-                        console.log('结果类型:', typeof result);
-                        console.log('success字段:', result.success);
-                        console.log('message字段:', result.message);
-                        console.log('config字段:', result.config);
-                        console.log('result.result字段:', result.result);
-                        console.log('所有字段:', Object.keys(result));
-                        
-                        // 检查结果是否为空或异常
-                        if (!result || typeof result !== 'object') {
-                            console.error('❌ MasterKey云函数返回了无效的结果:', result);
-                            return false;
-                        }
-                        
-                        // 优先检查result.result字段（LeanCloud云函数的标准返回格式）
-                        if (result.result && typeof result.result === 'object' && result.result.success !== undefined) {
-                            console.log('✅ 在MasterKey result.result中找到success字段:', result.result.success);
-                            console.log('数据库连接消息:', result.result.message);
-                            console.log('数据库配置:', result.result.config);
-                            
-                            if (result.result.success) {
-                                console.log('✅ MasterKey SQL Server数据库连接成功!');
-                                return true;
-                            } else {
-                                console.log('❌ MasterKey SQL Server数据库连接失败:', result.result.message);
-                                return false;
-                            }
-                        }
-                        
-                        // 如果result.result是字符串，尝试解析
-                        if (result.result && typeof result.result === 'string') {
-                            try {
-                                const parsedResult = JSON.parse(result.result);
-                                console.log('解析后的result.result:', parsedResult);
-                                if (parsedResult.success !== undefined) {
-                                    console.log('✅ 在解析后的MasterKey result.result中找到success字段:', parsedResult.success);
-                                    if (parsedResult.success) {
-                                        console.log('✅ MasterKey SQL Server数据库连接成功!');
-                                        return true;
-                                    } else {
-                                        console.log('❌ MasterKey SQL Server数据库连接失败:', parsedResult.message);
-                                        return false;
-                                    }
-                                }
-                            } catch (e) {
-                                console.log('无法解析MasterKey result.result:', e);
-                            }
-                        }
-                        
-                        // 检查直接返回的success字段
-                        if (result.success !== undefined) {
-                            if (result.success) {
-                                console.log('✅ MasterKey SQL Server数据库连接成功!');
-                                console.log('数据库信息:', result.config);
-                                return true;
-                            } else {
-                                console.log('❌ MasterKey SQL Server数据库连接失败');
-                                console.log('错误消息:', result.message);
-                                return false;
-                            }
-                        }
-                        
-                        // 如果都没有找到success字段
-                        console.error('❌ MasterKey云函数没有返回success字段');
-                        return false;
-                    });
-                })
-                .catch(error2 => {
-                    console.error('=== MasterKey云函数测试也失败 ===');
-                    console.error('MasterKey错误对象:', error2);
-                    console.error('MasterKey错误名称:', error2.name);
-                    console.error('MasterKey错误消息:', error2.message);
-                    console.error('MasterKey错误堆栈:', error2.stack);
-                    return false;
-                });
-            });
-        }
-        // 显示列（仅用于页面展示用的12列，不影响导出）
-        const DISPLAY_COLUMNS = [
-            '电站名称', '终端名称', '充电开始时间', '充电结束时间',
-            '充电电费(元)', '充电服务费(元)', '充电费用(元)', '充电时长(分钟)',
-            '充电前soc', '充电后soc', '判定车牌号', '车辆所属客户'
-        ];
-        // 统计总计（跨全量数据，而非当前页）
-        let __statsTotals = {
-            total: 0,
-            electricityFee: 0,
-            serviceFee: 0,
-            chargingFee: 0,
-            electricity: 0,
-            duration: 0
-        };
-
-        function getFirstDefined(row, keys) {
-            for (let i = 0; i < keys.length; i++) {
-                const k = keys[i];
-                if (row.hasOwnProperty(k) && row[k] !== null && row[k] !== undefined && row[k] !== 'NULL') {
-                    return row[k];
-                }
-            }
-            return '';
-        }
-
-        // 分页状态（页面展示每页20条）
-        let __pagination = {
-            enabled: false,
-            sqlNoOrder: '',
-            orderByFinal: '',
-            pageSize: 20,
-            total: 0,
-            currentPage: 1
-        };
-        function ensureTopPaginationBar() {
-            const container = document.getElementById('query-result');
-            if (!container) return null;
-            let bar = document.getElementById('query-pagination-top');
-            if (!bar) {
-                bar = document.createElement('div');
-                bar.id = 'query-pagination-top';
-                bar.style.margin = '8px 0';
-                container.insertBefore(bar, document.getElementById('query-result-content'));
-            }
-            return bar;
-        }
-
-        function renderPagination() {
-            const bar = ensureTopPaginationBar();
-            if (!bar) return;
-            if (!__pagination.enabled || __pagination.total === 0) {
-                bar.innerHTML = '';
-                return;
-            }
-            const totalPages = Math.max(1, Math.ceil(__pagination.total / __pagination.pageSize));
-            bar.innerHTML = `
-                <div style="padding:6px 8px; background:#f8f9fa; border:1px solid #e9ecef; border-radius:6px; display:flex; align-items:center; gap:8px;">
-                    <button id="pg-first" style="padding:4px 8px;">首页</button>
-                    <button id="pg-prev" style="padding:4px 8px;">上一页</button>
-                    <span>第 <strong>${__pagination.currentPage}</strong> / ${totalPages} 页</span>
-                    <span>共 <strong>${__pagination.total}</strong> 条</span>
-                    <button id="pg-next" style="padding:4px 8px;">下一页</button>
-                    <button id="pg-last" style="padding:4px 8px;">末页</button>
-                </div>`;
-            document.getElementById('pg-first').onclick = () => goToPage(1);
-            document.getElementById('pg-prev').onclick = () => goToPage(Math.max(1, __pagination.currentPage - 1));
-            document.getElementById('pg-next').onclick = () => {
-                const tp = Math.max(1, Math.ceil(__pagination.total / __pagination.pageSize));
-                goToPage(Math.min(tp, __pagination.currentPage + 1));
-            };
-            document.getElementById('pg-last').onclick = () => {
-                const tp = Math.max(1, Math.ceil(__pagination.total / __pagination.pageSize));
-                goToPage(tp);
-            };
-        }
-
-        function callSqlGeneric(sql) {
-            return fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery', {
-                method: 'POST',
-                headers: {
-                    'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
-                    'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ query: sql })
-            }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + r.statusText); return r.json(); })
-              .then(j => (j && j.result) ? j.result : j);
-        }
-
-        function goToPage(targetPage) {
-            if (!__pagination.enabled) return;
-            const resultContent = document.getElementById('query-result-content');
-            const totalPages = Math.max(1, Math.ceil(__pagination.total / __pagination.pageSize));
-            const page = Math.min(totalPages, Math.max(1, targetPage));
-            __pagination.currentPage = page;
-            const offset = (page - 1) * __pagination.pageSize;
-            resultContent.innerHTML = `<p>正在加载数据... 第 ${page} 页</p>`;
-            const startRn = offset + 1;
-            const endRn = offset + __pagination.pageSize;
-            // 从 sqlNoOrder 提取 FROM… 段
-            const innerFrom = __pagination.sqlNoOrder.replace(/^SELECT\s+\*\s+/i, '');
-            const overOrder = __pagination.orderByFinal.replace(/^ORDER\s+BY\s+/i, 'ORDER BY ');
-            const pageSql = `SELECT * FROM (SELECT ROW_NUMBER() OVER (${overOrder}) AS rn, * ${innerFrom}) t WHERE t.rn BETWEEN ${startRn} AND ${endRn}`;
-            callSqlGeneric(pageSql).then(pageRes => {
-                const rows = (pageRes && pageRes.results) ? pageRes.results : [];
-                const payload = { success: true, results: rows, rowCount: rows.length, query: pageSql };
-                __lastQueryResults = payload; // 保留当前页的完整列数据用于导出当前页
-                displayQueryResult(payload); // 仅显示12列
-                setExportEnabled(rows.length > 0);
-                renderPagination();
-            }).catch(err => {
-                console.error('分页加载失败:', err);
-                resultContent.innerHTML = `
-                    <div style="background:#f8d7da; border:1px solid #f5c6cb; padding:12px; border-radius:6px; color:#721c24;">
-                        <h4 style="margin:0 0 6px 0;">查询失败</h4>
-                        <div>${err.message || '未知错误'}</div>
-                    </div>`;
-                setExportEnabled(false);
-            });
-        }
-
-        // 设置时间框体默认值：当天日期带时分秒（显示在文本框内），选择时用原生日历不带时分秒
-        (function setDefaultDateTimes() {
-            try {
-                const pad = n => (n < 10 ? '0' + n : '' + n);
-                const now = new Date();
-                const y = now.getFullYear();
-                const m = pad(now.getMonth() + 1);
-                const d = pad(now.getDate());
-                const startTime = `${y}-${m}-${d} 00:00:00`;
-                const endTime = `${y}-${m}-${d} 23:59:59`;
-                const startEl = document.getElementById('start-datetime');
-                const endEl = document.getElementById('end-datetime');
-                if (startEl) startEl.value = startTime;
-                if (endEl) endEl.value = endTime;
-
-                function attachDateBehavior(input, isEnd) {
-                    if (!input) return;
-                    // 保持文本输入框始终显示 yyyy-mm-dd hh:mm:ss
-                    // 使用隐藏的原生日期选择器进行选择
-                    const hiddenPicker = document.createElement('input');
-                    hiddenPicker.type = 'date';
-                    hiddenPicker.style.position = 'fixed';
-                    hiddenPicker.style.opacity = '0';
-                    hiddenPicker.style.pointerEvents = 'none';
-                    hiddenPicker.style.width = '0';
-                    hiddenPicker.style.height = '0';
-                    document.body.appendChild(hiddenPicker);
-
-                    function openPicker() {
-                        const rect = input.getBoundingClientRect();
-                        hiddenPicker.style.left = `${Math.max(0, rect.left)}px`;
-                        hiddenPicker.style.top = `${Math.max(0, rect.bottom)}px`;
-                        const current = input.value && input.value.slice(0, 10);
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(current)) {
-                            hiddenPicker.value = current;
-                        }
-                        // 先聚焦再打开，确保首次定位正确
-                        hiddenPicker.focus();
-                        try { hiddenPicker.showPicker && hiddenPicker.showPicker(); } catch (e) { /* ignore */ }
-                        hiddenPicker.click();
-                    }
-
-                    input.addEventListener('mousedown', function(ev){ ev.preventDefault(); openPicker(); });
-                    input.addEventListener('focus', openPicker);
-                    input.addEventListener('click', openPicker);
-
-                    hiddenPicker.addEventListener('change', function() {
-                        const v = hiddenPicker.value;
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                            input.value = isEnd ? `${v} 23:59:59` : `${v} 00:00:00`;
-                        }
-                        // 选择后把焦点回到可见输入
-                        input.focus();
-                    });
-                }
-
-                attachDateBehavior(startEl, false);
-                attachDateBehavior(endEl, true);
-            } catch (e) { console.warn('默认时间设置失败:', e); }
-        })();
-
-        // ========= 充电数据 正式查询：交互与查询逻辑 =========
-        function setExportEnabled(enabled) {
-            const btn = document.getElementById('export-btn');
-            if (!btn) return;
-            btn.disabled = !enabled;
-            if (enabled) {
-                btn.style.background = '#28a745';
-                btn.style.cursor = 'pointer';
-            } else {
-                btn.style.background = '#adb5bd';
-                btn.style.cursor = 'not-allowed';
-            }
-        }
-
-        // 初始化导出按钮禁用
-        setTimeout(() => setExportEnabled(false), 0);
-
-        const STATION_GROUP_TO_NAMES = {
-            east: [
-                '长沙飞狐充电站',
-                '长沙特来电飞狐四方坪东区充电站',
-                '长沙特来电飞狐东区充电站',
-                '长沙飞狐四方坪桥下充电站',
-                '长沙飞狐四方坪桥下二期充电站'
-            ],
-            west: [
-                '长沙特来电飞狐四方坪西区充电站',
-                '长沙特来电飞狐西区充电站'
-            ],
-            south: [
-                '长沙特来电飞狐四方坪南区充电站',
-                '长沙特来电飞狐南区充电站',
-                '长沙飞狐四方坪桥下三期充电站'
-            ],
-            gaoling: [
-                '长沙市开福区高岭香江国际城充电站建设项目',
-                '华为飞狐特来电高岭超充站'
-            ]
-        };
-
-        function navigateHome() {
-            // 简单处理：关闭覆盖页，回到首页内容
-            const overlay = document.getElementById('page-cd-data');
-            if (overlay) overlay.style.display = 'none';
-            window.scrollTo(0, 0);
-        }
-
-        function toggleStationMenu() {
-            const menu = document.getElementById('station-menu');
-            if (!menu) return;
-            menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
-        }
-
-        // 点击页面空白处隐藏电站下拉
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('station-menu');
-            const box = document.getElementById('station-box');
-            if (!menu || !box) return;
-            if (menu.style.display === 'none' || menu.style.display === '') return;
-            const target = e.target;
-            if (!box.contains(target) && !menu.contains(target)) {
-                menu.style.display = 'none';
-            }
-        });
-        // 鼠标离开菜单区域后隐藏（稍作延迟避免抖动）
-        (function() {
-            const menu = document.getElementById('station-menu');
-            if (!menu) return;
-            let hideTimer = null;
-            function scheduleHide() {
-                clearTimeout(hideTimer);
-                hideTimer = setTimeout(() => { menu.style.display = 'none'; }, 200);
-            }
-            function cancelHide() { clearTimeout(hideTimer); }
-            menu.addEventListener('mouseleave', scheduleHide);
-            menu.addEventListener('mouseenter', cancelHide);
-            const box = document.getElementById('station-box');
-            if (box) {
-                box.addEventListener('mouseleave', scheduleHide);
-                box.addEventListener('mouseenter', cancelHide);
-            }
-        })();
-
-        function onToggleAllStations() {
-            const all = document.getElementById('station-all');
-            const items = document.querySelectorAll('#station-menu .station-group');
-            items.forEach(i => { i.checked = all.checked; });
-        }
-
-        function applyStationSelection() {
-            const all = document.getElementById('station-all');
-            const items = Array.from(document.querySelectorAll('#station-menu .station-group'));
-            const checked = items.filter(i => i.checked).map(i => i.getAttribute('data-group'));
-            if (checked.length === items.length) {
-                all.checked = true;
-            } else {
-                all.checked = false;
-            }
-            // 显示已选择的电站名称
-            const display = document.getElementById('station-display');
-            const mapToLabel = { east: '长沙飞狐东区站', west: '长沙飞狐西区站', south: '长沙飞狐南区站', gaoling: '长沙飞狐高岭充电站' };
-            if (display) {
-                if (all.checked) {
-                    display.textContent = '电站：全选';
-                } else if (checked.length > 0) {
-                    display.textContent = '电站：' + checked.map(k => mapToLabel[k]).join('、');
-                } else {
-                    display.textContent = '电站：未选择';
-                }
-            }
-            toggleStationMenu();
-        }
-
-        function getSelectedStationNames() {
-            const all = document.getElementById('station-all');
-            const items = Array.from(document.querySelectorAll('#station-menu .station-group'));
-            if (all && all.checked) {
-                // 全选：返回所有分组名称合并
-                return Object.values(STATION_GROUP_TO_NAMES).flat();
-            }
-            const groups = items.filter(i => i.checked).map(i => i.getAttribute('data-group'));
-            if (groups.length === 0) return [];
-            let list = [];
-            groups.forEach(g => { list = list.concat(STATION_GROUP_TO_NAMES[g] || []); });
-            return Array.from(new Set(list));
-        }
-
-        function toSqlDateTime(value, isEnd = false) {
-            if (!value) return '';
-            // value could be 'YYYY-MM-DD hh:mm:ss' or 'YYYY-MM-DD'
-            if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-                return isEnd ? `${value} 23:59:59` : `${value} 00:00:00`;
-            }
-            return value.replace('T', ' ');
-        }
-        function buildStationQuery() {
-            const timeField = (document.getElementById('time-field-select') || {}).value || '充电结束时间';
-            const start = toSqlDateTime((document.getElementById('start-datetime') || {}).value, false);
-            const end = toSqlDateTime((document.getElementById('end-datetime') || {}).value, true);
-            const stations = getSelectedStationNames();
-
-            if (!start || !end) {
-                return { ok: false, error: '请选择开始与结束时间' };
-            }
-
-            const whereParts = [];
-            whereParts.push(`[${timeField}] BETWEEN '${start}' AND '${end}'`);
-            if (stations.length > 0) {
-                const esc = stations.map(n => `N'${n.replace(/'/g, "''")}'`).join(', ');
-                whereParts.push(`[电站名称] IN (${esc})`);
-            }
-            // 如果用户未选任何站点，则视为全选（不加站点条件）
-
-            const whereClause = whereParts.length ? ('WHERE ' + whereParts.join(' AND ')) : '';
-            const sql = `SELECT * FROM [特来电] ${whereClause} ORDER BY [${timeField}] ASC`;
-            return { ok: true, sql };
-        }
-        let __lastQueryResults = null;
-
-        function runStationQuery() {
-            const build = buildStationQuery();
-            const resultContent = document.getElementById('query-result-content');
-            if (!build.ok) {
-                resultContent.innerHTML = '<div style="color:#c00;">' + build.error + '</div>';
-                setExportEnabled(false);
-                __pagination.enabled = false;
-                renderPagination();
-                return;
-            }
-
-            function singleQueryFallback() {
-                console.warn('分页失败，回退到单次查询');
-                resultContent.innerHTML = '<p>正在执行查询...</p>';
-                setExportEnabled(false);
-                return fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery', {
-                    method: 'POST',
-                    headers: {
-                        'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
-                        'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ query: build.sql })
-                })
-                .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + r.statusText); return r.json(); })
-                .then(result => {
-                    const payload = (result && result.result) ? result.result : result;
-                    if (payload && payload.success) {
-                        __lastQueryResults = payload;
-                        displayQueryResult(payload);
-                        setExportEnabled(!!(payload && payload.results && payload.results.length));
-                        __pagination.enabled = false;
-                        renderPagination();
-                    } else {
-                        resultContent.innerHTML = `
-                            <div style=\"background:#f8d7da; border:1px solid #f5c6cb; padding:12px; border-radius:6px; color:#721c24;\">\n                                <h4 style=\"margin:0 0 6px 0;\">查询失败</h4>\n                                <div>${(payload && payload.message) || '未知错误'}</div>\n                            </div>`;
-                        setExportEnabled(false);
-                        __pagination.enabled = false;
-                        renderPagination();
-                    }
-                })
-                .catch(err => {
-                    console.error('单次查询也失败:', err);
-                    resultContent.innerHTML = `
-                        <div style=\"background:#f8d7da; border:1px solid #f5c6cb; padding:12px; border-radius:6px; color:#721c24;\">\n                            <h4 style=\"margin:0 0 6px 0;\">查询失败</h4>\n                            <div>${err.message || '未知错误'}</div>\n                        </div>`;
-                    setExportEnabled(false);
-                    __pagination.enabled = false;
-                    renderPagination();
-                });
-            }
-
-            // 分页查询（稳健）
-            setExportEnabled(false);
-            resultContent.innerHTML = '<p>正在统计数据条数...</p>';
-
-            const timeFieldSel = (document.getElementById('time-field-select') || {}).value || '充电结束时间';
-            const sqlNoOrder = build.sql.replace(/ORDER\s+BY[\s\S]*$/i, '').trim();
-            const orderByFinal = `ORDER BY [${timeFieldSel}] ASC`;
-            const countSql = sqlNoOrder.replace(/SELECT\s+\*\s+/i, 'SELECT COUNT(1) AS total ');
-
-            callSqlGeneric(countSql)
-                .then(countRes => {
-                    const total = (countRes && countRes.results && countRes.results[0] && (countRes.results[0].total || countRes.results[0][''])) || 0;
-                    __pagination.enabled = true;
-                    __pagination.sqlNoOrder = sqlNoOrder;
-                    __pagination.orderByFinal = orderByFinal;
-                    __pagination.pageSize = 20;
-                    __pagination.total = total;
-                    __pagination.currentPage = 1;
-
-                    // 统计汇总（全量数据），不带 ORDER BY
-                    const innerFrom = sqlNoOrder.replace(/^SELECT\s+\*\s+/i, '');
-                    const sumSql = `SELECT 
-                        COUNT(1) AS total,
-                        SUM(CAST([充电电费(元)] AS DECIMAL(18,4))) AS fee_elec,
-                        SUM(CAST([充电服务费(元)] AS DECIMAL(18,4))) AS fee_service,
-                        SUM(CAST([充电费用(元)] AS DECIMAL(18,4))) AS fee_total,
-                        SUM(CAST([充电电量(度)] AS DECIMAL(18,4))) AS kwh_total,
-                        SUM(CAST([充电时长(分钟)] AS DECIMAL(18,4))) AS minutes_total
-                        ${innerFrom}`;
-                    return callSqlGeneric(sumSql).then(sumRes => {
-                        const row = (sumRes && sumRes.results && sumRes.results[0]) || {};
-                        __statsTotals = {
-                            total: Number(row.total) || total,
-                            electricityFee: Number(row.fee_elec) || 0,
-                            serviceFee: Number(row.fee_service) || 0,
-                            chargingFee: Number(row.fee_total) || 0,
-                            electricity: Number(row.kwh_total) || 0,
-                            duration: Number(row.minutes_total) || 0
-                        };
-                        let warningHtml = '';
-                        if (total > 100000) {
-                            warningHtml = `
-                                <div style="background:#fff3cd; border:1px solid #ffeeba; color:#856404; padding:10px; border-radius:6px; margin-bottom:8px;">
-                                    查询结果大于目标行数（${total} 条），请缩小时间范围查询。
-                                </div>`;
-                        }
-                        resultContent.innerHTML = warningHtml + '<p>准备加载第 1 页...</p>';
-                        renderPagination();
-                        goToPage(1);
-                    });
-                })
-                .catch(err => {
-                    console.error('分页统计失败:', err);
-                    singleQueryFallback();
-                });
-        }
-
-        function exportQueryToExcel() {
-            const exportBtn = document.getElementById('export-btn');
-            if (exportBtn && exportBtn.disabled) {
-                // 禁用状态下静默返回，不提示
-                return;
-            }
-            // 导出需要全量字段的所有数据（分批抓取）
-            try {
-                const timeFieldSel = (document.getElementById('time-field-select') || {}).value || '充电结束时间';
-                // 如果分页可用，使用分页基础SQL；否则退化为当前查询SQL
-                const sqlNoOrder = __pagination.enabled && __pagination.sqlNoOrder ? __pagination.sqlNoOrder : ((__lastQueryResults && __lastQueryResults.query) ? __lastQueryResults.query.replace(/ORDER\s+BY[\s\S]*$/i, '').trim() : '');
-                const orderByFinal = __pagination.enabled && __pagination.orderByFinal ? __pagination.orderByFinal : `ORDER BY [${timeFieldSel}] ASC`;
-                const pageSize = 1000;
-                let offset = 0;
-                let allRows = [];
-
-                if (!sqlNoOrder) {
-                    // 无法构造基础SQL，降级导出当前页
-                    const rows = (__lastQueryResults && __lastQueryResults.results) ? __lastQueryResults.results : [];
-                    const ws = XLSX.utils.json_to_sheet(rows);
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, '充电数据查询');
-                    XLSX.writeFile(wb, '充电数据查询.xlsx');
-                    return;
-                }
-
-                const total = __pagination.total || ((__lastQueryResults && __lastQueryResults.rowCount) ? __lastQueryResults.rowCount : 0);
-                const totalPages = total > 0 ? Math.ceil(total / pageSize) : 1;
-                const resultContent = document.getElementById('query-result-content');
-                const prevHtml = resultContent ? resultContent.innerHTML : '';
-                if (resultContent) resultContent.innerHTML = '<p>正在导出数据，请稍候...</p>';
-
-                function fetchPage() {
-                    const startRn = offset + 1;
-                    const endRn = offset + pageSize;
-                    const innerFrom = sqlNoOrder.replace(/^SELECT\s+\*\s+/i, '');
-                    const overOrder = orderByFinal.replace(/^ORDER\s+BY\s+/i, 'ORDER BY ');
-                    const pageSql = `SELECT * FROM (SELECT ROW_NUMBER() OVER (${overOrder}) AS rn, * ${innerFrom}) t WHERE t.rn BETWEEN ${startRn} AND ${endRn}`;
-                    return callSqlGeneric(pageSql).then(res => {
-                        const rows = (res && res.results) ? res.results : [];
-                        allRows = allRows.concat(rows);
-                    });
-                }
-
-                (async () => {
-                    const loops = total > 0 ? totalPages : 50; // 若未知总数，最多拉50批以防无穷
-                    for (let i = 0; i < loops; i++) {
-                        await fetchPage();
-                        if ((__pagination.total && allRows.length >= __pagination.total) || (allRows.length < (i + 1) * pageSize)) {
-                            break;
-                        }
-                        offset += pageSize;
-                    }
-                    const ws = XLSX.utils.json_to_sheet(allRows);
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, '充电数据查询');
-                    XLSX.writeFile(wb, '充电数据查询.xlsx');
-                    if (resultContent) resultContent.innerHTML = prevHtml;
-                })().catch(e => {
-                    console.error('导出失败:', e);
-                    alert('导出失败：' + (e.message || '未知错误'));
-                    if (resultContent) resultContent.innerHTML = prevHtml;
-                });
-            } catch (e) {
-                console.error('导出失败:', e);
-                alert('导出失败：' + (e.message || '未知错误'));
-            }
-        }
     </script>
     
     <!-- 版权信息已移除 -->
