@@ -12672,6 +12672,10 @@ function updateUnchargedTable() {
                 // 如果字段是DATE类型，直接比较字符串；如果是DATETIME类型，使用CONVERT提取日期部分
                 // 先尝试简单的字符串比较（适用于DATE类型字段）
                 whereClause = `WHERE [${timeField}] >= '${startDate}' AND [${timeField}] <= '${endDate}'`;
+            } else if (project === '智小盟') {
+                // 智小盟的时间字段前面可能有制表符或空格，清理后使用字符串比较（因为字段可能是nvarchar类型）
+                // 清理后的格式应该是 "YYYY-MM-DD HH:MM:SS"，可以直接进行字符串比较
+                whereClause = `WHERE LTRIM(RTRIM([${timeField}])) >= '${start}' AND LTRIM(RTRIM([${timeField}])) <= '${end}'`;
             } else {
                 // 日期时间字段：使用完整日期时间
                 whereClause = `WHERE [${timeField}] >= '${start}' AND [${timeField}] <= '${end}'`;
@@ -12763,15 +12767,61 @@ function updateUnchargedTable() {
                 console.log('COUNT SQL:', countSql);
                 console.log('WHERE子句:', query.whereClause);
                 
+                // 对于"智小盟"，先检查表中是否有任何数据，以及时间字段的格式
+                if (query.project === '智小盟') {
+                    const testSql = `SELECT TOP 5 [支付时间] FROM ${query.tableName} ORDER BY [支付时间] DESC`;
+                    console.log('智小盟测试查询 - 检查表中最近5条数据的时间字段:', testSql);
+                    callSqlWithRetry(testSql).then(testResult => {
+                        console.log('智小盟测试查询结果:', testResult);
+                        if (testResult && testResult.results && testResult.results.length > 0) {
+                            console.log('智小盟表中存在数据，最近5条记录的时间字段值:');
+                            testResult.results.forEach((row, idx) => {
+                                console.log(`  第${idx + 1}条: [支付时间] = "${row['支付时间']}" (类型: ${typeof row['支付时间']})`);
+                            });
+                        } else {
+                            console.warn('智小盟测试查询：表中没有任何数据');
+                        }
+                    }).catch(err => {
+                        console.error('智小盟测试查询失败:', err);
+                    });
+                    
+                    // 检查表中的总记录数
+                    const totalCountSql = `SELECT COUNT(*) as total FROM ${query.tableName}`;
+                    callSqlWithRetry(totalCountSql).then(totalResult => {
+                        if (totalResult && totalResult.results && totalResult.results[0]) {
+                            const totalInTable = totalResult.results[0].total || totalResult.results[0].TOTAL || 0;
+                            console.log(`智小盟表中总记录数: ${totalInTable}`);
+                        }
+                    }).catch(err => {
+                        console.error('智小盟总记录数查询失败:', err);
+                    });
+                }
+                
                 callSqlWithRetry(countSql)
                     .then(countResult => {
                         console.log('COUNT查询结果:', countResult);
-                        const total = countResult.results && countResult.results[0] ? countResult.results[0].total : 0;
+                        console.log('COUNT查询结果类型:', typeof countResult);
+                        console.log('COUNT查询结果keys:', Object.keys(countResult));
+                        if (countResult && countResult.results) {
+                            console.log('COUNT查询results:', countResult.results);
+                            console.log('COUNT查询results长度:', countResult.results.length);
+                            if (countResult.results.length > 0) {
+                                console.log('COUNT查询results[0]:', countResult.results[0]);
+                            }
+                        }
+                        const total = countResult.results && countResult.results[0] ? (countResult.results[0].total || countResult.results[0].TOTAL || 0) : 0;
+                        console.log('提取的total值:', total);
                         __zhPagination.total = total;
                         __zhPagination.currentPage = 1;
 
                         // 获取第一页数据
-                        const orderByFinal = `ORDER BY [${query.timeField}] DESC`;
+                        // 对于"智小盟"，ORDER BY需要使用清理后的字段
+                        let orderByFinal;
+                        if (query.project === '智小盟') {
+                            orderByFinal = `ORDER BY LTRIM(RTRIM([${query.timeField}])) DESC`;
+                        } else {
+                            orderByFinal = `ORDER BY [${query.timeField}] DESC`;
+                        }
                         __zhPagination.orderByFinal = orderByFinal;
                         // 兴元售货机使用指定的列，其他使用*
                         const selectCols = query.selectColumns || '*';
@@ -12782,7 +12832,17 @@ function updateUnchargedTable() {
                     })
                     .then(dataResult => {
                         console.log('数据查询结果:', dataResult);
+                        console.log('数据查询结果类型:', typeof dataResult);
+                        console.log('数据查询结果keys:', dataResult ? Object.keys(dataResult) : []);
                         console.log('结果数量:', dataResult && dataResult.results ? dataResult.results.length : 0);
+                        if (dataResult && dataResult.results && dataResult.results.length > 0) {
+                            console.log('第一条数据的字段:', Object.keys(dataResult.results[0]));
+                            console.log('第一条数据的完整内容:', dataResult.results[0]);
+                        } else {
+                            console.warn('数据查询结果为空或格式错误！');
+                            console.warn('dataResult:', dataResult);
+                            console.warn('dataResult.results:', dataResult ? dataResult.results : 'undefined');
+                        }
                         if (dataResult && dataResult.results) {
                             // 根据项目类别过滤列
                             let cleanedResults = dataResult.results;
@@ -12820,16 +12880,31 @@ function updateUnchargedTable() {
                                     return filtered;
                                 });
                             } else if (query.project === '智小盟') {
+                                console.log('智小盟：原始结果数量:', dataResult.results.length);
+                                if (dataResult.results.length > 0) {
+                                    console.log('智小盟：第一条数据的字段:', Object.keys(dataResult.results[0]));
+                                    console.log('智小盟：第一条数据内容:', dataResult.results[0]);
+                                }
                                 const allowedCols = ['设备名称', '实收金额 ', '支付方式', '支付时间'];
-                                cleanedResults = dataResult.results.map(row => {
+                                console.log('智小盟：允许的字段:', allowedCols);
+                                cleanedResults = dataResult.results.map((row, idx) => {
                                     const filtered = {};
                                     allowedCols.forEach(col => {
                                         if (row.hasOwnProperty(col)) {
                                             filtered[col] = row[col];
+                                        } else if (idx === 0) {
+                                            console.warn(`智小盟：第一条数据缺少字段 "${col}"，可用字段:`, Object.keys(row));
                                         }
                                     });
+                                    if (idx === 0 && Object.keys(filtered).length === 0) {
+                                        console.error('智小盟：过滤后的第一条数据为空，原始数据:', row);
+                                    }
                                     return filtered;
                                 });
+                                console.log('智小盟：过滤后结果数量:', cleanedResults.length);
+                                if (cleanedResults.length > 0) {
+                                    console.log('智小盟：过滤后第一条数据:', cleanedResults[0]);
+                                }
                             } else if (query.project === '车海洋洗车') {
                                 // 车海洋洗车：输出车海洋洗车消费表的所有列，不需要过滤
                                 cleanedResults = dataResult.results;
@@ -13157,8 +13232,9 @@ function updateUnchargedTable() {
                 return;
             }
             
+            // 智小盟的时间字段前面可能有制表符，清理后使用字符串比较
             const sql = `SELECT ISNULL(SUM([实收金额 ]), 0) as 实收金额合计 
-                        FROM [智小盟] WHERE [支付时间] >= '${start}' AND [支付时间] <= '${end}'`;
+                        FROM [智小盟] WHERE LTRIM(RTRIM([支付时间])) >= '${start}' AND LTRIM(RTRIM([支付时间])) <= '${end}'`;
             
             try {
                 console.log('智小盟统计SQL:', sql);
@@ -13646,7 +13722,10 @@ function updateUnchargedTable() {
                     return `${payMethod} ${amount.toFixed(2)}(${percentage}%)`;
                 }).join('   ');
                 
-                html += `<div style="font-weight:600; color:#28a745;">合计: ${__zhStatsTotals.totalAmount.toFixed(2)}   <span style="color:#007bff;">${payMethodSummary}</span></div>`;
+                html += `<div style="display:flex; justify-content:space-between; align-items:center; font-weight:600;">
+                    <span style="color:#007bff;">${payMethodSummary}</span>
+                    <span style="margin-left:auto; padding-left:20px; color:#28a745;">合计: ${__zhStatsTotals.totalAmount.toFixed(2)}</span>
+                </div>`;
                 html += `</div>`;
                 
             } else if (project === '月租车充值') {
@@ -13717,7 +13796,10 @@ function updateUnchargedTable() {
                     return `${payMethod} ${amount.toFixed(2)}(${percentage}%)`;
                 }).join('   ');
                 
-                html += `<div style="margin-top:8px; font-weight:600; color:#28a745;">合计: ${__zhStatsTotals.totalAmount.toFixed(2)}   <span style="color:#007bff;">${payMethodSummary}</span></div>`;
+                html += `<div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; font-weight:600;">
+                    <span style="color:#007bff;">${payMethodSummary}</span>
+                    <span style="margin-left:auto; padding-left:20px; color:#28a745;">合计: ${__zhStatsTotals.totalAmount.toFixed(2)}</span>
+                </div>`;
                 
             } else if (project === '兴元售货机') {
                 const stats = __zhStatsTotals.stats;
@@ -13870,8 +13952,12 @@ function updateUnchargedTable() {
                 });
                 
                 // 汇总
-                html += `<div style="margin-top:12px; padding-top:12px; border-top:1px solid #dee2e6; font-weight:600;">
-                    会员订单金额小计 <span style="color:#007bff; font-weight:bold;">${(__zhStatsTotals.totalMemberAmount || 0).toFixed(2)}</span>元    非会员订单金额小计 <span style="color:#007bff; font-weight:bold;">${(__zhStatsTotals.totalNonMemberAmount || 0).toFixed(2)}</span>元
+                const totalMemberAmount = __zhStatsTotals.totalMemberAmount || 0;
+                const totalNonMemberAmount = __zhStatsTotals.totalNonMemberAmount || 0;
+                const totalOrderAmount = totalMemberAmount + totalNonMemberAmount;
+                html += `<div style="margin-top:12px; padding-top:12px; border-top:1px solid #dee2e6; font-weight:600; display:flex; justify-content:space-between; align-items:center;">
+                    <span>会员订单金额小计 <span style="color:#007bff; font-weight:bold;">${totalMemberAmount.toFixed(2)}</span>元    非会员订单金额小计 <span style="color:#007bff; font-weight:bold;">${totalNonMemberAmount.toFixed(2)}</span>元</span>
+                    <span style="margin-left:auto; padding-left:20px;">订单金额总计：<span style="color:#28a745; font-weight:bold;">${totalOrderAmount.toFixed(2)}</span>元</span>
                 </div>`;
                 html += '</div>';
             } else if (!__zhStatsTotals) {
@@ -13923,7 +14009,13 @@ function updateUnchargedTable() {
             // 快易洁洗车：查询所有列
             
             const innerFrom = `FROM ${tableName} ${whereClause}`;
-            const overOrder = `ORDER BY [${timeField}] DESC`;
+            // 对于"智小盟"，ORDER BY也需要使用清理后的字段
+            let overOrder;
+            if (project === '智小盟') {
+                overOrder = `ORDER BY LTRIM(RTRIM([${timeField}])) DESC`;
+            } else {
+                overOrder = `ORDER BY [${timeField}] DESC`;
+            }
             // 构建分页SQL：外层选择指定列（排除rn），内层选择所有列包括rn
             let pageSql;
             if (project === '兴元售货机' || project === '赛菲姆道闸' || project === '收钱吧' || project === '智小盟' || project === '车海洋洗车' || project === '微信' || project === '车颜知己洗车') {
