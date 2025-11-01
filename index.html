@@ -4674,6 +4674,8 @@
         }
         // 加载并显示Excel数据
         function loadExcelData(filePath, fileName, dataType, isUserQuery = false) {
+            // 返回 Promise 以便调用者可以处理错误
+            return new Promise((resolve, reject) => {
             const isCharging = dataType === 'charging';
             const loadingElement = isCharging ? dataLoading : comprehensiveLoading;
             const tableElement = isCharging ? tableContainer : comprehensiveTableContainer;
@@ -4686,7 +4688,7 @@
             fetch(filePath)
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('文件未找到');
+                        throw new Error(`HTTP ${response.status}: 文件未找到或无法访问`);
                     }
                     return response.arrayBuffer();
                 })
@@ -4770,9 +4772,21 @@
                             behavior: 'smooth'
                         });
                     }
+                    
+                    resolve({ success: true, fileName, dataType });
                 })
                 .catch(error => {
                     console.error('加载Excel文件失败:', error);
+                    console.error('文件路径:', filePath);
+                    console.error('错误类型:', error.name);
+                    console.error('错误信息:', error.message);
+                    
+                    loadingElement.style.display = 'none';
+                    
+                    // 显示友好的错误提示
+                    const errorMessage = `无法加载文件: ${fileName}\n错误: ${error.message}\n这可能是由于文件不存在或网络连接问题引起的。`;
+                    infoElement.textContent = errorMessage;
+                    infoElement.style.color = '#dc3545';
                     
                     // 从文件名中提取年月信息
                     const fileNameWithoutExt = fileName.replace('.xlsx', '');
@@ -4833,11 +4847,14 @@
                         currentExportData = null;
                         exportBtn.disabled = true;
                     }
+                    
+                    reject(error);
                 })
                 .finally(() => {
                     loadingElement.style.display = 'none';
                     queryBtn.classList.remove('loading');
                 });
+            });
         }
         
         // 从数据渲染Excel表格
@@ -4879,29 +4896,38 @@
         
         // 加载默认数据
         function loadDefaultData() {
-            const now = new Date();
-            let year = now.getFullYear();
-            let month = now.getMonth(); // 0-11
-            
-            // 设置默认值为上个月
-            if (month === 0) {
-                year--;
-                month = 11;
-            } else {
-                month--;
+            try {
+                const now = new Date();
+                let year = now.getFullYear();
+                let month = now.getMonth(); // 0-11
+                
+                // 设置默认值为上个月
+                if (month === 0) {
+                    year--;
+                    month = 11;
+                } else {
+                    month--;
+                }
+                
+                const defaultDate = `${year}-${(month + 1).toString().padStart(2, '0')}`;
+                const chargingFileName = generateFileName(defaultDate, defaultDate);
+                const chargingFilePath = generateFilePath(chargingFileName, 'charging');
+                
+                // 加载默认充电数据（捕获错误但不阻塞）
+                loadExcelData(chargingFilePath, chargingFileName, 'charging').catch(err => {
+                    console.warn('默认充电数据加载失败，但不影响页面功能:', err);
+                });
+                
+                // 加载默认综合数据（捕获错误但不阻塞）
+                const comprehensiveFileName = generateFileName(defaultDate, defaultDate);
+                const comprehensiveFilePath = generateFilePath(comprehensiveFileName, 'comprehensive');
+                loadExcelData(comprehensiveFilePath, comprehensiveFileName, 'comprehensive').catch(err => {
+                    console.warn('默认综合数据加载失败，但不影响页面功能:', err);
+                });
+            } catch (err) {
+                console.error('loadDefaultData 执行失败:', err);
+                // 不抛出错误，避免阻塞页面初始化
             }
-            
-            const defaultDate = `${year}-${(month + 1).toString().padStart(2, '0')}`;
-            const chargingFileName = generateFileName(defaultDate, defaultDate);
-            const chargingFilePath = generateFilePath(chargingFileName, 'charging');
-            
-            // 加载默认充电数据
-            loadExcelData(chargingFilePath, chargingFileName, 'charging');
-            
-            // 加载默认综合数据
-            const comprehensiveFileName = generateFileName(defaultDate, defaultDate);
-            const comprehensiveFilePath = generateFilePath(comprehensiveFileName, 'comprehensive');
-            loadExcelData(comprehensiveFilePath, comprehensiveFileName, 'comprehensive');
         }
         
         // 导出Excel文件
@@ -11175,8 +11201,21 @@ function updateUnchargedTable() {
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ query: sql })
-                }).then(r => {
-                    if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + r.statusText);
+                }).then(async r => {
+                    if (!r.ok) {
+                        let errorMsg = 'HTTP ' + r.status + ': ' + r.statusText;
+                        try {
+                            const errorBody = await r.text();
+                            if (errorBody) {
+                                errorMsg += ' - ' + errorBody;
+                            }
+                        } catch (e) {
+                            // 忽略解析错误体的错误
+                        }
+                        const error = new Error(errorMsg);
+                        error.httpStatus = r.status;
+                        throw error;
+                    }
                     return r.json();
                 }).then(j => (j && j.result) ? j.result : j).catch(err => {
                     if (tries < attempts) {
@@ -12720,8 +12759,13 @@ function updateUnchargedTable() {
 
                 // 先获取总数
                 const countSql = `SELECT COUNT(*) as total FROM ${query.tableName} ${query.whereClause}`;
+                console.log('综合数据查询 - 项目:', query.project, '表名:', query.tableName, '时间字段:', query.timeField);
+                console.log('COUNT SQL:', countSql);
+                console.log('WHERE子句:', query.whereClause);
+                
                 callSqlWithRetry(countSql)
                     .then(countResult => {
+                        console.log('COUNT查询结果:', countResult);
                         const total = countResult.results && countResult.results[0] ? countResult.results[0].total : 0;
                         __zhPagination.total = total;
                         __zhPagination.currentPage = 1;
@@ -12732,10 +12776,13 @@ function updateUnchargedTable() {
                         // 兴元售货机使用指定的列，其他使用*
                         const selectCols = query.selectColumns || '*';
                         const dataSql = `SELECT TOP 20 ${selectCols} FROM ${query.tableName} ${query.whereClause} ${orderByFinal}`;
+                        console.log('数据查询SQL:', dataSql);
 
                         return callSqlWithRetry(dataSql);
                     })
                     .then(dataResult => {
+                        console.log('数据查询结果:', dataResult);
+                        console.log('结果数量:', dataResult && dataResult.results ? dataResult.results.length : 0);
                         if (dataResult && dataResult.results) {
                             // 根据项目类别过滤列
                             let cleanedResults = dataResult.results;
@@ -13098,22 +13145,46 @@ function updateUnchargedTable() {
 
         // 智小盟统计：统计实收金额汇总
         async function calculateZhixiaomengStats() {
-            const query = buildZhQuery();
-            const sql = `SELECT SUM([实收金额 ]) as 实收金额合计 
-                        FROM ${query.tableName} ${query.whereClause}`;
+            const startInput = document.getElementById('zh-start-datetime');
+            const endInput = document.getElementById('zh-end-datetime');
+            const start = toSqlDateTime(startInput ? startInput.value : '', false);
+            const end = toSqlDateTime(endInput ? endInput.value : '', true);
+            
+            if (!start || !end) {
+                console.error('智小盟统计：缺少时间参数');
+                __zhStatsTotals = null;
+                updateZhStatsDisplay();
+                return;
+            }
+            
+            const sql = `SELECT ISNULL(SUM([实收金额 ]), 0) as 实收金额合计 
+                        FROM [智小盟] WHERE [支付时间] >= '${start}' AND [支付时间] <= '${end}'`;
             
             try {
+                console.log('智小盟统计SQL:', sql);
                 const result = await callSqlWithRetry(sql);
+                console.log('智小盟统计查询结果:', result);
+                
                 if (result && result.results && result.results.length > 0) {
                     const totalAmount = parseFloat(result.results[0]['实收金额合计'] || 0);
+                    console.log('智小盟统计金额:', totalAmount);
                     
                     __zhStatsTotals = {
                         totalAmount: totalAmount
                     };
                     updateZhStatsDisplay();
+                } else {
+                    console.warn('智小盟统计：查询结果为空或格式错误');
+                    __zhStatsTotals = {
+                        totalAmount: 0
+                    };
+                    updateZhStatsDisplay();
                 }
             } catch (err) {
                 console.error('智小盟统计失败:', err);
+                console.error('错误详情:', err.message, err.stack);
+                __zhStatsTotals = null;
+                updateZhStatsDisplay();
             }
         }
 
@@ -13178,11 +13249,17 @@ function updateUnchargedTable() {
             }
             
             // 从"微信收款商业版"表统计
-            const shangyebanSql = `SELECT ISNULL(SUM([订单金额]), 0) as 订单金额合计, ISNULL(SUM([退款金额]), 0) as 退款金额合计 
+            // 检查时间参数是否有效
+            if (!start || !end || start === 'Invalid Date' || end === 'Invalid Date') {
+                console.error('微信统计：时间参数无效', { start, end });
+                throw new Error('时间参数无效');
+            }
+            
+            const shangyebanSql = `SELECT ISNULL(SUM(CAST([订单金额] AS FLOAT)), 0) as 订单金额合计, ISNULL(SUM(CAST([退款金额] AS FLOAT)), 0) as 退款金额合计 
                                   FROM [微信收款商业版] WHERE [交易时间] >= '${start}' AND [交易时间] <= '${end}'`;
             
             // 从"微信商户下单"表统计
-            const xiadanSql = `SELECT ISNULL(SUM([订单金额]), 0) as 订单金额合计, ISNULL(SUM([退款金额]), 0) as 退款金额合计 
+            const xiadanSql = `SELECT ISNULL(SUM(CAST([订单金额] AS FLOAT)), 0) as 订单金额合计, ISNULL(SUM(CAST([退款金额] AS FLOAT)), 0) as 退款金额合计 
                               FROM [微信商户下单] WHERE [交易时间] >= '${start}' AND [交易时间] <= '${end}'`;
             
             try {
@@ -13190,22 +13267,47 @@ function updateUnchargedTable() {
                 console.log('微信收款商业版SQL:', shangyebanSql);
                 console.log('微信商户下单SQL:', xiadanSql);
                 
-                const [shangyebanResult, xiadanResult] = await Promise.all([
-                    callSqlWithRetry(shangyebanSql),
-                    callSqlWithRetry(xiadanSql)
-                ]);
+                // 分别执行查询以便单独处理错误
+                let shangyebanResult, xiadanResult;
+                let shangyebanError = null;
+                let xiadanError = null;
                 
-                console.log('微信收款商业版查询结果:', shangyebanResult);
-                console.log('微信商户下单查询结果:', xiadanResult);
+                try {
+                    shangyebanResult = await callSqlWithRetry(shangyebanSql);
+                    console.log('微信收款商业版查询结果:', shangyebanResult);
+                } catch (err) {
+                    console.error('微信收款商业版查询失败:', err);
+                    shangyebanError = err;
+                    // 设置为空结果
+                    shangyebanResult = { results: [{ '订单金额合计': 0, '退款金额合计': 0 }] };
+                }
+                
+                try {
+                    xiadanResult = await callSqlWithRetry(xiadanSql);
+                    console.log('微信商户下单查询结果:', xiadanResult);
+                } catch (err) {
+                    console.error('微信商户下单查询失败:', err);
+                    xiadanError = err;
+                    // 设置为空结果
+                    xiadanResult = { results: [{ '订单金额合计': 0, '退款金额合计': 0 }] };
+                }
+                
+                // 如果有错误，记录警告但继续处理
+                if (shangyebanError) {
+                    console.warn('微信收款商业版查询失败，使用默认值0:', shangyebanError);
+                }
+                if (xiadanError) {
+                    console.warn('微信商户下单查询失败，使用默认值0:', xiadanError);
+                }
                 
                 if (!shangyebanResult || !shangyebanResult.results) {
                     console.error('微信收款商业版查询结果格式错误:', shangyebanResult);
-                    throw new Error('微信收款商业版查询结果格式错误');
+                    shangyebanResult = { results: [{ '订单金额合计': 0, '退款金额合计': 0 }] };
                 }
                 
                 if (!xiadanResult || !xiadanResult.results) {
                     console.error('微信商户下单查询结果格式错误:', xiadanResult);
-                    throw new Error('微信商户下单查询结果格式错误');
+                    xiadanResult = { results: [{ '订单金额合计': 0, '退款金额合计': 0 }] };
                 }
                 
                 const shangyebanRow = shangyebanResult.results[0] || {};
@@ -13218,13 +13320,17 @@ function updateUnchargedTable() {
                 const xiadanRefundAmount = parseFloat(xiadanRow['退款金额合计'] || 0);
                 const xiadanIncome = xiadanOrderAmount - xiadanRefundAmount;
                 
+                // 计算微信总收入
+                const totalIncome = shangyebanIncome + xiadanIncome;
+                
                 console.log('微信统计计算结果:', {
                     shangyebanOrderAmount,
                     shangyebanRefundAmount,
                     shangyebanIncome,
                     xiadanOrderAmount,
                     xiadanRefundAmount,
-                    xiadanIncome
+                    xiadanIncome,
+                    totalIncome
                 });
                 
                 __zhStatsTotals = {
@@ -13233,7 +13339,8 @@ function updateUnchargedTable() {
                     shangyebanIncome: shangyebanIncome,
                     xiadanOrderAmount: xiadanOrderAmount,
                     xiadanRefundAmount: xiadanRefundAmount,
-                    xiadanIncome: xiadanIncome
+                    xiadanIncome: xiadanIncome,
+                    totalIncome: totalIncome
                 };
                 
                 updateZhStatsDisplay();
@@ -13746,8 +13853,9 @@ function updateUnchargedTable() {
                 // 微信：显示微信扫码收入和微信商户下单收入
                 const stats = __zhStatsTotals || {};
                 html += `<div style="margin-top:8px; font-size:14px; line-height:1.8;">
-                    <div>微信扫码收入(等于订单金额减退款金额)：<span style="color:#28a745; font-weight:bold;">${(stats.shangyebanIncome || 0).toFixed(2)}</span>元（）：订单金额<span style="color:#28a745;">${(stats.shangyebanOrderAmount || 0).toFixed(2)}</span>元   退款金额<span style="color:#dc3545;">${(stats.shangyebanRefundAmount || 0).toFixed(2)}</span>元</div>
-                    <div style="margin-top:8px;">微信商户下单收入(等于订单金额减退款金额)：<span style="color:#28a745; font-weight:bold;">${(stats.xiadanIncome || 0).toFixed(2)}</span>元（）：订单金额<span style="color:#28a745;">${(stats.xiadanOrderAmount || 0).toFixed(2)}</span>元   退款金额<span style="color:#dc3545;">${(stats.xiadanRefundAmount || 0).toFixed(2)}</span>元</div>
+                    <div>微信扫码收入：<span style="color:#28a745; font-weight:bold;">${(stats.shangyebanIncome || 0).toFixed(2)}</span>元：订单金额<span style="color:#28a745;">${(stats.shangyebanOrderAmount || 0).toFixed(2)}</span>元   退款金额<span style="color:#dc3545;">${(stats.shangyebanRefundAmount || 0).toFixed(2)}</span>元</div>
+                    <div style="margin-top:8px;">微信商户下单收入：<span style="color:#28a745; font-weight:bold;">${(stats.xiadanIncome || 0).toFixed(2)}</span>元：订单金额<span style="color:#28a745;">${(stats.xiadanOrderAmount || 0).toFixed(2)}</span>元   退款金额<span style="color:#dc3545;">${(stats.xiadanRefundAmount || 0).toFixed(2)}</span>元</div>
+                    <div style="margin-top:12px; padding-top:12px; border-top:1px solid #dee2e6; font-weight:600;">微信总收入：<span style="color:#007bff; font-weight:bold;">${(stats.totalIncome || 0).toFixed(2)}</span>元</div>
                 </div>`;
             } else if (project === '车颜知己洗车') {
                 // 车颜知己洗车：按场所显示会员和非会员订单金额
