@@ -12511,14 +12511,21 @@ function updateUnchargedTable() {
             } else if (project === '智小盟') {
                 timeField = '支付时间';
             } else if (project === '车颜知己洗车') {
-                timeField = '日期';
+                timeField = '启动时间';
             } else if (project === '车海洋洗车') {
-                timeField = '日期';
+                timeField = '时间';
             } else if (project === '微信') {
-                timeField = '支付时间';
+                timeField = '交易时间';
             }
             
-            __zhPagination.tableName = `[${project}]`;
+            // 根据项目类别设置表名
+            if (project === '车海洋洗车') {
+                __zhPagination.tableName = '[车海洋洗车消费]';
+            } else if (project === '微信') {
+                __zhPagination.tableName = '[微信收款商业版]';
+            } else {
+                __zhPagination.tableName = `[${project}]`;
+            }
             __zhPagination.timeField = timeField;
             
             // 初始化日期选择器
@@ -12607,10 +12614,16 @@ function updateUnchargedTable() {
                 throw new Error('请选择开始时间和结束时间');
             }
 
-            const tableName = `[${project}]`;
+            // 根据项目类别设置表名
+            let tableName = `[${project}]`;
+            if (project === '车海洋洗车') {
+                tableName = '[车海洋洗车消费]';
+            } else if (project === '微信') {
+                tableName = '[微信收款商业版]';
+            }
             
             // 对于日期字段（如"交易日期"、"日期"），只使用日期部分进行比较
-            // 对于日期时间字段（如"支付时间"），使用完整日期时间进行比较
+            // 对于日期时间字段（如"支付时间"、"交易时间"、"时间"），使用完整日期时间进行比较
             let whereClause = '';
             if (timeField === '交易日期' || timeField === '日期') {
                 // 日期字段：只提取日期部分（YYYY-MM-DD）
@@ -12635,8 +12648,14 @@ function updateUnchargedTable() {
                 selectColumns = '[交易日期], [收款通道/支付方式], [交易状态], [收款金额]';
             } else if (project === '智小盟') {
                 selectColumns = '[设备名称], [实收金额 ], [支付方式], [支付时间]';
+            } else if (project === '车海洋洗车') {
+                selectColumns = '*'; // 车海洋洗车消费表的所有列
+            } else if (project === '微信') {
+                selectColumns = '[交易时间], [商户号], [微信订单号], [订单金额], [退款金额]';
+            } else if (project === '车颜知己洗车') {
+                selectColumns = '[场所], [启动时间], [停止时间], [订单金额], [使用会员卡], [订单状态]';
             }
-            // 快易洁洗车、车颜知己洗车、车海洋洗车、微信：查询所有列
+            // 快易洁洗车：查询所有列
             
             return {
                 tableName: tableName,
@@ -12764,6 +12783,31 @@ function updateUnchargedTable() {
                                     });
                                     return filtered;
                                 });
+                            } else if (query.project === '车海洋洗车') {
+                                // 车海洋洗车：输出车海洋洗车消费表的所有列，不需要过滤
+                                cleanedResults = dataResult.results;
+                            } else if (query.project === '微信') {
+                                const allowedCols = ['交易时间', '商户号', '微信订单号', '订单金额', '退款金额'];
+                                cleanedResults = dataResult.results.map(row => {
+                                    const filtered = {};
+                                    allowedCols.forEach(col => {
+                                        if (row.hasOwnProperty(col)) {
+                                            filtered[col] = row[col];
+                                        }
+                                    });
+                                    return filtered;
+                                });
+                            } else if (query.project === '车颜知己洗车') {
+                                const allowedCols = ['场所', '启动时间', '停止时间', '订单金额', '使用会员卡', '订单状态'];
+                                cleanedResults = dataResult.results.map(row => {
+                                    const filtered = {};
+                                    allowedCols.forEach(col => {
+                                        if (row.hasOwnProperty(col)) {
+                                            filtered[col] = row[col];
+                                        }
+                                    });
+                                    return filtered;
+                                });
                             }
                             
                             __lastZhQueryResults = { ...dataResult, results: cleanedResults };
@@ -12811,8 +12855,13 @@ function updateUnchargedTable() {
                     await calculateZhixiaomengStats();
                 } else if (project === '快易洁洗车') {
                     await calculateKuaijijieStats();
+                } else if (project === '车海洋洗车') {
+                    await calculateChehaiyangStats();
+                } else if (project === '微信') {
+                    await calculateWeixinStats();
+                } else if (project === '车颜知己洗车') {
+                    await calculateCheyanzhijiStats();
                 }
-                // 车颜知己洗车、车海洋洗车、微信：暂不实现统计，__zhStatsTotals保持为null
             } catch (err) {
                 console.error('统计计算失败:', err);
             }
@@ -13065,6 +13114,220 @@ function updateUnchargedTable() {
                 }
             } catch (err) {
                 console.error('智小盟统计失败:', err);
+            }
+        }
+
+        // 车海洋洗车统计：统计消费金额、返还金额、充值金额
+        async function calculateChehaiyangStats() {
+            const startInput = document.getElementById('zh-start-datetime');
+            const endInput = document.getElementById('zh-end-datetime');
+            const start = startInput.value || startInput.getAttribute('data-value') || '';
+            const end = endInput.value || endInput.getAttribute('data-value') || '';
+            
+            if (!start || !end) {
+                console.error('车海洋洗车统计：缺少时间参数');
+                return;
+            }
+            
+            // 从"车海洋洗车消费"表统计
+            const consumeSql = `SELECT SUM([消费金额]) as 消费金额合计, SUM([返还金额]) as 消费返还金额合计 
+                               FROM [车海洋洗车消费] WHERE [时间] >= '${start}' AND [时间] <= '${end}'`;
+            
+            // 从"车海洋洗车充值"表统计
+            const rechargeSql = `SELECT SUM([充值金额]) as 充值金额合计, SUM([返还金额]) as 充值返还金额合计 
+                                FROM [车海洋洗车充值] WHERE [时间] >= '${start}' AND [时间] <= '${end}'`;
+            
+            try {
+                const [consumeResult, rechargeResult] = await Promise.all([
+                    callSqlWithRetry(consumeSql),
+                    callSqlWithRetry(rechargeSql)
+                ]);
+                
+                const consumeAmount = parseFloat(consumeResult.results && consumeResult.results[0] ? (consumeResult.results[0]['消费金额合计'] || 0) : 0);
+                const consumeRefund = parseFloat(consumeResult.results && consumeResult.results[0] ? (consumeResult.results[0]['消费返还金额合计'] || 0) : 0);
+                const rechargeAmount = parseFloat(rechargeResult.results && rechargeResult.results[0] ? (rechargeResult.results[0]['充值金额合计'] || 0) : 0);
+                const rechargeRefund = parseFloat(rechargeResult.results && rechargeResult.results[0] ? (rechargeResult.results[0]['充值返还金额合计'] || 0) : 0);
+                const totalRefund = consumeRefund + rechargeRefund;
+                
+                __zhStatsTotals = {
+                    consumeAmount: consumeAmount,
+                    consumeRefund: consumeRefund,
+                    rechargeAmount: rechargeAmount,
+                    rechargeRefund: rechargeRefund,
+                    totalRefund: totalRefund
+                };
+                
+                updateZhStatsDisplay();
+            } catch (err) {
+                console.error('车海洋洗车统计失败:', err);
+            }
+        }
+
+        // 微信统计：统计微信扫码收入和微信商户下单收入
+        async function calculateWeixinStats() {
+            const startInput = document.getElementById('zh-start-datetime');
+            const endInput = document.getElementById('zh-end-datetime');
+            const start = toSqlDateTime(startInput ? startInput.value : '', false);
+            const end = toSqlDateTime(endInput ? endInput.value : '', true);
+            
+            if (!start || !end) {
+                console.error('微信统计：缺少时间参数');
+                __zhStatsTotals = null;
+                updateZhStatsDisplay();
+                return;
+            }
+            
+            // 从"微信收款商业版"表统计
+            const shangyebanSql = `SELECT ISNULL(SUM([订单金额]), 0) as 订单金额合计, ISNULL(SUM([退款金额]), 0) as 退款金额合计 
+                                  FROM [微信收款商业版] WHERE [交易时间] >= '${start}' AND [交易时间] <= '${end}'`;
+            
+            // 从"微信商户下单"表统计
+            const xiadanSql = `SELECT ISNULL(SUM([订单金额]), 0) as 订单金额合计, ISNULL(SUM([退款金额]), 0) as 退款金额合计 
+                              FROM [微信商户下单] WHERE [交易时间] >= '${start}' AND [交易时间] <= '${end}'`;
+            
+            try {
+                console.log('微信统计：开始查询，时间范围:', start, '至', end);
+                console.log('微信收款商业版SQL:', shangyebanSql);
+                console.log('微信商户下单SQL:', xiadanSql);
+                
+                const [shangyebanResult, xiadanResult] = await Promise.all([
+                    callSqlWithRetry(shangyebanSql),
+                    callSqlWithRetry(xiadanSql)
+                ]);
+                
+                console.log('微信收款商业版查询结果:', shangyebanResult);
+                console.log('微信商户下单查询结果:', xiadanResult);
+                
+                if (!shangyebanResult || !shangyebanResult.results) {
+                    console.error('微信收款商业版查询结果格式错误:', shangyebanResult);
+                    throw new Error('微信收款商业版查询结果格式错误');
+                }
+                
+                if (!xiadanResult || !xiadanResult.results) {
+                    console.error('微信商户下单查询结果格式错误:', xiadanResult);
+                    throw new Error('微信商户下单查询结果格式错误');
+                }
+                
+                const shangyebanRow = shangyebanResult.results[0] || {};
+                const shangyebanOrderAmount = parseFloat(shangyebanRow['订单金额合计'] || 0);
+                const shangyebanRefundAmount = parseFloat(shangyebanRow['退款金额合计'] || 0);
+                const shangyebanIncome = shangyebanOrderAmount - shangyebanRefundAmount;
+                
+                const xiadanRow = xiadanResult.results[0] || {};
+                const xiadanOrderAmount = parseFloat(xiadanRow['订单金额合计'] || 0);
+                const xiadanRefundAmount = parseFloat(xiadanRow['退款金额合计'] || 0);
+                const xiadanIncome = xiadanOrderAmount - xiadanRefundAmount;
+                
+                console.log('微信统计计算结果:', {
+                    shangyebanOrderAmount,
+                    shangyebanRefundAmount,
+                    shangyebanIncome,
+                    xiadanOrderAmount,
+                    xiadanRefundAmount,
+                    xiadanIncome
+                });
+                
+                __zhStatsTotals = {
+                    shangyebanOrderAmount: shangyebanOrderAmount,
+                    shangyebanRefundAmount: shangyebanRefundAmount,
+                    shangyebanIncome: shangyebanIncome,
+                    xiadanOrderAmount: xiadanOrderAmount,
+                    xiadanRefundAmount: xiadanRefundAmount,
+                    xiadanIncome: xiadanIncome
+                };
+                
+                updateZhStatsDisplay();
+            } catch (err) {
+                console.error('微信统计失败:', err);
+                console.error('错误详情:', err.message, err.stack);
+                __zhStatsTotals = null;
+                updateZhStatsDisplay();
+            }
+        }
+
+        // 车颜知己洗车统计：按场所统计会员和非会员订单金额
+        async function calculateCheyanzhijiStats() {
+            const startInput = document.getElementById('zh-start-datetime');
+            const endInput = document.getElementById('zh-end-datetime');
+            const start = toSqlDateTime(startInput ? startInput.value : '', false);
+            const end = toSqlDateTime(endInput ? endInput.value : '', true);
+            
+            if (!start || !end) {
+                console.error('车颜知己洗车统计：缺少时间参数');
+                __zhStatsTotals = null;
+                updateZhStatsDisplay();
+                return;
+            }
+            
+            // 查询所有已完成订单的数据
+            const sql = `SELECT [场所], [订单金额], [使用会员卡], [订单状态] 
+                        FROM [车颜知己洗车] 
+                        WHERE [启动时间] >= '${start}' AND [启动时间] <= '${end}' AND [订单状态] = '已完成'`;
+            
+            try {
+                const result = await callSqlWithRetry(sql);
+                if (!result || !result.results) {
+                    console.error('车颜知己洗车统计：查询结果格式错误');
+                    __zhStatsTotals = null;
+                    updateZhStatsDisplay();
+                    return;
+                }
+                
+                // 按场所统计
+                const statsByPlace = {};
+                let totalMemberAmount = 0;
+                let totalNonMemberAmount = 0;
+                
+                result.results.forEach(row => {
+                    const place = row['场所'] || '未知';
+                    const useMemberCard = String(row['使用会员卡'] || '').trim();
+                    const orderStatus = String(row['订单状态'] || '').trim();
+                    const orderAmount = parseFloat(row['订单金额'] || 0);
+                    
+                    if (orderStatus !== '已完成') {
+                        return; // 只统计已完成的订单
+                    }
+                    
+                    if (!statsByPlace[place]) {
+                        statsByPlace[place] = {
+                            memberCount: 0,      // 会员订单数
+                            nonMemberAmount: 0   // 非会员订单金额总和
+                        };
+                    }
+                    
+                    if (useMemberCard === '是') {
+                        // 会员：统计订单数，每个订单按7元计算
+                        statsByPlace[place].memberCount += 1;
+                    } else if (useMemberCard === '否') {
+                        // 非会员：直接累加订单金额
+                        statsByPlace[place].nonMemberAmount += orderAmount;
+                    }
+                });
+                
+                // 计算每个场所的会员订单金额（订单数 × 7）
+                const stats = {};
+                Object.keys(statsByPlace).forEach(place => {
+                    const memberAmount = statsByPlace[place].memberCount * 7;
+                    const nonMemberAmount = statsByPlace[place].nonMemberAmount;
+                    stats[place] = {
+                        memberAmount: memberAmount,
+                        nonMemberAmount: nonMemberAmount
+                    };
+                    totalMemberAmount += memberAmount;
+                    totalNonMemberAmount += nonMemberAmount;
+                });
+                
+                __zhStatsTotals = {
+                    stats: stats,
+                    totalMemberAmount: totalMemberAmount,
+                    totalNonMemberAmount: totalNonMemberAmount
+                };
+                
+                updateZhStatsDisplay();
+            } catch (err) {
+                console.error('车颜知己洗车统计失败:', err);
+                __zhStatsTotals = null;
+                updateZhStatsDisplay();
             }
         }
 
@@ -13469,8 +13732,42 @@ function updateUnchargedTable() {
                         html += `<div style="margin-top:8px; font-weight:600; color:#28a745;">金额合计: ${__zhStatsTotals.totalAmount.toFixed(2)}</div>`;
                     }
                 }
+            } else if (project === '车海洋洗车') {
+                // 车海洋洗车：显示消费金额、消费返还金额、充值金额、充值返还金额、返还总额
+                const stats = __zhStatsTotals || {};
+                html += `<div style="margin-top:8px; font-size:14px; line-height:1.8;">
+                    <div>消费金额：<span style="color:#28a745; font-weight:bold;">${(stats.consumeAmount || 0).toFixed(2)}</span>元</div>
+                    <div>消费返还金额：<span style="color:#28a745; font-weight:bold;">${(stats.consumeRefund || 0).toFixed(2)}</span>元</div>
+                    <div>充值金额：<span style="color:#28a745; font-weight:bold;">${(stats.rechargeAmount || 0).toFixed(2)}</span>元</div>
+                    <div>充值返还金额：<span style="color:#28a745; font-weight:bold;">${(stats.rechargeRefund || 0).toFixed(2)}</span>元</div>
+                    <div style="margin-top:6px; padding-top:6px; border-top:1px solid #dee2e6; font-weight:600;">返还总额：<span style="color:#dc3545; font-weight:bold;">${(stats.totalRefund || 0).toFixed(2)}</span>元</div>
+                </div>`;
+            } else if (project === '微信') {
+                // 微信：显示微信扫码收入和微信商户下单收入
+                const stats = __zhStatsTotals || {};
+                html += `<div style="margin-top:8px; font-size:14px; line-height:1.8;">
+                    <div>微信扫码收入(等于订单金额减退款金额)：<span style="color:#28a745; font-weight:bold;">${(stats.shangyebanIncome || 0).toFixed(2)}</span>元（）：订单金额<span style="color:#28a745;">${(stats.shangyebanOrderAmount || 0).toFixed(2)}</span>元   退款金额<span style="color:#dc3545;">${(stats.shangyebanRefundAmount || 0).toFixed(2)}</span>元</div>
+                    <div style="margin-top:8px;">微信商户下单收入(等于订单金额减退款金额)：<span style="color:#28a745; font-weight:bold;">${(stats.xiadanIncome || 0).toFixed(2)}</span>元（）：订单金额<span style="color:#28a745;">${(stats.xiadanOrderAmount || 0).toFixed(2)}</span>元   退款金额<span style="color:#dc3545;">${(stats.xiadanRefundAmount || 0).toFixed(2)}</span>元</div>
+                </div>`;
+            } else if (project === '车颜知己洗车') {
+                // 车颜知己洗车：按场所显示会员和非会员订单金额
+                const stats = __zhStatsTotals.stats || {};
+                html += '<div style="margin-top:8px; font-size:14px; line-height:1.8;">';
+                
+                // 按场所显示
+                Object.keys(stats).sort().forEach(place => {
+                    const memberAmount = stats[place].memberAmount || 0;
+                    const nonMemberAmount = stats[place].nonMemberAmount || 0;
+                    html += `<div>${place}   会员订单金额 <span style="color:#28a745; font-weight:bold;">${memberAmount.toFixed(2)}</span>元   非会员订单金额 <span style="color:#28a745; font-weight:bold;">${nonMemberAmount.toFixed(2)}</span>元</div>`;
+                });
+                
+                // 汇总
+                html += `<div style="margin-top:12px; padding-top:12px; border-top:1px solid #dee2e6; font-weight:600;">
+                    会员订单金额小计 <span style="color:#007bff; font-weight:bold;">${(__zhStatsTotals.totalMemberAmount || 0).toFixed(2)}</span>元    非会员订单金额小计 <span style="color:#007bff; font-weight:bold;">${(__zhStatsTotals.totalNonMemberAmount || 0).toFixed(2)}</span>元
+                </div>`;
+                html += '</div>';
             } else if (!__zhStatsTotals) {
-                // 其他项目（车颜知己洗车、车海洋洗车、微信）：暂无统计
+                // 其他项目：暂无统计
                 html += '<div style="color:#666;">暂无统计数据</div>';
             }
             
@@ -13508,14 +13805,20 @@ function updateUnchargedTable() {
                 selectCols = '[交易日期], [收款通道/支付方式], [交易状态], [收款金额]';
             } else if (project === '智小盟') {
                 selectCols = '[设备名称], [实收金额 ], [支付方式], [支付时间]';
+            } else if (project === '车海洋洗车') {
+                selectCols = '*'; // 车海洋洗车消费表的所有列
+            } else if (project === '微信') {
+                selectCols = '[交易时间], [商户号], [微信订单号], [订单金额], [退款金额]';
+            } else if (project === '车颜知己洗车') {
+                selectCols = '[场所], [启动时间], [停止时间], [订单金额], [使用会员卡], [订单状态]';
             }
-            // 快易洁洗车、车颜知己洗车、车海洋洗车、微信：查询所有列
+            // 快易洁洗车：查询所有列
             
             const innerFrom = `FROM ${tableName} ${whereClause}`;
             const overOrder = `ORDER BY [${timeField}] DESC`;
             // 构建分页SQL：外层选择指定列（排除rn），内层选择所有列包括rn
             let pageSql;
-            if (project === '兴元售货机' || project === '赛菲姆道闸' || project === '收钱吧' || project === '智小盟') {
+            if (project === '兴元售货机' || project === '赛菲姆道闸' || project === '收钱吧' || project === '智小盟' || project === '车海洋洗车' || project === '微信' || project === '车颜知己洗车') {
                 // 指定列的项目：外层选择指定列
                 pageSql = `SELECT ${selectCols} FROM (SELECT ROW_NUMBER() OVER (${overOrder}) AS rn, * ${innerFrom}) t WHERE t.rn BETWEEN ${startRn} AND ${endRn}`;
             } else {
@@ -13565,6 +13868,27 @@ function updateUnchargedTable() {
                                 return filtered;
                             } else if (project === '智小盟') {
                                 const allowedCols = ['设备名称', '实收金额 ', '支付方式', '支付时间'];
+                                const filtered = {};
+                                allowedCols.forEach(col => {
+                                    if (cleaned.hasOwnProperty(col)) {
+                                        filtered[col] = cleaned[col];
+                                    }
+                                });
+                                return filtered;
+                            } else if (project === '车海洋洗车') {
+                                // 车海洋洗车：输出所有列，不需要过滤
+                                return cleaned;
+                            } else if (project === '微信') {
+                                const allowedCols = ['交易时间', '商户号', '微信订单号', '订单金额', '退款金额'];
+                                const filtered = {};
+                                allowedCols.forEach(col => {
+                                    if (cleaned.hasOwnProperty(col)) {
+                                        filtered[col] = cleaned[col];
+                                    }
+                                });
+                                return filtered;
+                            } else if (project === '车颜知己洗车') {
+                                const allowedCols = ['场所', '启动时间', '停止时间', '订单金额', '使用会员卡', '订单状态'];
                                 const filtered = {};
                                 allowedCols.forEach(col => {
                                     if (cleaned.hasOwnProperty(col)) {
