@@ -2638,7 +2638,7 @@
                     <!-- 查询条件栏 -->
                     <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;">
                         <!-- 项目类别选择 -->
-                        <select id="zh-project-select" onchange="onZhProjectChange()" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px; color:#999;">
+                        <select id="zh-project-select" onchange="onZhProjectChange()" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px; color:#333;">
                             <option value="" disabled selected hidden>项目类别</option>
                             <option value="红门缴费">红门缴费</option>
                             <option value="月租车充值">月租车充值</option>
@@ -13720,10 +13720,10 @@ function updateUnchargedTable() {
                     const amount = payMethodTotals[payMethod];
                     const percentage = grandTotal > 0 ? ((amount / grandTotal) * 100).toFixed(2) : '0.00';
                     return `${payMethod} ${amount.toFixed(2)}(${percentage}%)`;
-                }).join('   ');
+                }).join('   |   ');
                 
                 html += `<div style="display:flex; justify-content:space-between; align-items:center; font-weight:600;">
-                    <span style="color:#007bff;">${payMethodSummary}</span>
+                    <span style="color:#007bff; font-size:50%;">${payMethodSummary}</span>
                     <span style="margin-left:auto; padding-left:20px; color:#28a745;">合计: ${__zhStatsTotals.totalAmount.toFixed(2)}</span>
                 </div>`;
                 html += `</div>`;
@@ -13794,10 +13794,10 @@ function updateUnchargedTable() {
                     const amount = payMethodTotals[payMethod];
                     const percentage = grandTotal > 0 ? ((amount / grandTotal) * 100).toFixed(2) : '0.00';
                     return `${payMethod} ${amount.toFixed(2)}(${percentage}%)`;
-                }).join('   ');
+                }).join('   |   ');
                 
                 html += `<div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; font-weight:600;">
-                    <span style="color:#007bff;">${payMethodSummary}</span>
+                    <span style="color:#007bff; font-size:50%;">${payMethodSummary}</span>
                     <span style="margin-left:auto; padding-left:20px; color:#28a745;">合计: ${__zhStatsTotals.totalAmount.toFixed(2)}</span>
                 </div>`;
                 
