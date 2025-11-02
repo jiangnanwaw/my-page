@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>长沙飞狐电动汽车充电服务有限公司 - 综合业务数据看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.4/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #ecf0f1;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #f1c40f;
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.4);
+        }
+        
+        .header-subtitle {
+            font-size: 1.2rem;
+            color: #bdc3c7;
+            margin-top: 8px;
+        }
+        
+        .time-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            color: #3498db;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .card {
+            background: rgba(30, 40, 70, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f1c40f;
+        }
+        
+        .card-subtitle {
+            font-size: 0.95rem;
+            color: #95a5a6;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: rgba(20, 30, 60, 0.6);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .data-table th {
+            background: rgba(52, 152, 219, 0.3);
+            padding: 16px 12px;
+            text-align: center;
+            font-weight: 600;
+            color: #ecf0f1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .data-table td {
+            padding: 14px 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .data-table tr:nth-child(even) {
+            background: rgba(30, 40, 70, 0.4);
+        }
+        
+        .data-table tr:hover {
+            background: rgba(41, 128, 185, 0.3);
+        }
+        
+        .summary-card {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .summary-item {
+            background: rgba(44, 62, 80, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 180px;
+            margin: 10px;
+            flex: 1;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .summary-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2ecc71;
+            margin: 10px 0;
+        }
+        
+        .summary-label {
+            font-size: 1rem;
+            color: #bdc3c7;
+        }
+        
+        .highlight {
+            background: rgba(46, 204, 113, 0.2);
+            border-radius: 5px;
+            padding: 3px 8px;
+            font-weight: 600;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #95a5a6;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-item {
+                min-width: 150px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .time-display {
+                margin-top: 15px;
+            }
+            
+            .summary-card {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1 class="header-title">综合业务数据看板</h1>
+                <p class="header-subtitle">长沙飞狐电动汽车充电服务有限公司 | 数据采集周期: 2025年10月01日至10月31日</p>
+            </div>
+            <div class="time-display" id="live-clock">2025年10月1日 Friday 13:26:44</div>
+        </header>
+        
+        <div class="summary-card">
+            <div class="summary-item">
+                <div class="summary-label">总收入</div>
+                <div class="summary-value">¥47003.13</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">四方坪站小计</div>
+                <div class="summary-value">¥30,233.37</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">高岭区域收入</div>
+                <div class="summary-value">¥16,769.76</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">月卡缴费收入</div>
+                <div class="summary-value">¥10,660.00</div>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">各区域收入对比</h2>
+                    <div class="card-subtitle">单位：元（人民币）</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="regionChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">业务收入构成</h2>
+                    <div class="card-subtitle">占总收入百分比</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card full-width">
+                <div class="card-header">
+                    <h2 class="card-title">详细业务数据</h2>
+                    <div class="card-subtitle">综合业务数据汇总（2025年10月）</div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>区域</th>
+                            <th>车海洋洗车收入</th>
+                            <th>兴元售货机收入</th>
+                            <th>微信销售收入</th>
+                            <th>快易洁洗车收入</th>
+                            <th>车颜知己洗车收入</th>
+                            <th>临停缴费收入</th>
+                            <th>月卡缴费收入</th>
+                            <th>合计</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>东区</td>
+                            <td>¥2,534.44</td>
+                            <td>¥2,567.40</td>
+                            <td>¥915.00</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥4,140.00</td>
+                            <td>¥3,380.00</td>
+                            <td>¥13,536.84</td>
+                        </tr>
+                        <tr>
+                            <td>西区</td>
+                            <td>¥1,345.85</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥4,015.00</td>
+                            <td>¥4,800.00</td>
+                            <td>¥10,160.85</td>
+                        </tr>
+                        <tr>
+                            <td>南区</td>
+                            <td>¥1,490.68</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥2,565.00</td>
+                            <td>¥2,480.00</td>
+                            <td>¥6,535.68</td>
+                        </tr>
+                        <tr>
+                            <td>四方坪站小计</td>
+                            <td>¥5,370.97</td>
+                            <td>¥2,567.40</td>
+                            <td>¥915.00</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥10,720.00</td>
+                            <td>¥10,660.00</td>
+                            <td class="highlight">¥30,233.37</td>
+                        </tr>
+                        <tr>
+                            <td>高岭</td>
+                            <td>¥0.00</td>
+                            <td>¥1,244.20</td>
+                            <td>¥0.00</td>
+                            <td>¥1,118.56</td>
+                            <td>¥14,407.00</td>
+                            <td>¥0.00</td>
+                            <td>¥0.00</td>
+                            <td>¥16,769.76</td>
+                        </tr>
+                        <tr>
+                            <td><strong>总计</strong></td>
+                            <td><strong>¥5,370.97</strong></td>
+                            <td><strong>¥3,811.60</strong></td>
+                            <td><strong>¥915.00</strong></td>
+                            <td><strong>¥1,118.56</strong></td>
+                            <td><strong>¥14,407.00</strong></td>
+                            <td><strong>¥10,720.00</strong></td>
+                            <td><strong>¥10,660.00</strong></td>
+                            <td class="highlight"><strong>¥47003.13</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="card full-width">
+                <div class="card-header">
+                    <h2 class="card-title">各业务区域分布</h2>
+                    <div class="card-subtitle">单位：元（人民币）</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="stackedChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>数据更新时间: 2025年11月1日 | 长沙飞狐电动汽车充电服务有限公司 © 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        // 动态时间显示
+        function updateClock() {
+            const now = luxon.DateTime.now().setZone('Asia/Shanghai');
+            const dateStr = now.toFormat('yyyy年M月d日 cccc HH:mm:ss');
+            document.getElementById('live-clock').textContent = dateStr;
+        }
+        
+        setInterval(updateClock, 1000);
+        updateClock();
+        
+        // 区域收入数据
+        const regionData = {
+            labels: ['东区', '西区', '南区', '四方坪站小计', '高岭', '总计'],
+            datasets: [{
+                label: '区域总收入 (元)',
+                data: [13536.84, 10160.85, 6535.68, 30233.37, 16769.76, 47003.13],
+                backgroundColor: [
+                    'rgba(52, 152, 219, 0.7)',
+                    'rgba(46, 204, 113, 0.7)',
+                    'rgba(155, 89, 182, 0.7)',
+                    'rgba(241, 196, 15, 0.7)',
+                    'rgba(230, 126, 34, 0.7)',
+                    'rgba(231, 76, 60, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(52, 152, 219, 1)',
+                    'rgba(46, 204, 113, 1)',
+                    'rgba(155, 89, 182, 1)',
+                    'rgba(241, 196, 15, 1)',
+                    'rgba(230, 126, 34, 1)',
+                    'rgba(231, 76, 60, 1)'
+                ],
+                borderWidth: 2
+            }]
+        };
+        
+        // 业务收入构成数据
+        const pieData = {
+            labels: ['车海洋洗车', '兴元售货机', '微信销售收入', '快易洁洗车', '车颜知己洗车', '临停缴费', '月卡缴费'],
+            datasets: [{
+                data: [5370.97, 3811.60, 915.00, 1118.56, 14407.00, 10720.00, 10660.00],
+                backgroundColor: [
+                    'rgba(52, 152, 219, 0.8)',
+                    'rgba(46, 204, 113, 0.8)',
+                    'rgba(155, 89, 182, 0.8)',
+                    'rgba(241, 196, 15, 0.8)',
+                    'rgba(230, 126, 34, 0.8)',
+                    'rgba(231, 76, 60, 0.8)',
+                    'rgba(149, 165, 166, 0.8)'
+                ],
+                borderColor: 'rgba(30, 40, 70, 0.8)',
+                borderWidth: 2
+            }]
+        };
+        
+        // 堆叠图数据
+        const stackedData = {
+            labels: ['东区', '西区', '南区', '高岭'],
+            datasets: [
+                {
+                    label: '车海洋洗车收入',
+                    data: [2534.44, 1345.85, 1490.68, 0],
+                    backgroundColor: 'rgba(52, 152, 219, 0.8)'
+                },
+                {
+                    label: '兴元售货机收入',
+                    data: [2567.40, 0, 0, 1244.20],
+                    backgroundColor: 'rgba(46, 204, 113, 0.8)'
+                },
+                {
+                    label: '微信销售收入',
+                    data: [915.00, 0, 0, 0],
+                    backgroundColor: 'rgba(155, 89, 182, 0.8)'
+                },
+                {
+                    label: '快易洁洗车收入',
+                    data: [0, 0, 0, 1118.56],
+                    backgroundColor: 'rgba(241, 196, 15, 0.8)'
+                },
+                {
+                    label: '车颜知己洗车收入',
+                    data: [0, 0, 0, 14407.00],
+                    backgroundColor: 'rgba(230, 126, 34, 0.8)'
+                },
+                {
+                    label: '临停缴费收入',
+                    data: [4140, 4015, 2565, 0],
+                    backgroundColor: 'rgba(231, 76, 60, 0.8)'
+                },
+                {
+                    label: '月卡缴费收入',
+                    data: [3380, 4800, 2480, 0],
+                    backgroundColor: 'rgba(149, 165, 166, 0.8)'
+                }
+            ]
+        };
+        
+        // 区域收入图表
+        const regionCtx = document.getElementById('regionChart').getContext('2d');
+        new Chart(regionCtx, {
+            type: 'bar',
+            data: regionData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `¥${context.parsed.y.toFixed(2)} `;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#ecf0f1',
+                            callback: function(value) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#ecf0f1'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 饼图
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: pieData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#ecf0f1',
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed;
+                                const total = context.chart.getDatasetMeta(0).total;
+                                const percentage = Math.round((value / total) * 100);
+                                return `${context.label}: ¥${value.toFixed(2)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+        
+        // 堆叠图
+        const stackedCtx = document.getElementById('stackedChart').getContext('2d');
+        new Chart(stackedCtx, {
+            type: 'bar',
+            data: stackedData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#ecf0f1',
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ¥${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#ecf0f1'
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#ecf0f1',
+                            callback: function(value) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
