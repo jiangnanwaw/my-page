@@ -13390,6 +13390,7 @@ function updateUnchargedTable() {
                     </div>
                     <div style="margin-top:12px; padding-top:12px; border-top:1px solid #dee2e6; font-size:14px;">
                         <strong>电量：</strong><span style="color:#28a745; font-weight:bold;">${totalElectricity.toFixed(2)} 度</span>
+                        <span style="margin-left:20px;"><strong>平均电价：</strong><span style="color:red; font-weight:bold;">${totalElectricity > 0 ? (totalFee / totalElectricity).toFixed(4) : '0.0000'} 元/度</span></span>
                     </div>
                 </div>
             `;
