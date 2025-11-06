@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>长沙飞狐充电数据分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(0, 30, 60, 0.7);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .title {
+            font-size: 2.4rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00c9ff, #92fe9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .company {
+            font-size: 1.1rem;
+            color: #a0d2ff;
+            margin-top: 5px;
+        }
+        
+        .date-time {
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 30px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .tabs {
+            display: flex;
+            background: rgba(0, 20, 40, 0.85);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 18px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            font-size: 1.1rem;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+            color: #b0d0ff;
+        }
+        
+        .tab i {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .tab:hover {
+            background: rgba(30, 100, 200, 0.3);
+        }
+        
+        .tab.active {
+            background: rgba(0, 150, 255, 0.25);
+            color: #fff;
+            box-shadow: inset 0 4px 8px rgba(0, 100, 200, 0.4);
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #00c9ff, #92fe9d);
+        }
+        
+        .content {
+            display: none;
+            background: rgba(0, 20, 40, 0.8);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(100, 180, 255, 0.15);
+        }
+        
+        .content.active {
+            display: block;
+            animation: fadeIn 0.6s ease;
+        }
+        
+        .content-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: #70c1ff;
+            display: flex;
+            align-items: center;
+        }
+        
+        .content-title i {
+            margin-right: 12px;
+            background: linear-gradient(135deg, #00c9ff, #92fe9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: rgba(0, 30, 60, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(100, 180, 255, 0.1);
+            height: 380px;
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #a0d2ff;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chart-title i {
+            margin-right: 10px;
+            color: #70c1ff;
+        }
+        
+        .table-container {
+            background: rgba(0, 30, 60, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(100, 180, 255, 0.1);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+        
+        th, td {
+            padding: 14px 16px;
+            text-align: center;
+            border-bottom: 1px solid rgba(100, 180, 255, 0.15);
+        }
+        
+        th {
+            background: rgba(0, 80, 160, 0.4);
+            color: #70c1ff;
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background: rgba(0, 40, 80, 0.3);
+        }
+        
+        tr:hover {
+            background: rgba(0, 100, 200, 0.2);
+        }
+        
+        .loss-rate {
+            color: #ff6b6b;
+            font-weight: 700;
+        }
+        
+        .profit {
+            color: #51cf66;
+            font-weight: 700;
+        }
+        
+        .highlight {
+            background: rgba(0, 150, 255, 0.2);
+            font-weight: 600;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .card {
+            background: rgba(0, 40, 80, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(100, 180, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(0, 60, 120, 0.7);
+        }
+        
+        .card i {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            color: #70c1ff;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            color: #a0d2ff;
+            margin-bottom: 10px;
+        }
+        
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .card-unit {
+            font-size: 0.9rem;
+            color: #a0d2ff;
+            margin-top: 5px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #a0d2ff;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(100, 180, 255, 0.1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 1100px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .date-time {
+                margin-top: 15px;
+            }
+        }
+        
+        /* 下载按钮样式 */
+        .download-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #00c9ff, #92fe9d);
+            color: #1a2a6c;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .download-btn i {
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .download-btn {
+                margin-top: 15px;
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <div class="title">充电运营数据分析看板</div>
+                <div class="company">长沙飞狐电动汽车充电服务有限公司 | 数据采集时间周期：2025年10月01日至10月31日</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="date-time" id="datetime">2025年11月3日星期日 10:27:01</div>
+                <a href="https://www.csfhcdz.cn/download/10月数据.xlsx" target="_blank" class="download-btn">
+                    <i class="fas fa-download"></i> Download
+                </a>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab" data-tab="basic">
+                <i class="fas fa-plug"></i> 基础数据
+            </div>
+            <div class="tab" data-tab="purchase">
+                <i class="fas fa-bolt"></i> 购电与损耗
+            </div>
+            <div class="tab active" data-tab="efficiency">
+                <i class="fas fa-tachometer-alt"></i> 运营效率
+            </div>
+            <div class="tab" data-tab="profit">
+                <i class="fas fa-chart-line"></i> 毛利核算
+            </div>
+            <div class="tab" data-tab="user">
+                <i class="fas fa-users"></i> 用户行为
+            </div>
+        </div>
+        
+        <!-- 基础数据板块 -->
+        <div class="content" id="basic-content">
+            <div class="content-title">
+                <i class="fas fa-plug"></i> 充电平台基础数据
+            </div>
+            
+            <div class="grid-container">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-chart-bar"></i> 充电站核心指标对比</div>
+                    <canvas id="basicChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>站点</th>
+                                <th>充电电量 (kwh)</th>
+                                <th>充电电费 (元)</th>
+                                <th>充电服务费 (元)</th>
+                                <th>充电时长 (小时)</th>
+                                <th>订单数量</th>
+                                <th>占位费 (元)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>四方坪站</td>
+                                <td>292,085.54</td>
+                                <td>140,183.54</td>
+                                <td>100,836.96</td>
+                                <td>8,746.13</td>
+                                <td>12,267</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>高岭站</td>
+                                <td>137,042.18</td>
+                                <td>75,721.49</td>
+                                <td>35,525.25</td>
+                                <td>3,223.93</td>
+                                <td>4,940</td>
+                                <td>293.10</td>
+                            </tr>
+                            <tr class="highlight">
+                                <td>总计</td>
+                                <td>429,127.72</td>
+                                <td>215,905.03</td>
+                                <td>136,362.21</td>
+                                <td>11,970.06</td>
+                                <td>17,207</td>
+                                <td>293.10</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="summary-cards">
+                <div class="card">
+                    <i class="fas fa-battery-full"></i>
+                    <div class="card-title">总充电电量</div>
+                    <div class="card-value">429,127.72</div>
+                    <div class="card-unit">kwh</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-clock"></i>
+                    <div class="card-title">总充电时长</div>
+                    <div class="card-value">11,970.06</div>
+                    <div class="card-unit">小时</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <div class="card-title">总服务费收入</div>
+                    <div class="card-value">136,362.21</div>
+                    <div class="card-unit">元</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-list-alt"></i>
+                    <div class="card-title">总订单数量</div>
+                    <div class="card-value">17,207</div>
+                    <div class="card-unit">笔</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 购电与损耗板块 -->
+        <div class="content" id="purchase-content">
+            <div class="content-title">
+                <i class="fas fa-bolt"></i> 电力局购电与损耗
+            </div>
+            
+            <div class="grid-container">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-chart-pie"></i> 电损率对比</div>
+                    <canvas id="lossChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>站点</th>
+                                <th>购电量 (kwh)</th>
+                                <th>购电成本 (元)</th>
+                                <th>总电损 (kwh)</th>
+                                <th>日电损 (kwh)</th>
+                                <th>电损率</th>
+                                <th>购电平均电价 (元/kwh)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>四方坪站</td>
+                                <td>324,360</td>
+                                <td>159,494.85</td>
+                                <td>36,993.92</td>
+                                <td>1,193.35</td>
+                                <td class="loss-rate">11.41%</td>
+                                <td>0.49</td>
+                            </tr>
+                            <tr>
+                                <td>高岭站</td>
+                                <td>151,050</td>
+                                <td>84,174.51</td>
+                                <td>14,007.82</td>
+                                <td>485.05</td>
+                                <td class="loss-rate">9.27%</td>
+                                <td>0.55</td>
+                            </tr>
+                            <tr class="highlight">
+                                <td>总计</td>
+                                <td>475,410</td>
+                                <td>243,669.36</td>
+                                <td>51,001.74</td>
+                                <td>1,645.22</td>
+                                <td class="loss-rate">10.73%</td>
+                                <td>0.51</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="summary-cards">
+                <div class="card">
+                    <i class="fas fa-plug-circle-bolt"></i>
+                    <div class="card-title">总购电量</div>
+                    <div class="card-value">475,410</div>
+                    <div class="card-unit">kwh</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <div class="card-title">总购电成本</div>
+                    <div class="card-value">243,669.36</div>
+                    <div class="card-unit">元</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-fire"></i>
+                    <div class="card-title">总电损</div>
+                    <div class="card-value">51,001.74</div>
+                    <div class="card-unit">kwh</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-percent"></i>
+                    <div class="card-title">平均电损率</div>
+                    <div class="card-value loss-rate">10.73%</div>
+                    <div class="card-unit">电损比例</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 运营效率板块 -->
+        <div class="content active" id="efficiency-content">
+            <div class="content-title">
+                <i class="fas fa-tachometer-alt"></i> 充电运营效率分析
+            </div>
+            
+            <div class="grid-container">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-chart-radar"></i> 运营效率指标对比</div>
+                    <canvas id="efficiencyChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>指标</th>
+                                <th>四方坪站</th>
+                                <th>高岭站</th>
+                                <th>两站平均</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>单枪日均充电时长(小时)</td>
+                                <td>2.20</td>
+                                <td>2.89</td>
+                                <td>2.35</td>
+                            </tr>
+                            <tr>
+                                <td>单枪日均利用率</td>
+                                <td>9.17%</td>
+                                <td>12.04%</td>
+                                <td>9.79%</td>
+                            </tr>
+                            <tr>
+                                <td>单枪日均充电电量(kwh)</td>
+                                <td>74.19</td>
+                                <td>122.80</td>
+                                <td>84.93</td>
+                            </tr>
+                            <tr>
+                                <td>单枪日均充电收益(元)</td>
+                                <td>25.61</td>
+                                <td>31.83</td>
+                                <td>26.99</td>
+                            </tr>
+                            <tr>
+                                <td>平均每小时充电功率(kw)</td>
+                                <td>33.40</td>
+                                <td>42.51</td>
+                                <td>35.85</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="summary-cards">
+                <div class="card">
+                    <i class="fas fa-charging-station"></i>
+                    <div class="card-title">单枪日均充电时长</div>
+                    <div class="card-value">2.35</div>
+                    <div class="card-unit">小时</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-battery-three-quarters"></i>
+                    <div class="card-title">单枪日均充电电量</div>
+                    <div class="card-value">84.93</div>
+                    <div class="card-unit">kwh</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-coins"></i>
+                    <div class="card-title">单枪日均充电收益</div>
+                    <div class="card-value">26.99</div>
+                    <div class="card-unit">元</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-bolt"></i>
+                    <div class="card-title">平均充电功率</div>
+                    <div class="card-value">35.85</div>
+                    <div class="card-unit">kw</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 毛利核算板块 -->
+        <div class="content" id="profit-content">
+            <div class="content-title">
+                <i class="fas fa-chart-line"></i> 充电毛利核算
+            </div>
+            
+            <div class="grid-container">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-chart-area"></i> 收入与成本构成</div>
+                    <canvas id="profitChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>站点</th>
+                                <th>充电总收入(元)</th>
+                                <th>充电总成本(元)</th>
+                                <th>每kwh毛利(元)</th>
+                                <th>毛利率</th>
+                                <th>毛利润(元)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>四方坪站</td>
+                                <td>241,020.50</td>
+                                <td>166,349.89</td>
+                                <td>0.28</td>
+                                <td>30.98%</td>
+                                <td class="profit">74,670.61</td>
+                            </tr>
+                            <tr>
+                                <td>高岭站</td>
+                                <td>111,539.84</td>
+                                <td>84,609.52</td>
+                                <td>0.20</td>
+                                <td>24.14%</td>
+                                <td class="profit">26,930.32</td>
+                            </tr>
+                            <tr class="highlight">
+                                <td>总计</td>
+                                <td>352,560.34</td>
+                                <td>250,959.41</td>
+                                <td>0.25</td>
+                                <td>28.82%</td>
+                                <td class="profit">101,600.93</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="summary-cards">
+                <div class="card">
+                    <i class="fas fa-money-bill"></i>
+                    <div class="card-title">充电总收入</div>
+                    <div class="card-value">352,560.34</div>
+                    <div class="card-unit">元</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-file-invoice"></i>
+                    <div class="card-title">充电总成本</div>
+                    <div class="card-value">250,959.41</div>
+                    <div class="card-unit">元</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-percent"></i>
+                    <div class="card-title">平均毛利率</div>
+                    <div class="card-value">28.82%</div>
+                    <div class="card-unit">毛利率</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <div class="card-title">总毛利润</div>
+                    <div class="card-value profit">101,600.93</div>
+                    <div class="card-unit">元</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 用户行为板块 -->
+        <div class="content" id="user-content">
+            <div class="content-title">
+                <i class="fas fa-users"></i> 用户行为分析
+            </div>
+            
+            <div class="grid-container">
+                <div class="chart-container">
+                    <div class="chart-title"><i class="fas fa-chart-line"></i> 充电时段分布</div>
+                    <canvas id="userChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>站点</th>
+                                <th>尖时段占比</th>
+                                <th>峰时段占比</th>
+                                <th>平时段占比</th>
+                                <th>谷时段占比</th>
+                                <th>进站车辆数</th>
+                                <th>充电车辆数</th>
+                                <th>进站车辆充电率</th>
+                                <th>充电完成率</th>
+                                <th>超时占位率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>四方坪站</td>
+                                <td>0.00%</td>
+                                <td>10.93%</td>
+                                <td>25.40%</td>
+                                <td>63.68%</td>
+                                <td>16,038</td>
+                                <td>12,267</td>
+                                <td>76.48%</td>
+                                <td>69.56%</td>
+                                <td>0%</td>
+                            </tr>
+                            <tr>
+                                <td>高岭站</td>
+                                <td>0.00%</td>
+                                <td>12.35%</td>
+                                <td>38.66%</td>
+                                <td>48.99%</td>
+                                <td>5,506</td>
+                                <td>4,940</td>
+                                <td>89.72%</td>
+                                <td>72.47%</td>
+                                <td>10.22%</td>
+                            </tr>
+                            <tr class="highlight">
+                                <td>两站平均</td>
+                                <td>0.00%</td>
+                                <td>11.64%</td>
+                                <td>32.03%</td>
+                                <td>56.34%</td>
+                                <td>10,772</td>
+                                <td>8,603.5</td>
+                                <td>83.10%</td>
+                                <td>71.02%</td>
+                                <td>5.11%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="summary-cards">
+                <div class="card">
+                    <i class="fas fa-car"></i>
+                    <div class="card-title">总进站车辆数</div>
+                    <div class="card-value">21,544</div>
+                    <div class="card-unit">辆</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-car-battery"></i>
+                    <div class="card-title">总充电车辆数</div>
+                    <div class="card-value">17,207</div>
+                    <div class="card-unit">辆</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-percentage"></i>
+                    <div class="card-title">平均充电率</div>
+                    <div class="card-value">83.10%</div>
+                    <div class="card-unit">进站车辆充电率</div>
+                </div>
+                <div class="card">
+                    <i class="fas fa-clock"></i>
+                    <div class="card-title">谷时段充电占比</div>
+                    <div class="card-value">56.34%</div>
+                    <div class="card-unit">比例</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>数据更新时间：2025年11月02日 | 长沙飞狐电动汽车充电服务有限公司 © 2025 版权所有</p>
+        </div>
+    </div>
+    
+    <script>
+        // 更新时间显示
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            document.getElementById('datetime').textContent = now.toLocaleDateString('zh-CN', options);
+        }
+        
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+        
+        // 标签切换功能
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有活动状态
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+                
+                // 添加当前活动状态
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-content`).classList.add('active');
+            });
+        });
+        
+        // 基础数据图表
+        const basicCtx = document.getElementById('basicChart').getContext('2d');
+        new Chart(basicCtx, {
+            type: 'bar',
+            data: {
+                labels: ['四方坪站', '高岭站'],
+                datasets: [
+                    {
+                        label: '充电电量 (kwh)',
+                        data: [292085.54, 137042.18],
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '充电电费 (元)',
+                        data: [140183.54, 75721.49],
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '充电服务费 (元)',
+                        data: [100836.96, 35525.25],
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#a0d2ff'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#a0d2ff'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#a0d2ff'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 电损率图表
+        const lossCtx = document.getElementById('lossChart').getContext('2d');
+        new Chart(lossCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['四方坪站电损率', '四方坪站有效电量', '高岭站电损率', '高岭站有效电量'],
+                datasets: [{
+                    data: [11.41, 88.59, 9.27, 90.73],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#a0d2ff'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 运营效率图表
+        const efficiencyCtx = document.getElementById('efficiencyChart').getContext('2d');
+        new Chart(efficiencyCtx, {
+            type: 'radar',
+            data: {
+                labels: ['日均充电时长(小时)', '日均利用率', '日均充电电量(kwh)', '日均充电收益(元)', '平均充电功率(kw)'],
+                datasets: [
+                    {
+                        label: '四方坪站',
+                        data: [2.20, 9.17, 74.19, 25.61, 33.40],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                        pointBorderColor: '#fff'
+                    },
+                    {
+                        label: '高岭站',
+                        data: [2.89, 12.04, 122.80, 31.83, 42.51],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                        pointBorderColor: '#fff'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        pointLabels: {
+                            color: '#a0d2ff'
+                        },
+                        ticks: {
+                            backdropColor: 'transparent',
+                            color: '#a0d2ff'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#a0d2ff'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 毛利核算图表
+        const profitCtx = document.getElementById('profitChart').getContext('2d');
+        new Chart(profitCtx, {
+            type: 'bar',
+            data: {
+                labels: ['四方坪站', '高岭站'],
+                datasets: [
+                    {
+                        label: '充电总收入',
+                        data: [241020.50, 111539.84],
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '充电总成本',
+                        data: [166349.89, 84609.52],
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '毛利润',
+                        data: [74670.61, 26930.32],
+                        backgroundColor: 'rgba(75, 192, 75, 0.7)',
+                        borderColor: 'rgba(75, 192, 75, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#a0d2ff'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#a0d2ff'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#a0d2ff'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 用户行为图表
+        const userCtx = document.getElementById('userChart').getContext('2d');
+        new Chart(userCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00-02:00', '02:00-04:00', '04:00-06:00', '06:00-08:00', '08:00-10:00', 
+                         '10:00-12:00', '12:00-14:00', '14:00-16:00', '16:00-18:00', '18:00-20:00', 
+                         '20:00-22:00', '22:00-24:00'],
+                datasets: [
+                    {
+                        label: '四方坪站充电量(kwh)',
+                        data: [205311.03, 68417.52, 78094.18, 112792.54, 30421.98, 51789.96, 25173.48, 104722.44, 143229.49, 25823.58, 14252.67, 84031.19],
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: '高岭站充电量(kwh)',
+                        data: [73671.18, 12532.69, 10030.72, 59831.8, 28376.82, 40536.1, 17770.93, 47219.45, 64799.98, 20904.98, 6208.58, 52221.27],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#a0d2ff'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#a0d2ff'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#a0d2ff'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
