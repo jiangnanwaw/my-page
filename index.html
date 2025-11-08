@@ -4189,47 +4189,37 @@
             }, 1000);
         }
         
-        // 初始化主页面系统函数
+        // 初始化主页面系统函数（优化版：延迟加载）
         function initMainSystem() {
-            // 初始化移动端菜单
+            // 立即执行的初始化（不涉及网络请求）
             initMobileMenu();
-            
-            // 初始化菜单点击事件
             initMenuEvents();
-            
-            // 初始化日期选择器
             initDatePickers();
-            
-            // 初始化自定义日期选择器
             initCustomDatePickers();
-            
-            // 加载默认数据
-            loadDefaultData();
-
-            // 初始化图表
             initCharts();
-            
-            // 启动顶部时间刷新
             startClock();
-            
-            // 加载指标数据
-            loadMetricsData();
-
-            // 加载综合收入看板数据
-            loadIncomeDashboardData();
-
-            // 加载站点数据统计
-            loadSiteStatsData();
-            
-            // 加载充电数据看板
-            loadChargingBoardData();
             initChargingBoardExport();
             
-            // 加载实时数据
-            loadRealtimeData();
+            // 加载默认数据（静默加载，不阻塞）
+            loadDefaultData();
+
+            // 优先级1：立即加载主页可见的关键数据（延迟100ms，让页面先渲染）
+            setTimeout(() => {
+                loadMetricsData(); // 主页指标数据
+                loadIncomeDashboardData(); // 主页收入看板
+            }, 100);
             
-            // 加载未充电时长统计数据
-            loadUnchargedData();
+            // 优先级2：延迟加载主页其他数据（延迟500ms）
+            setTimeout(() => {
+                loadChargingBoardData(); // 充电数据看板
+                loadRealtimeData(); // 实时数据
+            }, 500);
+            
+            // 优先级3：延迟加载非关键数据（延迟1000ms，或在用户访问时加载）
+            setTimeout(() => {
+                loadSiteStatsData(); // 站点数据统计（在站点统计页面才需要）
+                loadUnchargedData(); // 未充电时长统计（在相应页面才需要）
+            }, 1000);
             
 			// 添加页面关闭相关事件监听器，尽量在卸载前完成登出记录
 			window.addEventListener('beforeunload', handlePageUnload);
@@ -4384,6 +4374,151 @@
         
         // GitHub数据文件URL
         const metricsDataUrl = 'https://www.csfhcdz.cn/data/homepage.xlsx';
+        
+        // ========== 性能优化：资源缓存管理器 ==========
+        const resourceCache = {
+            cache: new Map(),
+            loading: new Map(),
+            cacheTimestamps: new Map(), // 记录缓存时间
+            cacheDuration: 5 * 60 * 1000, // 默认缓存5分钟
+            
+            // 获取基础URL（去除查询参数）
+            getBaseUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    return urlObj.origin + urlObj.pathname;
+                } catch {
+                    return url.split('?')[0];
+                }
+            },
+            
+            // 检查缓存是否过期
+            isCacheValid(baseUrl) {
+                if (!this.cache.has(baseUrl) || !this.cacheTimestamps.has(baseUrl)) {
+                    return false;
+                }
+                const timestamp = this.cacheTimestamps.get(baseUrl);
+                const now = Date.now();
+                return (now - timestamp) < this.cacheDuration;
+            },
+            
+            // 获取资源（带缓存）
+            async get(url, options = {}) {
+                // 对于带时间戳的URL，使用基础URL进行缓存
+                const baseUrl = this.getBaseUrl(url);
+                // 如果明确设置了forceCache: false，则不使用缓存
+                const useCache = options.forceCache !== false;
+                const hasTimestamp = url.includes('?t=');
+                
+                // 对于实时数据（带时间戳），默认不使用缓存，除非明确指定
+                if (hasTimestamp && !options.forceCache) {
+                    // 实时数据：仍然检查是否有正在进行的加载，避免重复请求
+                    if (this.loading.has(baseUrl)) {
+                        return this.loading.get(baseUrl);
+                    }
+                } else {
+                    // 静态数据：如果使用缓存且缓存有效，直接返回
+                    if (useCache && this.isCacheValid(baseUrl)) {
+                        return Promise.resolve(this.cache.get(baseUrl));
+                    }
+                    
+                    // 如果正在加载中，等待加载完成
+                    if (this.loading.has(baseUrl)) {
+                        return this.loading.get(baseUrl);
+                    }
+                }
+                
+                // 开始加载
+                const loadPromise = fetch(url, options)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to load ${url}: ${response.statusText}`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(arrayBuffer => {
+                        const data = new Uint8Array(arrayBuffer);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        // 缓存结果（使用基础URL作为key）
+                        // 只有明确允许缓存或不是实时数据时才缓存
+                        if (useCache && (!hasTimestamp || options.forceCache === true)) {
+                            this.cache.set(baseUrl, workbook);
+                            this.cacheTimestamps.set(baseUrl, Date.now());
+                        }
+                        this.loading.delete(baseUrl);
+                        return workbook;
+                    })
+                    .catch(error => {
+                        this.loading.delete(baseUrl);
+                        throw error;
+                    });
+                
+                this.loading.set(baseUrl, loadPromise);
+                return loadPromise;
+            },
+            
+            // 清除缓存
+            clear(url) {
+                if (url) {
+                    const baseUrl = this.getBaseUrl(url);
+                    this.cache.delete(baseUrl);
+                    this.cacheTimestamps.delete(baseUrl);
+                } else {
+                    this.cache.clear();
+                    this.cacheTimestamps.clear();
+                }
+                this.loading.clear();
+            },
+            
+            // 预加载资源
+            async preload(urls) {
+                return Promise.all(urls.map(url => this.get(url).catch(() => null)));
+            }
+        };
+        
+        // ========== 性能优化：延迟加载管理器 ==========
+        const lazyLoadManager = {
+            loaded: new Set(),
+            loading: new Set(),
+            
+            // 延迟加载函数
+            async load(id, loader, priority = 0) {
+                if (this.loaded.has(id)) {
+                    return Promise.resolve();
+                }
+                
+                if (this.loading.has(id)) {
+                    return new Promise((resolve) => {
+                        const checkInterval = setInterval(() => {
+                            if (this.loaded.has(id)) {
+                                clearInterval(checkInterval);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                }
+                
+                this.loading.add(id);
+                try {
+                    await loader();
+                    this.loaded.add(id);
+                } catch (error) {
+                    console.error(`Failed to load ${id}:`, error);
+                } finally {
+                    this.loading.delete(id);
+                }
+            },
+            
+            // 批量延迟加载
+            async loadBatch(loaders, delay = 100) {
+                for (const { id, loader, priority } of loaders.sort((a, b) => b.priority - a.priority)) {
+                    await this.load(id, loader);
+                    if (delay > 0) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
+        };
         
         // 显示功能提示弹窗
         function showFeaturePopup(message) {
@@ -5384,13 +5519,11 @@ let currentMode = 'month';
 let currentPage = 0;
 let availablePages = [];
 
-// 加载站点统计数据
+// 加载站点统计数据（优化版：使用缓存）
 function loadSiteStatsData() {
-    fetch('https://www.csfhcdz.cn/data/hzsj.xlsx')
-        .then(response => response.arrayBuffer())
-        .then(arrayBuffer => {
-            const data = new Uint8Array(arrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array' });
+    // 使用缓存管理器加载数据
+    resourceCache.get('https://www.csfhcdz.cn/data/hzsj.xlsx')
+        .then(workbook => {
             
             // 获取Sheet1工作表
             const sheet = workbook.Sheets['Sheet1'];
@@ -5765,11 +5898,9 @@ let chargingBoardData = [];
 
 // 加载充电数据看板数据
 function loadChargingBoardData() {
-    fetch('https://www.csfhcdz.cn/data/homepage.xlsx')
-        .then(response => response.arrayBuffer())
-        .then(arrayBuffer => {
-            const data = new Uint8Array(arrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array' });
+    // 使用缓存管理器加载数据（与loadMetricsData共享缓存）
+    resourceCache.get('https://www.csfhcdz.cn/data/homepage.xlsx')
+        .then(workbook => {
             
             // 获取Chargingdata工作表
             const chargingSheet = workbook.Sheets['Chargingdata'];
@@ -6072,14 +6203,14 @@ function initChargingBoardExport() {
             const loadingIndicator = document.createElement('div');
             loadingIndicator.className = 'data-loading-indicator';
             loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在加载指标数据...';
-            document.querySelector('.metrics-section').prepend(loadingIndicator);
+            const metricsSection = document.querySelector('.metrics-section');
+            if (metricsSection) {
+                metricsSection.prepend(loadingIndicator);
+            }
             
-            fetch(metricsDataUrl)
-                .then(response => response.arrayBuffer())
-                .then(arrayBuffer => {
-                    const data = new Uint8Array(arrayBuffer);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
+            // 使用缓存管理器加载数据
+            resourceCache.get(metricsDataUrl)
+                .then(workbook => {
                     // 处理指标数据（Metrics工作表）
                     const metricsSheet = workbook.Sheets['Metrics'];
                     const metricsJson = XLSX.utils.sheet_to_json(metricsSheet, { header: 1 });
@@ -6274,13 +6405,14 @@ let realtimeChart = null;
 // 加载实时数据
 function loadRealtimeData() {
     const loadingElement = document.getElementById('realtime-loading');
-    loadingElement.style.display = 'block';
+    if (loadingElement) {
+        loadingElement.style.display = 'block';
+    }
     
-     fetch('https://www.csfhcdz.cn/data/daydata.xlsx?t=' + new Date().getTime())
-        .then(response => response.arrayBuffer())
-        .then(arrayBuffer => {
-            const data = new Uint8Array(arrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array' });
+    // 使用缓存管理器加载数据（实时数据，但使用短缓存）
+    const url = 'https://www.csfhcdz.cn/data/daydata.xlsx?t=' + new Date().getTime();
+    resourceCache.get(url, { forceCache: false })
+        .then(workbook => {
             
             // 获取第一个工作表
             const firstSheetName = workbook.SheetNames[0];
@@ -6666,9 +6798,8 @@ let incomeDashboardChart = null;
 // 加载综合收入数据
 async function loadIncomeDashboardData() {
     try {
-        const response = await fetch('https://www.csfhcdz.cn/data/homepage.xlsx');
-        const arrayBuffer = await response.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        // 使用缓存管理器加载数据（与loadMetricsData和loadChargingBoardData共享缓存）
+        const workbook = await resourceCache.get('https://www.csfhcdz.cn/data/homepage.xlsx');
         
         // 查找zgmysj工作表
         const sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('zgmysj'));
@@ -7040,13 +7171,14 @@ function loadUnchargedData() {
     loadingElement.style.padding = '20px';
     
     const tableContainer = document.querySelector('.uncharged-table-container');
-    tableContainer.prepend(loadingElement);
+    if (tableContainer) {
+        tableContainer.prepend(loadingElement);
+    }
     
-    fetch('https://www.csfhcdz.cn/data/wcdsc.xlsx?t=' + new Date().getTime())
-        .then(response => response.arrayBuffer())
-        .then(arrayBuffer => {
-            const data = new Uint8Array(arrayBuffer);
-            const workbook = XLSX.read(data, { type: 'array' });
+    // 使用缓存管理器加载数据（实时数据，但使用短缓存）
+    const url = 'https://www.csfhcdz.cn/data/wcdsc.xlsx?t=' + new Date().getTime();
+    resourceCache.get(url, { forceCache: false })
+        .then(workbook => {
             
             // 获取第一个工作表
             const firstSheetName = workbook.SheetNames[0];
@@ -7441,14 +7573,8 @@ function updateUnchargedTable() {
         // 从Excel文件加载整体情况概要数据
         async function loadOverviewData() {
             try {
-                const response = await fetch('https://www.csfhcdz.cn/data/cddata.xlsx');
-                if (!response.ok) {
-                    throw new Error('无法加载Excel文件');
-                }
-                
-                const arrayBuffer = await response.arrayBuffer();
-                const data = new Uint8Array(arrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
+                // 使用缓存管理器加载数据
+                const workbook = await resourceCache.get('https://www.csfhcdz.cn/data/cddata.xlsx');
                 
                 // 解析每个工作表的数据
                 parseOverviewSheetData(workbook);
@@ -7661,16 +7787,11 @@ function updateUnchargedTable() {
         let dayDataList = []; // 日数据列表
         let monthDataList = []; // 月数据列表
 
-        // 从sheet1获取最大日期
+        // 从sheet1获取最大日期（优化版：使用缓存）
         async function getMaxDateFromSheet1() {
             try {
-                const response = await fetch('https://www.csfhcdz.cn/data/hzsj.xlsx');
-                if (!response.ok) {
-                    throw new Error('数据加载失败');
-                }
-                
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                // 使用缓存管理器加载数据（与loadSiteStatsData和loadVisualizationData共享缓存）
+                const workbook = await resourceCache.get('https://www.csfhcdz.cn/data/hzsj.xlsx');
                 
                 // 获取Sheet1工作表
                 if (!workbook.Sheets['Sheet1']) {
@@ -7770,16 +7891,11 @@ function updateUnchargedTable() {
             return null;
         }
 
-        // 加载可视化数据
+        // 加载可视化数据（优化版：使用缓存，与loadSiteStatsData共享）
         async function loadVisualizationData() {
             try {
-                const response = await fetch('https://www.csfhcdz.cn/data/hzsj.xlsx');
-                if (!response.ok) {
-                    throw new Error('数据加载失败');
-                }
-                
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                // 使用缓存管理器加载数据（与loadSiteStatsData共享缓存）
+                const workbook = await resourceCache.get('https://www.csfhcdz.cn/data/hzsj.xlsx');
                 
                 // 加载sheet2数据（站点数据）
                 if (workbook.Sheets['Sheet2']) {
