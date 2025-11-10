@@ -2457,6 +2457,7 @@
                         <i class="fas fa-file-invoice-dollar"></i>
                         <span>电费账单</span>
                     </a>
+                    <a href="#" class="submenu-item" id="menu-userq-1"><i class="fas fa-user" style="margin-right:6px;"></i> 用户查询</a>
                 </div>
 
                 <!-- 其他菜单项 -->
@@ -15389,5 +15390,146 @@ function updateUnchargedTable() {
     </script>
     
     <!-- 版权信息已移除 -->
+<!-- 用户查询 独立页面 -->
+<div id="page-userq-1" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
+  <!-- 面包屑 -->
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+    <div style="font-size:14px; color:#6c757d;">
+      <span style="cursor:pointer; color:#007bff;" onclick="document.getElementById('menu-home').click()">平台首页</span>
+      <span style="margin:0 8px; color:#adb5bd;">/</span>
+      <span>数据查询</span>
+      <span style="margin:0 8px; color:#adb5bd;">/</span>
+      <span id="breadcrumb-section-userq-1">用户查询</span>
+    </div>
+  </div>
+
+  <h2 class="section-title" style="display:flex; align-items:center; gap:8px;">
+    <i class="fas fa-user"></i> 用户查询
+  </h2>
+
+  <div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:16px; margin:16px 0;">
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:nowrap;">
+      <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+        <label for="userq1-plate" style="white-space:nowrap; color:#495057;">车牌号</label>
+        <input id="userq1-plate" type="text" placeholder="支持模糊或完整匹配（* 为任意字符）" style="width:220px; padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:14px; height:36px; box-sizing:border-box;" />
+        <button id="userq1-query-btn" style="padding:8px 10px; background:#007bff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px; display:flex; align-items:center; white-space:nowrap; height:36px; box-sizing:border-box;">
+          查询
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="userq1-result" style="border:1px solid #e9ecef; border-radius:8px; overflow:auto;">
+    <div style="padding:16px; color:#6c757d;">请输入车牌号后点击“查询”。</div>
+  </div>
+</div>
+
+<script>
+// ===== 用户查询页逻辑 =====
+function showUserQueryPage1(){
+  // 隐藏其它页面
+  ['page-cd-data','page-zh-data','page-bill-data'].forEach(id=>{
+    var el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  var p=document.getElementById('page-userq-1');
+  if(p) p.style.display='block';
+  var bc=document.getElementById('breadcrumb-section-userq-1');
+  if(bc) bc.textContent='用户查询';
+}
+
+// 绑定左侧菜单点击
+setTimeout(function(){
+  var btn=document.getElementById('menu-userq-1');
+  if(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      showUserQueryPage1();
+    });
+  }
+  var q=document.getElementById('userq1-query-btn');
+  if(q){
+    q.addEventListener('click', runUserPlateQuery1);
+  }
+}, 0);
+
+// 工具：转义 LIKE（并把*转为%）
+function escapeLike1(s){ return s.replace(/'/g, "''"); }
+function buildPlateWhere1(input){
+  if(!input) return null;
+  var kw = input.trim().replace(/\*/g, '%');
+  if(!/%|_/.test(kw)) kw = '%'+kw+'%';
+  kw = escapeLike1(kw);
+  // UPPER 不区分大小写
+  return "UPPER([判定车牌号]) LIKE UPPER(N'"+kw+"')";
+}
+
+// 查询逻辑 (已更新为返回正确的车牌号)
+async function runUserPlateQuery1(){
+  var box = document.getElementById('userq1-result');
+  var plate = (document.getElementById('userq1-plate')||{}).value||'';
+  if(!plate.trim()){ alert('请输入车牌号'); return; }
+  var where = buildPlateWhere1(plate);
+  if(!where){ alert('车牌号不合法'); return; }
+
+  box.innerHTML = '<div style="padding:12px;color:#666;"><i class="fas fa-spinner fa-spin"></i> 查询中...</div>';
+
+  // 第一步：按“车辆所属客户”归集
+  var sqlByCustomer = 
+    `SELECT [判定车牌号] AS [车牌号], [车辆所属客户], MAX([充电结束时间]) AS [最近一次活跃时间] ` +
+    `FROM [特来电] WHERE ${where} ` +
+    `AND [车辆所属客户] IS NOT NULL AND LTRIM(RTRIM([车辆所属客户])) <> '' ` +
+    `GROUP BY [判定车牌号], [车辆所属客户] ORDER BY [最近一次活跃时间] DESC`;
+
+  try{
+    var res = await callSqlWithRetry(sqlByCustomer, 2, 800);
+    var rows = (res && res.results) ? res.results : [];
+    if(rows && rows.length > 0){
+      renderUserq1Table(box, rows, ['车牌号','车辆所属客户','最近一次活跃时间']);
+      return;
+    }
+  }catch(e){
+    // 查询失败或无结果，继续下一步
+  }
+
+  // 没有客户信息 -> 询问是否按手机号深度查询
+  if(confirm('没有找到车辆所属客户的相关资料，需要进一步深度查询吗？')){
+    var sqlByPhone = 
+      `SELECT [判定车牌号] AS [车牌号], [手机号], MAX([充电结束时间]) AS [最近一次活跃时间] ` +
+      `FROM [特来电] WHERE ${where} ` +
+      `AND [手机号] IS NOT NULL AND LTRIM(RTRIM([手机号])) <> '' ` +
+      `GROUP BY [判定车牌号], [手机号] ORDER BY [最近一次活跃时间] DESC`;
+    try{
+      var r2 = await callSqlWithRetry(sqlByPhone, 2, 800);
+      var rows2 = (r2 && r2.results) ? res.results : [];
+      if(rows2 && rows2.length > 0){
+        renderUserq1Table(box, rows2, ['车牌号','手机号','最近一次活跃时间']);
+      } else {
+        box.innerHTML = '<div style="padding:12px; color:#c00;">无此车牌号记录</div>';
+      }
+    }catch(err){
+      box.innerHTML = '<div style="padding:12px; color:#c00;">查询失败：'+(err && err.message ? err.message : '未知错误')+'</div>';
+    }
+  }else{
+    box.innerHTML = '<div style="padding:12px; color:#666;">已取消深度查询</div>';
+  }
+}
+
+function renderUserq1Table(container, rows, cols){
+  var html = '<div style=\"overflow:auto;\"><table style=\"width:100%; border-collapse:collapse; font-size:13px;\">';
+  html += '<thead><tr style=\"background:#e9ecef;\">' + cols.map(function(c){
+    return '<th style=\"padding:8px; border:1px solid #ddd; text-align:center; white-space:nowrap; font-weight:600;\">'+c+'</th>';
+  }).join('') + '</tr></thead><tbody>';
+  rows.forEach(function(row, idx){
+    var bg = idx%2===0 ? '#fff' : '#f8f9fa';
+    html += '<tr>' + cols.map(function(c){
+      var v = row[c]; return '<td style=\"padding:8px; border:1px solid #ddd; text-align:center; background:'+bg+'; white-space:nowrap;\">'+(v==null?'':v)+'</td>';
+    }).join('') + '</tr>';
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+</script>
+
 </body>
 </html>
