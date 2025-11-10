@@ -10041,6 +10041,7 @@ function updateUnchargedTable() {
                 var pageCd = document.getElementById('page-cd-data');
                 var pageZh = document.getElementById('page-zh-data');
                 var pageBill = document.getElementById('page-bill-data');
+                var pageUserQ = document.getElementById('page-userq-1');
                 var breadcrumbLeaf = document.getElementById('breadcrumb-leaf');
 
                 if (!btnCd || !btnZh || !btnHome || !pageCd || !pageZh) return;
@@ -10049,6 +10050,7 @@ function updateUnchargedTable() {
                     pageCd.style.display = 'block';
                     pageZh.style.display = 'none';
                     if (pageBill) pageBill.style.display = 'none';
+                    if (pageUserQ) pageUserQ.style.display = 'none';
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
                     // 初始化充电设备选项显示
                     if (typeof onStationChange === 'function') {
@@ -10060,6 +10062,7 @@ function updateUnchargedTable() {
                     pageCd.style.display = 'none';
                     pageZh.style.display = 'block';
                     if (pageBill) pageBill.style.display = 'none';
+                    if (pageUserQ) pageUserQ.style.display = 'none';
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
                     // 初始化综合数据页面的日期选择器
                     if (typeof initZhDatetimePickers === 'function') {
@@ -10071,6 +10074,7 @@ function updateUnchargedTable() {
                     pageCd.style.display = 'none';
                     pageZh.style.display = 'none';
                     if (pageBill) pageBill.style.display = 'block';
+                    if (pageUserQ) pageUserQ.style.display = 'none';
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
                 }
 
@@ -10078,6 +10082,7 @@ function updateUnchargedTable() {
                     pageCd.style.display = 'none';
                     pageZh.style.display = 'none';
                     if (pageBill) pageBill.style.display = 'none';
+                    if (pageUserQ) pageUserQ.style.display = 'none';
                 }
 
                 btnCd.addEventListener('click', function(e) { e.preventDefault(); if (breadcrumbLeaf) breadcrumbLeaf.textContent = '充电数据'; showCd(); });
@@ -15411,11 +15416,11 @@ function updateUnchargedTable() {
     <div style="display:flex; gap:12px; align-items:center; flex-wrap:nowrap;">
       <div class="form-group" style="display:flex; align-items:center; gap:8px;">
         <label for="userq1-plate" style="white-space:nowrap; color:#495057;">车牌号</label>
-        <input id="userq1-plate" type="text" placeholder="支持模糊或完整匹配（* 为任意字符）" style="width:220px; padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:14px; height:36px; box-sizing:border-box;" />
-        <button id="userq1-query-btn" style="padding:8px 10px; background:#007bff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px; display:flex; align-items:center; white-space:nowrap; height:36px; box-sizing:border-box;">
-          查询
-        </button>
+        <input id="userq1-plate" type="text" placeholder="支持模糊或完整匹配（* 为任意字符）" style="width:220px; padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:14px;" />
       </div>
+      <button id="userq1-query-btn" style="padding:8px 14px; background:#007bff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-search"></i> 查询
+      </button>
     </div>
   </div>
 
