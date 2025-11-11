@@ -2457,7 +2457,27 @@
                         <i class="fas fa-file-invoice-dollar"></i>
                         <span>电费账单</span>
                     </a>
-                    <a href="#" class="submenu-item" id="menu-userq-1"><i class="fas fa-user" style="margin-right:6px;"></i> 用户查询</a>
+                </div>
+
+                <!-- 报表查询（带子菜单） -->
+                <div class="menu-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span>报表查询</span>
+                    <i class="fas fa-chevron-right menu-toggle"></i>
+                </div>
+                <div class="submenu">
+                    <a href="#" class="submenu-item" id="menu-report-charging">
+                        <i class="fas fa-bolt"></i>
+                        <span>充电数据报表</span>
+                    </a>
+                    <a href="#" class="submenu-item" id="menu-report-comprehensive">
+                        <i class="fas fa-chart-line"></i>
+                        <span>综合数据报表</span>
+                    </a>
+                    <a href="#" class="submenu-item" id="menu-report-user">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>用户查询</span>
+                    </a>
                 </div>
 
                 <!-- 其他菜单项 -->
@@ -2693,6 +2713,73 @@
                             <strong style="color: #495057;">当前条件：</strong><span id="zh-current-conditions-text" style="color: #6c757d;">请选择查询条件后点击查询</span>
                         </div>
                         <div id="zh-query-result-content" style="flex: 1; overflow: auto; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 覆盖式空白页面：充电数据报表 -->
+                <div id="page-report-charging" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
+                    <!-- 面包屑导航 -->
+                    <div style="font-size:14px; color:#666; margin-bottom:12px;">
+                        <a href="#" onclick="navigateHome()" style="color:#007bff; text-decoration:none;">首页</a>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <span>报表查询</span>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <strong style="color:#333;">充电数据报表</strong>
+                    </div>
+                    <div style="padding: 40px; text-align: center; color: #999;">
+                        <h3>充电数据报表</h3>
+                        <p>此功能正在开发中...</p>
+                    </div>
+                </div>
+                
+                <!-- 覆盖式空白页面：综合数据报表 -->
+                <div id="page-report-comprehensive" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
+                    <!-- 面包屑导航 -->
+                    <div style="font-size:14px; color:#666; margin-bottom:12px;">
+                        <a href="#" onclick="navigateHome()" style="color:#007bff; text-decoration:none;">首页</a>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <span>报表查询</span>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <strong style="color:#333;">综合数据报表</strong>
+                    </div>
+                    <div style="padding: 40px; text-align: center; color: #999;">
+                        <h3>综合数据报表</h3>
+                        <p>此功能正在开发中...</p>
+                    </div>
+                </div>
+                
+                <!-- 覆盖式空白页面：用户查询 -->
+                <div id="page-report-user" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
+                    <!-- 面包屑导航 -->
+                    <div style="font-size:14px; color:#666; margin-bottom:12px;">
+                        <a href="#" onclick="navigateHome()" style="color:#007bff; text-decoration:none;">首页</a>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <span>报表查询</span>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <strong style="color:#333;">用户查询</strong>
+                    </div>
+                    
+                    <!-- 查询条件栏 -->
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:20px;">
+                        <!-- 车牌号输入框 -->
+                        <div style="position:relative; width:300px;">
+                            <label style="display:block; margin-bottom:6px; font-size:14px; color:#333; font-weight:500;">车牌号</label>
+                            <input id="user-query-plate" type="text" placeholder="请输入车牌号" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px;" onkeypress="if(event.key==='Enter') runUserQuery();" />
+                        </div>
+
+                        <!-- 查询按钮 -->
+                        <div style="display:flex; align-items:flex-end;">
+                            <button onclick="runUserQuery()" style="background:#28a745; color:#fff; border:none; padding:10px 24px; border-radius:6px; cursor:pointer; font-size:14px; height:42px;">查询</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 查询结果 -->
+                    <div id="user-query-result" style="margin-top: 16px; height: calc(100vh - 200px); display: flex; flex-direction: column;">
+                        <div id="user-query-result-content" style="flex: 1; overflow: auto; border: 1px solid #ddd; border-radius: 6px; padding: 20px; background: #f9f9f9;">
+                            <div style="text-align: center; color: #999; padding: 40px;">
+                                <p>请输入车牌号进行查询</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -10041,16 +10128,30 @@ function updateUnchargedTable() {
                 var pageCd = document.getElementById('page-cd-data');
                 var pageZh = document.getElementById('page-zh-data');
                 var pageBill = document.getElementById('page-bill-data');
-                var pageUserQ = document.getElementById('page-userq-1');
                 var breadcrumbLeaf = document.getElementById('breadcrumb-leaf');
+
+                // 报表查询菜单按钮
+                var btnReportCharging = document.getElementById('menu-report-charging');
+                var btnReportComprehensive = document.getElementById('menu-report-comprehensive');
+                var btnReportUser = document.getElementById('menu-report-user');
+                var pageReportCharging = document.getElementById('page-report-charging');
+                var pageReportComprehensive = document.getElementById('page-report-comprehensive');
+                var pageReportUser = document.getElementById('page-report-user');
 
                 if (!btnCd || !btnZh || !btnHome || !pageCd || !pageZh) return;
 
-                function showCd() {
-                    pageCd.style.display = 'block';
+                function hideAllPages() {
+                    pageCd.style.display = 'none';
                     pageZh.style.display = 'none';
                     if (pageBill) pageBill.style.display = 'none';
-                    if (pageUserQ) pageUserQ.style.display = 'none';
+                    if (pageReportCharging) pageReportCharging.style.display = 'none';
+                    if (pageReportComprehensive) pageReportComprehensive.style.display = 'none';
+                    if (pageReportUser) pageReportUser.style.display = 'none';
+                }
+
+                function showCd() {
+                    hideAllPages();
+                    pageCd.style.display = 'block';
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
                     // 初始化充电设备选项显示
                     if (typeof onStationChange === 'function') {
@@ -10059,10 +10160,8 @@ function updateUnchargedTable() {
                 }
 
                 function showZh() {
-                    pageCd.style.display = 'none';
+                    hideAllPages();
                     pageZh.style.display = 'block';
-                    if (pageBill) pageBill.style.display = 'none';
-                    if (pageUserQ) pageUserQ.style.display = 'none';
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
                     // 初始化综合数据页面的日期选择器
                     if (typeof initZhDatetimePickers === 'function') {
@@ -10071,18 +10170,31 @@ function updateUnchargedTable() {
                 }
 
                 function showBill() {
-                    pageCd.style.display = 'none';
-                    pageZh.style.display = 'none';
+                    hideAllPages();
                     if (pageBill) pageBill.style.display = 'block';
-                    if (pageUserQ) pageUserQ.style.display = 'none';
+                    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+                }
+
+                function showReportCharging() {
+                    hideAllPages();
+                    if (pageReportCharging) pageReportCharging.style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+                }
+
+                function showReportComprehensive() {
+                    hideAllPages();
+                    if (pageReportComprehensive) pageReportComprehensive.style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+                }
+
+                function showReportUser() {
+                    hideAllPages();
+                    if (pageReportUser) pageReportUser.style.display = 'block';
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
                 }
 
                 function showHome() {
-                    pageCd.style.display = 'none';
-                    pageZh.style.display = 'none';
-                    if (pageBill) pageBill.style.display = 'none';
-                    if (pageUserQ) pageUserQ.style.display = 'none';
+                    hideAllPages();
                 }
 
                 btnCd.addEventListener('click', function(e) { e.preventDefault(); if (breadcrumbLeaf) breadcrumbLeaf.textContent = '充电数据'; showCd(); });
@@ -10094,6 +10206,15 @@ function updateUnchargedTable() {
                 });
                 if (btnBill) {
                     btnBill.addEventListener('click', function(e) { e.preventDefault(); showBill(); });
+                }
+                if (btnReportCharging) {
+                    btnReportCharging.addEventListener('click', function(e) { e.preventDefault(); showReportCharging(); });
+                }
+                if (btnReportComprehensive) {
+                    btnReportComprehensive.addEventListener('click', function(e) { e.preventDefault(); showReportComprehensive(); });
+                }
+                if (btnReportUser) {
+                    btnReportUser.addEventListener('click', function(e) { e.preventDefault(); showReportUser(); });
                 }
                 btnHome.addEventListener('click', function() { showHome(); });
             }
@@ -10238,6 +10359,181 @@ function updateUnchargedTable() {
                         </div>
                     `;
                 });
+        }
+
+        // 用户查询功能：根据车牌号查询手机号
+        function runUserQuery() {
+            const plateInput = document.getElementById('user-query-plate');
+            const plateNumber = plateInput ? plateInput.value.trim() : '';
+            const resultContent = document.getElementById('user-query-result-content');
+
+            if (!plateNumber) {
+                alert('请输入车牌号');
+                return;
+            }
+
+            if (!resultContent) {
+                alert('查询结果容器不存在');
+                return;
+            }
+
+            resultContent.innerHTML = '<div style="text-align: center; padding: 40px;"><p>正在查询...</p></div>';
+
+            // 构建SQL查询
+            // 优化后的查询：直接使用GROUP BY获取每个车牌号对应客户的最大充电结束时间
+            // 支持模糊匹配，去除空格后进行匹配
+            // 注意：使用REPLACE来转义单引号，防止SQL注入
+            const escapedPlateNumber = plateNumber.replace(/'/g, "''").replace(/\s/g, '');
+            const sqlQuery = `
+                SELECT TOP 100
+                    [判定车牌号] AS [车牌号],
+                    CASE
+                        WHEN [车辆所属客户] IS NOT NULL AND LTRIM(RTRIM([车辆所属客户])) != ''
+                        THEN [车辆所属客户]
+                        ELSE [手机号]
+                    END AS [车辆所属客户],
+                    MAX([充电结束时间]) AS [最近一次活跃时间]
+                FROM [特来电]
+                WHERE REPLACE([判定车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE '%${escapedPlateNumber}%'
+                GROUP BY
+                    [判定车牌号],
+                    CASE
+                        WHEN [车辆所属客户] IS NOT NULL AND LTRIM(RTRIM([车辆所属客户])) != ''
+                        THEN [车辆所属客户]
+                        ELSE [手机号]
+                    END
+                ORDER BY [判定车牌号]
+            `;
+            
+            // 使用带重试的查询函数来处理偶发的503错误
+            // 注意：云函数应该已经配置为连接到XTZJ-20220408GR\SQLEXPRESS服务器的chargingdata数据库
+            callSqlWithRetry(sqlQuery)
+                .then(function(result) {
+                    // 处理返回结果
+                    console.log('用户查询原始返回结果:', result);
+                    let queryResult = null;
+
+                    // callSqlWithRetry 已经处理了 result.result 的提取
+                    if (result && typeof result === 'object' && result.success !== undefined) {
+                        queryResult = result;
+                    } else if (result && result.result && typeof result.result === 'object' && result.result.success !== undefined) {
+                        queryResult = result.result;
+                    } else if (result && result.result && typeof result.result === 'string') {
+                        try {
+                            queryResult = JSON.parse(result.result);
+                        } catch (e) {
+                            queryResult = result;
+                        }
+                    } else {
+                        queryResult = result;
+                    }
+
+                    console.log('用户查询解析后结果:', queryResult);
+
+                    if (queryResult && queryResult.success) {
+                        const data = queryResult.data || queryResult.rows || queryResult.results || [];
+                        console.log('用户查询数据行数:', data.length);
+                        console.log('用户查询数据:', data);
+
+                        if (!data || data.length === 0) {
+                            resultContent.innerHTML = `
+                                <div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 6px; text-align: center; color: #856404;">
+                                    <h4 style="margin: 0 0 10px 0;">无此车牌号记录</h4>
+                                    <p style="margin: 0;">未找到匹配的车牌号：${plateNumber}</p>
+                                    <p style="margin-top: 10px; font-size: 12px;">调试信息：查询成功但返回0条记录</p>
+                                </div>
+                            `;
+                            return;
+                        }
+                        
+                        // 显示查询结果表格
+                        let tableHTML = `
+                            <div style="background: white; border-radius: 6px; overflow: hidden;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                    <thead>
+                                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">车牌号</th>
+                                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">车辆所属客户</th>
+                                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">最近一次活跃时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        data.forEach((row, index) => {
+                            const bgColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                            const plateNumber = row['车牌号'] || row['PlateNumber'] || '';
+                            const customer = row['车辆所属客户'] || row['ContactInfo'] || '';
+                            const lastActiveTime = row['最近一次活跃时间'] || row['LastActiveTime'] || '';
+                            
+                            tableHTML += `
+                                <tr style="background: ${bgColor};">
+                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${escapeHtml(plateNumber)}</td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${escapeHtml(customer)}</td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${escapeHtml(formatDateTime(lastActiveTime))}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        tableHTML += `
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-radius: 6px; color: #004085; font-size: 14px;">
+                                <strong>查询结果：</strong>共找到 ${data.length} 条记录
+                            </div>
+                        `;
+                        
+                        resultContent.innerHTML = tableHTML;
+                    } else {
+                        resultContent.innerHTML = `
+                            <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; color: #721c24;">
+                                <h4>查询失败</h4>
+                                <p>${queryResult ? (queryResult.message || '未知错误') : '查询返回了意外的结果格式'}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(function(error) {
+                    console.error('用户查询错误:', error);
+                    let errorMsg = error.message || '未知错误';
+                    if (error.httpStatus) {
+                        errorMsg = `HTTP ${error.httpStatus}: ${errorMsg}`;
+                    }
+                    resultContent.innerHTML = `
+                        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; color: #721c24;">
+                            <h4>查询失败</h4>
+                            <p>错误信息: ${errorMsg}</p>
+                            <p style="margin-top: 10px; font-size: 12px; color: #856404;">提示：如果遇到503错误，系统已自动重试，请稍后再试或检查网络连接。</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        // 辅助函数：转义HTML
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 辅助函数：格式化日期时间
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '';
+            try {
+                const date = new Date(dateTimeStr);
+                if (isNaN(date.getTime())) return dateTimeStr;
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            } catch (e) {
+                return dateTimeStr;
+            }
         }
 
         // 更新当前条件显示
@@ -11467,6 +11763,12 @@ function updateUnchargedTable() {
             if (overlayBill) overlayBill.style.display = 'none';
             const overlayZh = document.getElementById('page-zh-data');
             if (overlayZh) overlayZh.style.display = 'none';
+            const overlayReportCharging = document.getElementById('page-report-charging');
+            if (overlayReportCharging) overlayReportCharging.style.display = 'none';
+            const overlayReportComprehensive = document.getElementById('page-report-comprehensive');
+            if (overlayReportComprehensive) overlayReportComprehensive.style.display = 'none';
+            const overlayReportUser = document.getElementById('page-report-user');
+            if (overlayReportUser) overlayReportUser.style.display = 'none';
             window.scrollTo(0, 0);
         }
 
@@ -15395,146 +15697,5 @@ function updateUnchargedTable() {
     </script>
     
     <!-- 版权信息已移除 -->
-<!-- 用户查询 独立页面 -->
-<div id="page-userq-1" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
-  <!-- 面包屑 -->
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-    <div style="font-size:14px; color:#6c757d;">
-      <span style="cursor:pointer; color:#007bff;" onclick="document.getElementById('menu-home').click()">平台首页</span>
-      <span style="margin:0 8px; color:#adb5bd;">/</span>
-      <span>数据查询</span>
-      <span style="margin:0 8px; color:#adb5bd;">/</span>
-      <span id="breadcrumb-section-userq-1">用户查询</span>
-    </div>
-  </div>
-
-  <h2 class="section-title" style="display:flex; align-items:center; gap:8px;">
-    <i class="fas fa-user"></i> 用户查询
-  </h2>
-
-  <div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:16px; margin:16px 0;">
-    <div style="display:flex; gap:12px; align-items:center; flex-wrap:nowrap;">
-      <div class="form-group" style="display:flex; align-items:center; gap:8px;">
-        <label for="userq1-plate" style="white-space:nowrap; color:#495057;">车牌号</label>
-        <input id="userq1-plate" type="text" placeholder="支持模糊或完整匹配（* 为任意字符）" style="width:220px; padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:14px;" />
-      </div>
-      <button id="userq1-query-btn" style="height:36px; padding:0 14px; background:#007bff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:8px; white-space:nowrap;">
-        <i class="fas fa-search"></i> 查询
-      </button>
-    </div>
-  </div>
-
-  <div id="userq1-result" style="border:1px solid #e9ecef; border-radius:8px; overflow:auto;">
-    <div style="padding:16px; color:#6c757d;">请输入车牌号后点击“查询”。</div>
-  </div>
-</div>
-
-<script>
-// ===== 用户查询页逻辑 =====
-function showUserQueryPage1(){
-  // 隐藏其它页面
-  ['page-cd-data','page-zh-data','page-bill-data'].forEach(id=>{
-    var el=document.getElementById(id);
-    if(el) el.style.display='none';
-  });
-  var p=document.getElementById('page-userq-1');
-  if(p) p.style.display='block';
-  var bc=document.getElementById('breadcrumb-section-userq-1');
-  if(bc) bc.textContent='用户查询';
-}
-
-// 绑定左侧菜单点击
-setTimeout(function(){
-  var btn=document.getElementById('menu-userq-1');
-  if(btn){
-    btn.addEventListener('click', function(e){
-      e.preventDefault();
-      showUserQueryPage1();
-    });
-  }
-  var q=document.getElementById('userq1-query-btn');
-  if(q){
-    q.addEventListener('click', runUserPlateQuery1);
-  }
-}, 0);
-
-// 工具：转义 LIKE（并把*转为%）
-function escapeLike1(s){ return s.replace(/'/g, "''"); }
-function buildPlateWhere1(input){
-  if(!input) return null;
-  var kw = input.trim().replace(/\*/g, '%');
-  if(!/%|_/.test(kw)) kw = '%'+kw+'%';
-  kw = escapeLike1(kw);
-  // UPPER 不区分大小写
-  return "UPPER([判定车牌号]) LIKE UPPER(N'"+kw+"')";
-}
-
-// 查询逻辑 (已更新为返回正确的车牌号)
-async function runUserPlateQuery1(){
-  var box = document.getElementById('userq1-result');
-  var plate = (document.getElementById('userq1-plate')||{}).value||'';
-  if(!plate.trim()){ alert('请输入车牌号'); return; }
-  var where = buildPlateWhere1(plate);
-  if(!where){ alert('车牌号不合法'); return; }
-
-  box.innerHTML = '<div style="padding:12px;color:#666;"><i class="fas fa-spinner fa-spin"></i> 查询中...</div>';
-
-  // 第一步：按“车辆所属客户”归集
-  var sqlByCustomer = 
-    `SELECT [判定车牌号] AS [车牌号], [车辆所属客户], MAX([充电结束时间]) AS [最近一次活跃时间] ` +
-    `FROM [特来电] WHERE ${where} ` +
-    `AND [车辆所属客户] IS NOT NULL AND LTRIM(RTRIM([车辆所属客户])) <> '' ` +
-    `GROUP BY [判定车牌号], [车辆所属客户] ORDER BY [最近一次活跃时间] DESC`;
-
-  try{
-    var res = await callSqlWithRetry(sqlByCustomer, 2, 800);
-    var rows = (res && res.results) ? res.results : [];
-    if(rows && rows.length > 0){
-      renderUserq1Table(box, rows, ['车牌号','车辆所属客户','最近一次活跃时间']);
-      return;
-    }
-  }catch(e){
-    // 查询失败或无结果，继续下一步
-  }
-
-  // 没有客户信息 -> 询问是否按手机号深度查询
-  if(confirm('没有找到车辆所属客户的相关资料，需要进一步深度查询吗？')){
-    var sqlByPhone = 
-      `SELECT [判定车牌号] AS [车牌号], [手机号], MAX([充电结束时间]) AS [最近一次活跃时间] ` +
-      `FROM [特来电] WHERE ${where} ` +
-      `AND [手机号] IS NOT NULL AND LTRIM(RTRIM([手机号])) <> '' ` +
-      `GROUP BY [判定车牌号], [手机号] ORDER BY [最近一次活跃时间] DESC`;
-    try{
-      var r2 = await callSqlWithRetry(sqlByPhone, 2, 800);
-      var rows2 = (r2 && r2.results) ? res.results : [];
-      if(rows2 && rows2.length > 0){
-        renderUserq1Table(box, rows2, ['车牌号','手机号','最近一次活跃时间']);
-      } else {
-        box.innerHTML = '<div style="padding:12px; color:#c00;">无此车牌号记录</div>';
-      }
-    }catch(err){
-      box.innerHTML = '<div style="padding:12px; color:#c00;">查询失败：'+(err && err.message ? err.message : '未知错误')+'</div>';
-    }
-  }else{
-    box.innerHTML = '<div style="padding:12px; color:#666;">已取消深度查询</div>';
-  }
-}
-
-function renderUserq1Table(container, rows, cols){
-  var html = '<div style=\"overflow:auto;\"><table style=\"width:100%; border-collapse:collapse; font-size:13px;\">';
-  html += '<thead><tr style=\"background:#e9ecef;\">' + cols.map(function(c){
-    return '<th style=\"padding:8px; border:1px solid #ddd; text-align:center; white-space:nowrap; font-weight:600;\">'+c+'</th>';
-  }).join('') + '</tr></thead><tbody>';
-  rows.forEach(function(row, idx){
-    var bg = idx%2===0 ? '#fff' : '#f8f9fa';
-    html += '<tr>' + cols.map(function(c){
-      var v = row[c]; return '<td style=\"padding:8px; border:1px solid #ddd; text-align:center; background:'+bg+'; white-space:nowrap;\">'+(v==null?'':v)+'</td>';
-    }).join('') + '</tr>';
-  });
-  html += '</tbody></table></div>';
-  container.innerHTML = html;
-}
-</script>
-
 </body>
 </html>
