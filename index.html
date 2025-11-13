@@ -15970,6 +15970,129 @@ function updateUnchargedTable() {
         // 存储最后一次查询结果
         let __lastUserQueryResults = null;
 
+        // 用户数据分页状态（前端分页，每页20条）
+        let __userPagination = {
+            enabled: false,
+            pageSize: 20,
+            currentPage: 1,
+            total: 0,
+            rows: [],
+            deviceType: '',
+            columns: []
+        };
+
+        function ensureUserPaginationBar() {
+            const container = document.getElementById('user-query-result');
+            if (!container) return null;
+            let bar = document.getElementById('user-pagination-top');
+            if (!bar) {
+                bar = document.createElement('div');
+                bar.id = 'user-pagination-top';
+                bar.style.margin = '8px 0';
+                const contentEl = document.getElementById('user-query-result-content');
+                if (contentEl) {
+                    container.insertBefore(bar, contentEl);
+                } else {
+                    container.appendChild(bar);
+                }
+            }
+            return bar;
+        }
+
+        function renderUserPagination() {
+            const bar = ensureUserPaginationBar();
+            if (!bar) return;
+            if (!__userPagination.enabled || __userPagination.total === 0) {
+                bar.innerHTML = '';
+                return;
+            }
+            const totalPages = Math.max(1, Math.ceil(__userPagination.total / __userPagination.pageSize));
+            bar.innerHTML = `
+                <div style="padding:6px 8px; background:#f8f9fa; border:1px solid #e9ecef; border-radius:6px; display:flex; align-items:center; gap:8px;">
+                    <button id="user-pg-first" style="padding:4px 8px;">首页</button>
+                    <button id="user-pg-prev" style="padding:4px 8px;">上一页</button>
+                    <span>第 <strong>${__userPagination.currentPage}</strong> / ${totalPages} 页</span>
+                    <span>共 <strong>${__userPagination.total}</strong> 条</span>
+                    <button id="user-pg-next" style="padding:4px 8px;">下一页</button>
+                    <button id="user-pg-last" style="padding:4px 8px;">末页</button>
+                </div>`;
+            const lastPage = totalPages;
+            const firstBtn = document.getElementById('user-pg-first');
+            const prevBtn = document.getElementById('user-pg-prev');
+            const nextBtn = document.getElementById('user-pg-next');
+            const lastBtn = document.getElementById('user-pg-last');
+            if (firstBtn) firstBtn.onclick = () => goToUserPage(1);
+            if (prevBtn) prevBtn.onclick = () => goToUserPage(Math.max(1, __userPagination.currentPage - 1));
+            if (nextBtn) nextBtn.onclick = () => goToUserPage(Math.min(lastPage, __userPagination.currentPage + 1));
+            if (lastBtn) lastBtn.onclick = () => goToUserPage(lastPage);
+        }
+
+        function goToUserPage(page) {
+            if (!__userPagination.enabled) return;
+            const totalPages = Math.max(1, Math.ceil(__userPagination.total / __userPagination.pageSize));
+            const targetPage = Math.min(Math.max(page, 1), totalPages);
+            if (targetPage === __userPagination.currentPage) return;
+            __userPagination.currentPage = targetPage;
+            renderUserTablePage();
+            renderUserPagination();
+        }
+
+        function renderUserTablePage() {
+            const resultContent = document.getElementById('user-query-result-content');
+            if (!resultContent) return;
+            if (!__userPagination.enabled || !Array.isArray(__userPagination.rows) || __userPagination.rows.length === 0) {
+                resultContent.innerHTML = '';
+                return;
+            }
+
+            const rows = __userPagination.rows;
+            const columns = Array.isArray(__userPagination.columns) ? __userPagination.columns : [];
+            const pageSize = __userPagination.pageSize || 20;
+            const currentPage = __userPagination.currentPage || 1;
+            const total = __userPagination.total || rows.length;
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, total);
+            const pageRows = rows.slice(startIndex, endIndex);
+
+            if (columns.length === 0) {
+                resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">暂无可显示的列</div>';
+                return;
+            }
+
+            let tableHtml = '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+            tableHtml += '<thead><tr style="background:#f8f9fa; font-weight:bold;">';
+            columns.forEach(col => {
+                tableHtml += `<th style="padding:10px; border:1px solid #ddd; text-align:left;">${col}</th>`;
+            });
+            tableHtml += '</tr></thead><tbody>';
+
+            pageRows.forEach((row, index) => {
+                const rowClass = index % 2 === 0 ? 'background:#ffffff;' : 'background:#f9f9f9;';
+                tableHtml += `<tr style="${rowClass}">`;
+                if (__userPagination.deviceType === '车牌号') {
+                    columns.forEach(col => {
+                        let value = row[col];
+                        if (value === undefined || value === null) {
+                            const fallbackKey = col.replace(/\(.*?\)/g, '');
+                            value = row[fallbackKey];
+                        }
+                        if (value === undefined || value === null) value = '';
+                        tableHtml += `<td style="padding:8px; border:1px solid #ddd;">${value}</td>`;
+                    });
+                } else {
+                    columns.forEach(col => {
+                        let value = row[col];
+                        if (value === undefined || value === null) value = '';
+                        tableHtml += `<td style="padding:8px; border:1px solid #ddd;">${value}</td>`;
+                    });
+                }
+                tableHtml += '</tr>';
+            });
+
+            tableHtml += '</tbody></table>';
+            resultContent.innerHTML = tableHtml;
+        }
+
         // 设置导出按钮状态
         function setUserExportEnabled(enabled) {
             const btn = document.getElementById('user-export-btn');
@@ -16143,6 +16266,13 @@ function updateUnchargedTable() {
             // 禁用导出按钮
             setUserExportEnabled(false);
 
+            // 重置用户数据分页状态
+            __userPagination.enabled = false;
+            __userPagination.rows = [];
+            __userPagination.total = 0;
+            __userPagination.currentPage = 1;
+            renderUserPagination();
+
             // 显示加载提示
             if (resultContent) {
                 resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#666;"><i class="fas fa-spinner fa-spin"></i> 正在查询，请稍候...</div>';
@@ -16193,6 +16323,10 @@ function updateUnchargedTable() {
             const rows = (payload && payload.results) ? payload.results : [];
 
             if (rows.length === 0) {
+                __userPagination.enabled = false;
+                __userPagination.rows = [];
+                __userPagination.total = 0;
+                renderUserPagination();
                 resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">未找到符合条件的数据</div>';
                 if (statsContainer) statsContainer.innerHTML = '';
                 return;
@@ -16275,54 +16409,20 @@ function updateUnchargedTable() {
                 statsContainer.innerHTML = statsHtml;
             }
 
-            // 显示表格数据
-            let tableHtml = '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
-            tableHtml += '<thead><tr style="background:#f8f9fa; font-weight:bold;">';
+            const userColumns = build.deviceType === '车牌号'
+                ? ['电站名称', '终端名称', '充电开始时间', '充电结束时间', '充电电量(度)', '充电电费(元)', '充电服务费(元)', '充电费用(元)', '充电时长(分钟)', '判定车牌号']
+                : ['充电桩名称', '开始日期时间', '结束日期时间', '充电量', '电费', '服务费', '消费金额', '充电时长', '卡号', '持卡人'];
 
-            // 根据数据类型显示不同的列
-            if (build.deviceType === '车牌号') {
-                // 特来电表的列
-                const columns = ['电站名称', '终端名称', '充电开始时间', '充电结束时间', '充电电量(度)', '充电电费(元)', '充电服务费(元)', '充电费用(元)', '充电时长(分钟)', '判定车牌号'];
-                columns.forEach(col => {
-                    tableHtml += `<th style="padding:10px; border:1px solid #ddd; text-align:left;">${col}</th>`;
-                });
-            } else {
-                // 能科表的列
-                const columns = ['充电桩名称', '开始日期时间', '结束日期时间', '充电量', '电费', '服务费', '消费金额', '充电时长', '卡号', '持卡人'];
-                columns.forEach(col => {
-                    tableHtml += `<th style="padding:10px; border:1px solid #ddd; text-align:left;">${col}</th>`;
-                });
-            }
+            __userPagination.enabled = true;
+            __userPagination.rows = rows;
+            __userPagination.total = rows.length;
+            __userPagination.pageSize = 20;
+            __userPagination.currentPage = 1;
+            __userPagination.deviceType = build.deviceType;
+            __userPagination.columns = userColumns;
 
-            tableHtml += '</tr></thead><tbody>';
-
-            // 显示数据行
-            rows.forEach((row, index) => {
-                const rowClass = index % 2 === 0 ? 'background:#ffffff;' : 'background:#f9f9f9;';
-                tableHtml += `<tr style="${rowClass}">`;
-
-                if (build.deviceType === '车牌号') {
-                    const columns = ['电站名称', '终端名称', '充电开始时间', '充电结束时间', '充电电量(度)', '充电电费(元)', '充电服务费(元)', '充电费用(元)', '充电时长(分钟)', '判定车牌号'];
-                    columns.forEach(col => {
-                        let value = row[col] || row[col.replace(/\(.*?\)/g, '')] || '';
-                        if (value === null || value === undefined) value = '';
-                        tableHtml += `<td style="padding:8px; border:1px solid #ddd;">${value}</td>`;
-                    });
-                } else {
-                    const columns = ['充电桩名称', '开始日期时间', '结束日期时间', '充电量', '电费', '服务费', '消费金额', '充电时长', '卡号', '持卡人'];
-                    columns.forEach(col => {
-                        let value = row[col] || '';
-                        if (value === null || value === undefined) value = '';
-                        tableHtml += `<td style="padding:8px; border:1px solid #ddd;">${value}</td>`;
-                    });
-                }
-
-                tableHtml += '</tr>';
-            });
-
-            tableHtml += '</tbody></table>';
-
-            resultContent.innerHTML = tableHtml;
+            renderUserTablePage();
+            renderUserPagination();
         }
 
         // 导出用户数据到Excel
@@ -16662,12 +16762,13 @@ function updateUnchargedTable() {
                 }
                 console.log(`   结果: ${stationData.platformServiceFee}`);
 
-                // 7. 查询活动优惠券（暂时禁用，避免超时）
-                console.log('6. 活动优惠券（暂时禁用）');
-                stationData.couponCost = 0;
-                console.log('   活动优惠券查询已暂时禁用，设为0');
+                // 7. 查询活动优惠券成本
+                console.log('6. 查询活动优惠券成本...');
+                stationData.couponCost = await queryCouponCost(station, startDateFormatted, endDateFormatted);
+                console.log(`   结果: ${stationData.couponCost}`);
 
                 // 8. 其他成本
+                console.log('7. 其他成本（暂无）');
                 stationData.otherCost = 0;
 
                 console.log(`========== ${station} 查询完成 ==========\n`);
@@ -16846,50 +16947,93 @@ function updateUnchargedTable() {
         async function queryCouponCost(station, startDate, endDate) {
             let stationCondition = '';
             if (station === '四方坪站') {
-                stationCondition = "([电站名称] NOT LIKE N'%华为飞狐特来电高岭超充站%' AND [电站名称] NOT LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')";
+                stationCondition = "[电站名称] NOT IN ('华为飞狐特来电高岭超充站','长沙市开福区高岭香江国际城充电站建设项目')";
             } else if (station === '高岭站') {
-                stationCondition = "([电站名称] LIKE N'%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')";
+                stationCondition = "([电站名称] = '华为飞狐特来电高岭超充站' OR [电站名称] = '长沙市开福区高岭香江国际城充电站建设项目')";
+            } else {
+                console.warn('  未识别的站点，跳过活动优惠券查询:', station);
+                return 0;
             }
 
-            const dateCondition = `([收款时间] >= '${startDate}' AND [收款时间] < DATEADD(day, 1, '${endDate}'))`;
-            const settlementCondition = "(ISNULL([卡券是否结算], '') <> N'是')";
+            const startParts = startDate.split('-');
+            const endParts = endDate.split('-');
+            if (startParts.length < 3 || endParts.length < 3) {
+                console.warn('  活动优惠券查询日期格式无效:', startDate, endDate);
+                return 0;
+            }
 
-            // 使用一个复杂查询代替6个查询，提高性能
+            const startDateStr = `${startParts[0]}/${startParts[1]}/${startParts[2]} 00:00:00`;
+            const endDateStr = `${endParts[0]}/${endParts[1]}/${endParts[2]} 23:59:59`;
+            const dateCondition = `[收款时间] >= '${startDateStr}' AND [收款时间] <= '${endDateStr}'`;
+            const settlementCondition = "[卡券是否结算] NOT IN ('是')";
+
             const combinedQuery = `
                 SELECT
-                    SUM(
-                        CASE
-                            -- 条件1和2: 代金券+赠券（收款金额）
-                            WHEN [支付方式] = N'代金券' AND [卡券类型] = N'赠券'
-                            THEN ISNULL(CAST([收款金额(元)] AS FLOAT), 0)
-                            -- 条件3和5: 代金券+卖券（赠送金额）
-                            WHEN [支付方式] = N'代金券' AND [卡券类型] = N'卖券'
-                            THEN ISNULL(CAST([卖券赠送金额(元)] AS FLOAT), 0)
-                            -- 条件4和6: 优惠券（收款金额）
-                            WHEN [支付方式] = N'优惠券'
-                            THEN ISNULL(CAST([收款金额(元)] AS FLOAT), 0)
-                            ELSE 0
-                        END
-                    ) AS total
+                    ROUND(SUM(CASE
+                        WHEN [费用类型] = '电费' AND [支付方式] = '代金券' AND [卡券类型] = '赠券'
+                        THEN [收款金额(元)]
+                        ELSE 0
+                    END), 2) AS condition1,
+                    ROUND(SUM(CASE
+                        WHEN [费用类型] = '服务费' AND [支付方式] = '代金券' AND [卡券类型] = '赠券'
+                        THEN [收款金额(元)]
+                        ELSE 0
+                    END), 2) AS condition2,
+                    ROUND(SUM(CASE
+                        WHEN [费用类型] = '电费' AND [支付方式] = '代金券' AND [卡券类型] = '卖券'
+                        THEN [卖券赠送金额(元)]
+                        ELSE 0
+                    END), 2) AS condition3,
+                    ROUND(SUM(CASE
+                        WHEN [费用类型] = '服务费' AND [支付方式] = '优惠券'
+                        THEN [收款金额(元)]
+                        ELSE 0
+                    END), 2) AS condition4,
+                    ROUND(SUM(CASE
+                        WHEN [费用类型] = '服务费' AND [支付方式] = '代金券' AND [卡券类型] = '卖券'
+                        THEN [卖券赠送金额(元)]
+                        ELSE 0
+                    END), 2) AS condition5,
+                    ROUND(SUM(CASE
+                        WHEN [费用类型] = '电费' AND [支付方式] = '优惠券'
+                        THEN [收款金额(元)]
+                        ELSE 0
+                    END), 2) AS condition6
                 FROM [活动优惠券]
-                WHERE ${settlementCondition}
+                WHERE ${dateCondition}
                 AND ${stationCondition}
-                AND ${dateCondition}
+                AND ${settlementCondition}
             `;
 
             let total = 0;
-            console.log(`查询${station}活动优惠券成本，日期范围: ${startDate} 到 ${endDate}`);
+            console.log(`  活动优惠券查询SQL生成完成，日期范围: ${startDateStr} 到 ${endDateStr}`);
 
             try {
-                const results = await executeLeanCloudSQL(combinedQuery);
-                if (results.length > 0 && results[0].total != null) {
-                    total = parseFloat(results[0].total);
-                    console.log(`  活动优惠券总成本: ${total}`);
+                const result = await callSqlWithRetry(combinedQuery, 3, 600);
+                const rows = (result && result.results)
+                    ? result.results
+                    : Array.isArray(result)
+                        ? result
+                        : (result && result.data)
+                            ? result.data
+                            : (result && result.rows)
+                                ? result.rows
+                                : [];
+
+                if (rows && rows.length > 0) {
+                    const row = rows[0] || {};
+                    const keys = ['condition1', 'condition2', 'condition3', 'condition4', 'condition5', 'condition6'];
+                    total = keys.reduce((sum, key) => {
+                        const value = parseFloat(row[key]);
+                        return sum + (Number.isFinite(value) ? value : 0);
+                    }, 0);
+                    total = Number.isFinite(total) ? Number(total.toFixed(2)) : 0;
+                    console.log(`  活动优惠券查询成功，各类合计: ${JSON.stringify(row)}, 总成本: ${total}`);
                 } else {
-                    console.log(`  结果: 0 (无数据)`);
+                    console.log('  活动优惠券查询返回空结果');
                 }
             } catch (e) {
-                console.error(`  活动优惠券查询失败:`, e);
+                console.error('  活动优惠券查询失败:', e);
                 total = 0;
             }
 
