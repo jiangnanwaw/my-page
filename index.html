@@ -16183,6 +16183,29 @@ function updateUnchargedTable() {
             return /^\d{11}$/.test(input.trim());
         }
 
+        // 当以手机号查询时，将数值字段统一保留两位小数，并格式化充电时长
+        function formatUserPhoneRow(row) {
+            if (!row || typeof row !== 'object') return row;
+            const formatted = { ...row };
+            const numericFields = ['充电量', '电费', '服务费', '消费金额'];
+            
+            numericFields.forEach(field => {
+                if (formatted[field] !== undefined && formatted[field] !== null && formatted[field] !== '') {
+                    const normalized = String(formatted[field]).trim().replace(/[¥￥,，\s]/g, '');
+                    const num = parseFloat(normalized);
+                    if (!isNaN(num)) {
+                        formatted[field] = num.toFixed(2);
+                    }
+                }
+            });
+            
+            if (formatted['充电时长']) {
+                formatted['充电时长'] = formatDuration(formatted['充电时长']);
+            }
+            
+            return formatted;
+        }
+
         // 构建用户数据查询SQL
         function buildUserQuery() {
             const userInput = (document.getElementById('user-input') || {}).value || '';
@@ -16414,7 +16437,10 @@ function updateUnchargedTable() {
                 : ['充电桩名称', '开始日期时间', '结束日期时间', '充电量', '电费', '服务费', '消费金额', '充电时长', '卡号', '持卡人'];
 
             __userPagination.enabled = true;
-            __userPagination.rows = rows;
+            const displayRows = build.deviceType === '手机号'
+                ? rows.map(formatUserPhoneRow)
+                : rows;
+            __userPagination.rows = displayRows;
             __userPagination.total = rows.length;
             __userPagination.pageSize = 20;
             __userPagination.currentPage = 1;
