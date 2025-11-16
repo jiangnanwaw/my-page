@@ -16583,11 +16583,11 @@ function updateUnchargedTable() {
             let pickerHTML = `
                 <div style="padding:15px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <button onclick="changeYear(-1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
+                        <button onclick="changeYear(-1, event)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
                             <i class="fas fa-chevron-left"></i>
                         </button>
                         <span id="picker-year-${targetId}" style="font-size:16px; font-weight:bold;">${currentPickerYear}年</span>
-                        <button onclick="changeYear(1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
+                        <button onclick="changeYear(1, event)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
                             <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
@@ -16624,7 +16624,11 @@ function updateUnchargedTable() {
             }, 100);
         }
         
-        function changeYear(delta) {
+        function changeYear(delta, event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
             currentPickerYear += delta;
             const yearSpan = document.getElementById('picker-year-' + currentPickerTarget);
             if (yearSpan) {
