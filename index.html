@@ -2635,14 +2635,14 @@
 
                         <!-- 开始时间（年月格式） -->
                         <div style="position:relative; width:220px;">
-                            <input id="bill-start-month" type="text" placeholder="开始年月" readonly style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showBillMonthPicker('bill-start-month', this)" />
+                            <input id="bill-start-month" type="text" placeholder="开始年月" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showBillMonthPicker('bill-start-month', this)" />
                             <button id="bill-start-month-btn" title="选择年月" onclick="showBillMonthPicker('bill-start-month', document.getElementById('bill-start-month'))" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                             <div id="bill-start-month-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                         </div>
 
                         <!-- 结束时间（年月格式） -->
                         <div style="position:relative; width:220px;">
-                            <input id="bill-end-month" type="text" placeholder="结束年月" readonly style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showBillMonthPicker('bill-end-month', this)" />
+                            <input id="bill-end-month" type="text" placeholder="结束年月" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showBillMonthPicker('bill-end-month', this)" />
                             <button id="bill-end-month-btn" title="选择年月" onclick="showBillMonthPicker('bill-end-month', document.getElementById('bill-end-month'))" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                             <div id="bill-end-month-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                         </div>
@@ -2750,14 +2750,16 @@
 
                         <!-- 开始时间 -->
                         <div style="position:relative; width:220px;">
-                            <input id="zh-start-datetime" type="text" placeholder="开始时间" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px;" />
-                            <button id="zh-start-date-btn" title="选择日期" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <input id="zh-start-datetime" type="text" placeholder="开始时间" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" />
+                            <button id="zh-start-date-btn" title="选择日期" onclick="showZhMonthPicker('zh-start-datetime', document.getElementById('zh-start-datetime'))" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <div id="zh-start-datetime-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                         </div>
 
                         <!-- 结束时间 -->
                         <div style="position:relative; width:220px;">
-                            <input id="zh-end-datetime" type="text" placeholder="结束时间" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px;" />
-                            <button id="zh-end-date-btn" title="选择日期" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <input id="zh-end-datetime" type="text" placeholder="结束时间" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" />
+                            <button id="zh-end-date-btn" title="选择日期" onclick="showZhMonthPicker('zh-end-datetime', document.getElementById('zh-end-datetime'))" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <div id="zh-end-datetime-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                         </div>
 
                         <!-- 操作按钮 -->
@@ -2819,16 +2821,18 @@
                             </div>
 
                             <!-- 开始日期 -->
-                            <div style="position:relative;">
+                            <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
-                                <input type="text" id="start-date" readonly style="min-width:150px; padding:8px 12px; border:1px solid #ddd; border-radius:4px; cursor:pointer;" onclick="showMonthPicker('start-date', this)">
+                                <input type="text" id="start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('start-date', this)">
+                                <button id="start-date-btn" title="选择日期" onclick="showMonthPicker('start-date', document.getElementById('start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
                             <!-- 结束日期 -->
-                            <div style="position:relative;">
+                            <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
-                                <input type="text" id="end-date" readonly style="min-width:150px; padding:8px 12px; border:1px solid #ddd; border-radius:4px; cursor:pointer;" onclick="showMonthPicker('end-date', this)">
+                                <input type="text" id="end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('end-date', this)">
+                                <button id="end-date-btn" title="选择日期" onclick="showMonthPicker('end-date', document.getElementById('end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
@@ -2918,16 +2922,18 @@
                             </div>
 
                             <!-- 开始日期 -->
-                            <div style="position:relative;">
+                            <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
-                                <input type="text" id="comp-start-date" readonly style="min-width:150px; padding:8px 12px; border:1px solid #ddd; border-radius:4px; cursor:pointer;" onclick="showCompMonthPicker('comp-start-date', this)">
+                                <input type="text" id="comp-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showCompMonthPicker('comp-start-date', this)">
+                                <button id="comp-start-date-btn" title="选择日期" onclick="showCompMonthPicker('comp-start-date', document.getElementById('comp-start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="comp-start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
                             <!-- 结束日期 -->
-                            <div style="position:relative;">
+                            <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
-                                <input type="text" id="comp-end-date" readonly style="min-width:150px; padding:8px 12px; border:1px solid #ddd; border-radius:4px; cursor:pointer;" onclick="showCompMonthPicker('comp-end-date', this)">
+                                <input type="text" id="comp-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showCompMonthPicker('comp-end-date', this)">
+                                <button id="comp-end-date-btn" title="选择日期" onclick="showCompMonthPicker('comp-end-date', document.getElementById('comp-end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="comp-end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
@@ -17500,6 +17506,115 @@ function updateUnchargedTable() {
             const pickerId = targetId === 'comp-start-date' ? 'comp-start-date-picker' : 'comp-end-date-picker';
             document.getElementById(pickerId).style.display = 'none';
             currentCompPickerTarget = null;
+        }
+
+        // 充电数据报表月份选择器相关变量
+        let currentZhPickerTarget = null;
+        let currentZhPickerYear = new Date().getFullYear();
+
+        // 显示充电数据报表月份选择器
+        function showZhMonthPicker(targetId, inputElement) {
+            document.getElementById('zh-start-datetime-picker').style.display = 'none';
+            document.getElementById('zh-end-datetime-picker').style.display = 'none';
+
+            currentZhPickerTarget = targetId;
+            const targetInput = inputElement || document.getElementById(targetId);
+            const currentValue = targetInput.value;
+
+            // 从日期时间格式中提取年月，格式可能是 YYYY-MM-DD HH:mm:ss 或 YYYY-MM
+            let year, month;
+            if (currentValue && currentValue.match(/^\d{4}-\d{2}/)) {
+                const parts = currentValue.split('-');
+                year = parseInt(parts[0]);
+                month = parseInt(parts[1]);
+            } else if (currentValue && currentValue.match(/^\d{4}-\d{2}$/)) {
+                const parts = currentValue.split('-');
+                year = parseInt(parts[0]);
+                month = parseInt(parts[1]);
+            } else {
+                const now = new Date();
+                year = now.getFullYear();
+                month = now.getMonth() + 1;
+            }
+            currentZhPickerYear = year;
+
+            const pickerId = targetId === 'zh-start-datetime' ? 'zh-start-datetime-picker' : 'zh-end-datetime-picker';
+            const pickerContainer = document.getElementById(pickerId);
+
+            const inputWidth = targetInput.offsetWidth;
+            pickerContainer.style.width = inputWidth + 'px';
+
+            let pickerHTML = `
+                <div style="padding:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <button onclick="changeZhYear(-1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="zh-picker-year-${targetId}" style="font-size:16px; font-weight:bold;">${currentZhPickerYear}年</span>
+                        <button onclick="changeZhYear(1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
+                        <button onclick="selectZhMonth(1, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">1月</button>
+                        <button onclick="selectZhMonth(2, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">2月</button>
+                        <button onclick="selectZhMonth(3, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">3月</button>
+                        <button onclick="selectZhMonth(4, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">4月</button>
+                        <button onclick="selectZhMonth(5, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">5月</button>
+                        <button onclick="selectZhMonth(6, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">6月</button>
+                        <button onclick="selectZhMonth(7, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">7月</button>
+                        <button onclick="selectZhMonth(8, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">8月</button>
+                        <button onclick="selectZhMonth(9, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">9月</button>
+                        <button onclick="selectZhMonth(10, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">10月</button>
+                        <button onclick="selectZhMonth(11, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">11月</button>
+                        <button onclick="selectZhMonth(12, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">12月</button>
+                    </div>
+                    <button onclick="closeZhMonthPicker('${targetId}')" style="width:100%; padding:6px; background:#6c757d; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:13px;">取消</button>
+                </div>
+            `;
+
+            pickerContainer.innerHTML = pickerHTML;
+            pickerContainer.style.display = 'block';
+
+            setTimeout(() => {
+                const closeOnClickOutside = (e) => {
+                    if (!pickerContainer.contains(e.target) && e.target !== targetInput) {
+                        pickerContainer.style.display = 'none';
+                        document.removeEventListener('click', closeOnClickOutside);
+                    }
+                };
+                document.addEventListener('click', closeOnClickOutside);
+            }, 100);
+        }
+
+        function changeZhYear(delta) {
+            currentZhPickerYear += delta;
+            const yearSpan = document.getElementById('zh-picker-year-' + currentZhPickerTarget);
+            if (yearSpan) {
+                yearSpan.textContent = currentZhPickerYear + '年';
+            }
+        }
+
+        function selectZhMonth(month, targetId) {
+            const pad = n => (n < 10 ? '0' + n : '' + n);
+            const isEnd = targetId === 'zh-end-datetime';
+            // 获取该月的第一天和最后一天
+            const year = currentZhPickerYear;
+            const monthNum = month;
+            const firstDay = `${year}-${pad(monthNum)}-01`;
+            const lastDay = new Date(year, monthNum, 0).getDate();
+            const lastDayStr = `${year}-${pad(monthNum)}-${pad(lastDay)}`;
+            
+            // 根据是开始还是结束时间设置不同的时间
+            const dateTime = isEnd ? `${lastDayStr} 23:59:59` : `${firstDay} 00:00:00`;
+            document.getElementById(targetId).value = dateTime;
+            closeZhMonthPicker(targetId);
+        }
+
+        function closeZhMonthPicker(targetId) {
+            const pickerId = targetId === 'zh-start-datetime' ? 'zh-start-datetime-picker' : 'zh-end-datetime-picker';
+            document.getElementById(pickerId).style.display = 'none';
+            currentZhPickerTarget = null;
         }
 
         // 查询综合数据报表
