@@ -17077,7 +17077,7 @@ function updateUnchargedTable() {
                 html = generateSingleStationReport(data, stations[0], startDate, endDate);
             } else if (stations.length === 2) {
                 // 双站对比报表
-                html = generateDualStationReport(data, startDate, endDate);
+                html = generateDualStationReport(data, stations, startDate, endDate);
             }
 
             reportResult.innerHTML = html;
@@ -17088,14 +17088,20 @@ function updateUnchargedTable() {
             const stationData = data[station] || {};
 
             // 格式化日期显示
-            let dateDisplay = startDate;
+            let periodDisplay = startDate;
             if (startDate !== endDate) {
-                dateDisplay = `${startDate}至${endDate}`;
+                periodDisplay = `${startDate}至${endDate}`;
             }
 
             let html = `
                 <div style="background:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                    <h2 style="text-align:center; margin-bottom:30px; color:#333; font-size:24px;">${station}${dateDisplay}财务报表</h2>
+                    <h2 style="text-align:center; margin-bottom:20px; color:#333; font-size:24px;">充电数据报表</h2>
+                    <div style="width:100%; color:#666; font-size:14px; display:flex; box-sizing:border-box;">
+                        <div style="width:30%; padding:12px; text-align:left; box-sizing:border-box;">单位：长沙飞狐电动汽车充电服务有限公司</div>
+                        <div style="width:25%; padding:12px; text-align:left; box-sizing:border-box;">站点：${station}</div>
+                        <div style="width:25%; padding:12px; text-align:left; box-sizing:border-box;">报表周期：${periodDisplay}</div>
+                        <div style="flex:1; padding:12px; text-align:right; box-sizing:border-box;">金额：元</div>
+                    </div>
 
                     <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
                         <thead>
@@ -17239,15 +17245,18 @@ function updateUnchargedTable() {
         }
 
         // 生成双站对比报表
-        function generateDualStationReport(data, startDate, endDate) {
+        function generateDualStationReport(data, stations, startDate, endDate) {
             const sfpData = data['四方坪站'] || {};
             const glData = data['高岭站'] || {};
 
             // 格式化日期显示
-            let dateDisplay = startDate;
+            let periodDisplay = startDate;
             if (startDate !== endDate) {
-                dateDisplay = `${startDate}至${endDate}`;
+                periodDisplay = `${startDate}至${endDate}`;
             }
+
+            // 动态生成站点显示名称
+            const stationDisplay = stations.join('和');
 
             // 计算各项数据
             const sfpRevenue = parseFloat(sfpData.chargingTotalIncome || 0) + parseFloat(sfpData.otherIncome || 0);
@@ -17272,7 +17281,13 @@ function updateUnchargedTable() {
 
             let html = `
                 <div style="background:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                    <h2 style="text-align:center; margin-bottom:30px; color:#333; font-size:24px;">四方坪站和高岭站${dateDisplay}财务报表</h2>
+                    <h2 style="text-align:center; margin-bottom:20px; color:#333; font-size:24px;">充电数据报表</h2>
+                    <div style="width:100%; color:#666; font-size:14px; display:flex; box-sizing:border-box;">
+                        <div style="width:40%; padding:12px; text-align:left; box-sizing:border-box;">单位：长沙飞狐电动汽车充电服务有限公司</div>
+                        <div style="width:20%; padding:12px; text-align:right; box-sizing:border-box;">站点：${stationDisplay}</div>
+                        <div style="width:20%; padding:12px; text-align:right; box-sizing:border-box;">报表周期：${periodDisplay}</div>
+                        <div style="flex:1; padding:12px; text-align:right; box-sizing:border-box;">金额：元</div>
+                    </div>
 
                     <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
                         <thead>
@@ -17742,7 +17757,7 @@ function updateUnchargedTable() {
             if (stations.length === 1) {
                 html = generateSingleStationCompReport(data, stations[0], startDate, endDate);
             } else if (stations.length === 2) {
-                html = generateDualStationCompReport(data, startDate, endDate);
+                html = generateDualStationCompReport(data, stations, startDate, endDate);
             }
 
             reportResult.innerHTML = html;
@@ -17752,9 +17767,10 @@ function updateUnchargedTable() {
         function generateSingleStationCompReport(data, station, startDate, endDate) {
             const stationData = data[station] || {};
 
-            let dateDisplay = startDate;
+            // 格式化日期显示
+            let periodDisplay = startDate;
             if (startDate !== endDate) {
-                dateDisplay = `${startDate}至${endDate}`;
+                periodDisplay = `${startDate}至${endDate}`;
             }
 
             // 计算营业收入合计
@@ -17781,7 +17797,13 @@ function updateUnchargedTable() {
 
             let html = `
                 <div style="background:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                    <h2 style="text-align:center; margin-bottom:30px; color:#333; font-size:24px;">${station}${dateDisplay}综合业务财务报表</h2>
+                    <h2 style="text-align:center; margin-bottom:20px; color:#333; font-size:24px;">综合数据报表</h2>
+                    <div style="width:100%; color:#666; font-size:14px; display:flex; box-sizing:border-box;">
+                        <div style="width:30%; padding:12px; text-align:left; box-sizing:border-box;">单位：长沙飞狐电动汽车充电服务有限公司</div>
+                        <div style="width:25%; padding:12px; text-align:left; box-sizing:border-box;">站点：${station}</div>
+                        <div style="width:25%; padding:12px; text-align:left; box-sizing:border-box;">报表周期：${periodDisplay}</div>
+                        <div style="flex:1; padding:12px; text-align:right; box-sizing:border-box;">金额：元</div>
+                    </div>
 
                     <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
                         <thead>
@@ -17890,14 +17912,18 @@ function updateUnchargedTable() {
         }
 
         // 生成双站综合对比报表
-        function generateDualStationCompReport(data, startDate, endDate) {
+        function generateDualStationCompReport(data, stations, startDate, endDate) {
             const sfpData = data['四方坪站'] || {};
             const glData = data['高岭站'] || {};
 
-            let dateDisplay = startDate;
+            // 格式化日期显示
+            let periodDisplay = startDate;
             if (startDate !== endDate) {
-                dateDisplay = `${startDate}至${endDate}`;
+                periodDisplay = `${startDate}至${endDate}`;
             }
+
+            // 动态生成站点显示名称
+            const stationDisplay = stations.join('和');
 
             // 计算四方坪站营业收入
             const sfpRevenue = parseFloat(sfpData.cheHaiYangIncome || 0) +
@@ -17936,7 +17962,13 @@ function updateUnchargedTable() {
 
             let html = `
                 <div style="background:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                    <h2 style="text-align:center; margin-bottom:30px; color:#333; font-size:24px;">四方坪站和高岭站${dateDisplay}财务报表</h2>
+                    <h2 style="text-align:center; margin-bottom:20px; color:#333; font-size:24px;">综合数据报表</h2>
+                    <div style="width:100%; color:#666; font-size:14px; display:flex; box-sizing:border-box;">
+                        <div style="width:40%; padding:12px; text-align:left; box-sizing:border-box;">单位：长沙飞狐电动汽车充电服务有限公司</div>
+                        <div style="width:20%; padding:12px; text-align:right; box-sizing:border-box;">站点：${stationDisplay}</div>
+                        <div style="width:20%; padding:12px; text-align:right; box-sizing:border-box;">报表周期：${periodDisplay}</div>
+                        <div style="flex:1; padding:12px; text-align:right; box-sizing:border-box;">金额：元</div>
+                    </div>
 
                     <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
                         <thead>
