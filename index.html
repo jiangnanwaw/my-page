@@ -2798,21 +2798,21 @@
                             <!-- 站点选择 -->
                             <div style="position:relative;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">站点</label>
-                                <div id="station-selector" class="multi-select-box" style="min-width:200px; padding:8px 12px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer; position:relative;">
-                                    <span id="station-display">请选择站点</span>
+                                <div id="station-selector" class="multi-select-box" style="min-width:200px; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer; position:relative; display:flex; align-items:center; box-sizing:border-box; min-height:38px;">
+                                    <span id="station-display" style="font-size:12px;">请选择站点</span>
                                     <i class="fas fa-chevron-down" style="position:absolute; right:10px; top:50%; transform:translateY(-50%);"></i>
                                 </div>
                                 <div id="station-dropdown" style="display:none; position:absolute; top:100%; left:0; z-index:1001; background:#fff; border:1px solid #ddd; border-radius:4px; margin-top:2px; min-width:200px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
                                     <div style="padding:8px;">
-                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
                                             <input type="checkbox" id="station-all" value="全部" onchange="toggleStationAll()" style="margin-right:8px;">
                                             全选
                                         </label>
-                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
                                             <input type="checkbox" class="station-option" value="四方坪站" onchange="updateStationSelection()" style="margin-right:8px;">
                                             四方坪站
                                         </label>
-                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
                                             <input type="checkbox" class="station-option" value="高岭站" onchange="updateStationSelection()" style="margin-right:8px;">
                                             高岭站
                                         </label>
@@ -2824,7 +2824,7 @@
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
                                 <input type="text" id="start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('start-date', this)">
-                                <button id="start-date-btn" title="选择日期" onclick="showMonthPicker('start-date', document.getElementById('start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <button id="start-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('start-date', document.getElementById('start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
@@ -2832,15 +2832,19 @@
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
                                 <input type="text" id="end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('end-date', this)">
-                                <button id="end-date-btn" title="选择日期" onclick="showMonthPicker('end-date', document.getElementById('end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <button id="end-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('end-date', document.getElementById('end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
                             <!-- 查询按钮 -->
-                            <div style="margin-top:23px;">
+                            <div style="margin-top:23px; display:flex; gap:10px;">
                                 <button onclick="queryChargingReport()" style="padding:8px 20px; background:#007bff; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:8px; transition:background 0.3s;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
                                     <i class="fas fa-search"></i>
                                     <span>查询</span>
+                                </button>
+                                <button id="charging-report-export-btn" onclick="exportChargingReport()" disabled style="padding:8px 20px; background:#adb5bd; color:#fff; border:none; border-radius:4px; cursor:not-allowed; font-size:14px; display:flex; align-items:center; gap:8px; transition:background 0.3s;">
+                                    <i class="fas fa-download"></i>
+                                    <span>导出数据</span>
                                 </button>
                             </div>
                         </div>
@@ -2899,21 +2903,21 @@
                             <!-- 站点选择 -->
                             <div style="position:relative;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">站点</label>
-                                <div id="comp-station-selector" class="multi-select-box" style="min-width:200px; padding:8px 12px; border:1px solid #ddd; border-radius:4px; background:#fff; cursor:pointer; position:relative;">
-                                    <span id="comp-station-display">请选择站点</span>
+                                <div id="comp-station-selector" class="multi-select-box" style="min-width:200px; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer; position:relative; display:flex; align-items:center; box-sizing:border-box; min-height:38px;">
+                                    <span id="comp-station-display" style="font-size:12px;">请选择站点</span>
                                     <i class="fas fa-chevron-down" style="position:absolute; right:10px; top:50%; transform:translateY(-50%);"></i>
                                 </div>
                                 <div id="comp-station-dropdown" style="display:none; position:absolute; top:100%; left:0; z-index:1001; background:#fff; border:1px solid #ddd; border-radius:4px; margin-top:2px; min-width:200px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
                                     <div style="padding:8px;">
-                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
                                             <input type="checkbox" id="comp-station-all" value="全部" onchange="toggleCompStationAll()" style="margin-right:8px;">
                                             全选
                                         </label>
-                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
                                             <input type="checkbox" class="comp-station-option" value="四方坪站" onchange="updateCompStationSelection()" style="margin-right:8px;">
                                             四方坪站
                                         </label>
-                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
                                             <input type="checkbox" class="comp-station-option" value="高岭站" onchange="updateCompStationSelection()" style="margin-right:8px;">
                                             高岭站
                                         </label>
@@ -2938,10 +2942,14 @@
                             </div>
 
                             <!-- 查询按钮 -->
-                            <div style="margin-top:23px;">
+                            <div style="margin-top:23px; display:flex; gap:10px;">
                                 <button onclick="queryComprehensiveReport()" style="padding:8px 20px; background:#007bff; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:8px; transition:background 0.3s;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
                                     <i class="fas fa-search"></i>
                                     <span>查询</span>
+                                </button>
+                                <button id="comp-report-export-btn" onclick="exportComprehensiveReport()" disabled style="padding:8px 20px; background:#adb5bd; color:#fff; border:none; border-radius:4px; cursor:not-allowed; font-size:14px; display:flex; align-items:center; gap:8px; transition:background 0.3s;">
+                                    <i class="fas fa-download"></i>
+                                    <span>导出数据</span>
                                 </button>
                             </div>
                         </div>
@@ -16494,6 +16502,10 @@ function updateUnchargedTable() {
         // 全局变量
         let currentPickerTarget = null;
         let currentPickerYear = new Date().getFullYear();
+        
+        // 报表数据保存变量
+        let chargingReportData = null;
+        let compReportData = null;
 
         // 初始化日期为当前年月
         document.addEventListener('DOMContentLoaded', function() {
@@ -16620,8 +16632,12 @@ function updateUnchargedTable() {
             
             // 点击外部区域关闭选择器
             setTimeout(() => {
+                const startDateBtn = document.getElementById('start-date-btn');
+                const endDateBtn = document.getElementById('end-date-btn');
                 const closeOnClickOutside = (e) => {
-                    if (!pickerContainer.contains(e.target) && e.target !== targetInput) {
+                    const isStartDateBtn = e.target === startDateBtn || startDateBtn.contains(e.target);
+                    const isEndDateBtn = e.target === endDateBtn || endDateBtn.contains(e.target);
+                    if (!pickerContainer.contains(e.target) && e.target !== targetInput && !isStartDateBtn && !isEndDateBtn) {
                         pickerContainer.style.display = 'none';
                         document.removeEventListener('click', closeOnClickOutside);
                     }
@@ -16702,6 +16718,14 @@ function updateUnchargedTable() {
             reportResult.style.display = 'block';
             reportResult.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px; color:#007bff;"></i><br><br>正在查询数据，请稍候...</div>';
 
+            // 禁用导出按钮
+            const exportBtn = document.getElementById('charging-report-export-btn');
+            if (exportBtn) {
+                exportBtn.disabled = true;
+                exportBtn.style.background = '#adb5bd';
+                exportBtn.style.cursor = 'not-allowed';
+            }
+
             try {
                 // 查询所有站点的数据
                 const result = {};
@@ -16716,6 +16740,13 @@ function updateUnchargedTable() {
 
             } catch (error) {
                 reportResult.innerHTML = `<div style="text-align:center; padding:40px; color:#dc3545;"><i class="fas fa-exclamation-circle" style="font-size:32px;"></i><br><br>${error.message}</div>`;
+                // 保持导出按钮禁用状态
+                const exportBtn = document.getElementById('charging-report-export-btn');
+                if (exportBtn) {
+                    exportBtn.disabled = true;
+                    exportBtn.style.background = '#adb5bd';
+                    exportBtn.style.cursor = 'not-allowed';
+                }
             }
         }
 
@@ -17081,6 +17112,14 @@ function updateUnchargedTable() {
             const reportResult = document.getElementById('report-result');
             let html = '';
 
+            // 保存报表数据
+            chargingReportData = {
+                data: data,
+                stations: stations,
+                startDate: startDate,
+                endDate: endDate
+            };
+
             // 判断是单站还是双站查询
             if (stations.length === 1) {
                 // 单站报表
@@ -17091,6 +17130,16 @@ function updateUnchargedTable() {
             }
 
             reportResult.innerHTML = html;
+            
+            // 启用导出按钮
+            const exportBtn = document.getElementById('charging-report-export-btn');
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.style.background = '#28a745';
+                exportBtn.style.cursor = 'pointer';
+                exportBtn.onmouseover = function() { this.style.background = '#218838'; };
+                exportBtn.onmouseout = function() { this.style.background = '#28a745'; };
+            }
         }
 
         // 生成单站报表
@@ -17252,6 +17301,74 @@ function updateUnchargedTable() {
             `;
 
             return html;
+        }
+
+        // 导出充电数据报表
+        function exportChargingReport() {
+            if (!chargingReportData) {
+                alert('没有可导出的数据，请先查询报表');
+                return;
+            }
+
+            const { data, stations, startDate, endDate } = chargingReportData;
+            const reportResult = document.getElementById('report-result');
+            const table = reportResult.querySelector('table');
+            
+            if (!table) {
+                alert('没有找到报表数据');
+                return;
+            }
+
+            // 从表格中提取数据
+            const headers = [];
+            const rows = [];
+
+            // 获取表头
+            const headerRow = table.querySelector('thead tr');
+            if (headerRow) {
+                headerRow.querySelectorAll('th').forEach(th => {
+                    headers.push(th.textContent.trim());
+                });
+            }
+
+            // 获取数据行
+            const dataRows = table.querySelectorAll('tbody tr');
+            dataRows.forEach(row => {
+                const rowData = [];
+                const cells = row.querySelectorAll('td');
+                cells.forEach((cell, index) => {
+                    let cellText = cell.textContent.trim();
+                    // 移除颜色样式标记（如果有）
+                    cellText = cellText.replace(/\s+/g, ' ');
+                    rowData.push(cellText);
+                });
+                if (rowData.length > 0) {
+                    rows.push(rowData);
+                }
+            });
+
+            // 创建Excel数据
+            const excelData = [headers];
+            rows.forEach(row => excelData.push(row));
+
+            // 生成文件名
+            let periodDisplay = startDate;
+            if (startDate !== endDate) {
+                periodDisplay = `${startDate}至${endDate}`;
+            }
+            const stationName = stations.length === 1 ? stations[0] : stations.join('和');
+            const fileName = `充电数据报表_${stationName}_${periodDisplay}.xlsx`;
+
+            // 创建工作簿和工作表
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            
+            // 设置列宽
+            const colWidths = headers.map(() => ({ wch: 20 }));
+            ws['!cols'] = colWidths;
+
+            XLSX.utils.book_append_sheet(wb, ws, '充电数据报表');
+            XLSX.writeFile(wb, fileName);
         }
 
         // 生成双站对比报表
@@ -17643,6 +17760,14 @@ function updateUnchargedTable() {
             reportResult.style.display = 'block';
             reportResult.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px; color:#007bff;"></i><br><br>正在查询数据，请稍候...</div>';
 
+            // 禁用导出按钮
+            const exportBtn = document.getElementById('comp-report-export-btn');
+            if (exportBtn) {
+                exportBtn.disabled = true;
+                exportBtn.style.background = '#adb5bd';
+                exportBtn.style.cursor = 'not-allowed';
+            }
+
             try {
                 const result = {};
 
@@ -17655,6 +17780,13 @@ function updateUnchargedTable() {
 
             } catch (error) {
                 reportResult.innerHTML = `<div style="text-align:center; padding:40px; color:#dc3545;"><i class="fas fa-exclamation-circle" style="font-size:32px;"></i><br><br>${error.message}</div>`;
+                // 保持导出按钮禁用状态
+                const exportBtn = document.getElementById('comp-report-export-btn');
+                if (exportBtn) {
+                    exportBtn.disabled = true;
+                    exportBtn.style.background = '#adb5bd';
+                    exportBtn.style.cursor = 'not-allowed';
+                }
             }
         }
 
@@ -17873,6 +18005,14 @@ function updateUnchargedTable() {
             const reportResult = document.getElementById('comp-report-result');
             let html = '';
 
+            // 保存报表数据
+            compReportData = {
+                data: data,
+                stations: stations,
+                startDate: startDate,
+                endDate: endDate
+            };
+
             if (stations.length === 1) {
                 html = generateSingleStationCompReport(data, stations[0], startDate, endDate);
             } else if (stations.length === 2) {
@@ -17880,6 +18020,16 @@ function updateUnchargedTable() {
             }
 
             reportResult.innerHTML = html;
+            
+            // 启用导出按钮
+            const exportBtn = document.getElementById('comp-report-export-btn');
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.style.background = '#28a745';
+                exportBtn.style.cursor = 'pointer';
+                exportBtn.onmouseover = function() { this.style.background = '#218838'; };
+                exportBtn.onmouseout = function() { this.style.background = '#28a745'; };
+            }
         }
 
         // 生成单站综合报表
@@ -18135,6 +18285,74 @@ function updateUnchargedTable() {
             `;
 
             return html;
+        }
+
+        // 导出综合数据报表
+        function exportComprehensiveReport() {
+            if (!compReportData) {
+                alert('没有可导出的数据，请先查询报表');
+                return;
+            }
+
+            const { data, stations, startDate, endDate } = compReportData;
+            const reportResult = document.getElementById('comp-report-result');
+            const table = reportResult.querySelector('table');
+            
+            if (!table) {
+                alert('没有找到报表数据');
+                return;
+            }
+
+            // 从表格中提取数据
+            const headers = [];
+            const rows = [];
+
+            // 获取表头
+            const headerRow = table.querySelector('thead tr');
+            if (headerRow) {
+                headerRow.querySelectorAll('th').forEach(th => {
+                    headers.push(th.textContent.trim());
+                });
+            }
+
+            // 获取数据行
+            const dataRows = table.querySelectorAll('tbody tr');
+            dataRows.forEach(row => {
+                const rowData = [];
+                const cells = row.querySelectorAll('td');
+                cells.forEach((cell, index) => {
+                    let cellText = cell.textContent.trim();
+                    // 移除颜色样式标记（如果有）
+                    cellText = cellText.replace(/\s+/g, ' ');
+                    rowData.push(cellText);
+                });
+                if (rowData.length > 0) {
+                    rows.push(rowData);
+                }
+            });
+
+            // 创建Excel数据
+            const excelData = [headers];
+            rows.forEach(row => excelData.push(row));
+
+            // 生成文件名
+            let periodDisplay = startDate;
+            if (startDate !== endDate) {
+                periodDisplay = `${startDate}至${endDate}`;
+            }
+            const stationName = stations.length === 1 ? stations[0] : stations.join('和');
+            const fileName = `综合数据报表_${stationName}_${periodDisplay}.xlsx`;
+
+            // 创建工作簿和工作表
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            
+            // 设置列宽
+            const colWidths = headers.map(() => ({ wch: 20 }));
+            ws['!cols'] = colWidths;
+
+            XLSX.utils.book_append_sheet(wb, ws, '综合数据报表');
+            XLSX.writeFile(wb, fileName);
         }
 
     </script>
