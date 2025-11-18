@@ -16599,8 +16599,12 @@ function updateUnchargedTable() {
             // 关闭其他选择器
             const reportStartPicker = document.getElementById('report-start-date-picker');
             const reportEndPicker = document.getElementById('report-end-date-picker');
+            const defaultStartPicker = document.getElementById('start-date-picker');
+            const defaultEndPicker = document.getElementById('end-date-picker');
             if (reportStartPicker) reportStartPicker.style.display = 'none';
             if (reportEndPicker) reportEndPicker.style.display = 'none';
+            if (defaultStartPicker) defaultStartPicker.style.display = 'none';
+            if (defaultEndPicker) defaultEndPicker.style.display = 'none';
             document.getElementById('month-picker-modal').style.display = 'none';
             
             currentPickerTarget = targetId;
@@ -16712,9 +16716,13 @@ function updateUnchargedTable() {
         }
 
         function closeMonthPicker() {
-            document.getElementById('month-picker-modal').style.display = 'none';
-            document.getElementById('start-date-picker').style.display = 'none';
-            document.getElementById('end-date-picker').style.display = 'none';
+            const modal = document.getElementById('month-picker-modal');
+            if (modal) modal.style.display = 'none';
+
+            ['start-date-picker', 'end-date-picker', 'report-start-date-picker', 'report-end-date-picker'].forEach(id => {
+                const picker = document.getElementById(id);
+                if (picker) picker.style.display = 'none';
+            });
             currentPickerTarget = null;
         }
 
@@ -16722,8 +16730,8 @@ function updateUnchargedTable() {
         async function queryChargingReport() {
             const options = document.querySelectorAll('.station-option');
             const selected = Array.from(options).filter(opt => opt.checked).map(opt => opt.value);
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
+            const startDate = (document.getElementById('report-start-date') || {}).value || '';
+            const endDate = (document.getElementById('report-end-date') || {}).value || '';
 
             if (selected.length === 0) {
                 alert('请选择至少一个站点');
