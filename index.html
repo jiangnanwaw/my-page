@@ -10616,29 +10616,49 @@ function updateUnchargedTable() {
             resultContent.innerHTML = '<div style="text-align: center; padding: 40px;"><p>正在查询...</p></div>';
 
             // 构建SQL查询
-            // 优化后的查询：直接使用GROUP BY获取每个车牌号对应客户的最大充电结束时间
+            // 修改后的查询逻辑：
+            // 1. 先根据车牌号在"判定车牌号"列中匹配
+            // 2. 然后在匹配的记录中，同时在"车辆所属客户"列和"手机号"列中查询，获取所有唯一的手机号码
+            // 3. 将查询结果按唯一的手机号码分组，根据"充电结束时间"最大的记录来显示
             // 支持模糊匹配，去除空格后进行匹配
             // 注意：使用REPLACE来转义单引号，防止SQL注入
             const escapedPlateNumber = plateNumber.replace(/'/g, "''").replace(/\s/g, '');
             const sqlQuery = `
                 SELECT TOP 100
-                    [判定车牌号] AS [车牌号],
-                    CASE
-                        WHEN [车辆所属客户] IS NOT NULL AND LTRIM(RTRIM([车辆所属客户])) != ''
-                        THEN [车辆所属客户]
-                        ELSE [手机号]
-                    END AS [车辆所属客户],
-                    MAX([充电结束时间]) AS [最近一次活跃时间]
-                FROM [特来电]
-                WHERE REPLACE([判定车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE '%${escapedPlateNumber}%'
-                GROUP BY
-                    [判定车牌号],
-                    CASE
-                        WHEN [车辆所属客户] IS NOT NULL AND LTRIM(RTRIM([车辆所属客户])) != ''
-                        THEN [车辆所属客户]
-                        ELSE [手机号]
-                    END
-                ORDER BY [判定车牌号]
+                    t.[判定车牌号] AS [车牌号],
+                    t.[手机号码],
+                    t.[充电结束时间] AS [最近一次活跃时间]
+                FROM (
+                    SELECT 
+                        [判定车牌号],
+                        [手机号码],
+                        [充电结束时间],
+                        ROW_NUMBER() OVER (
+                            PARTITION BY [手机号码]
+                            ORDER BY [充电结束时间] DESC
+                        ) AS rn
+                    FROM (
+                        SELECT 
+                            [判定车牌号],
+                            LTRIM(RTRIM([车辆所属客户])) AS [手机号码],
+                            [充电结束时间]
+                        FROM [特来电]
+                        WHERE REPLACE([判定车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE '%${escapedPlateNumber}%'
+                            AND [车辆所属客户] IS NOT NULL 
+                            AND LTRIM(RTRIM([车辆所属客户])) != ''
+                        UNION ALL
+                        SELECT 
+                            [判定车牌号],
+                            LTRIM(RTRIM([手机号])) AS [手机号码],
+                            [充电结束时间]
+                        FROM [特来电]
+                        WHERE REPLACE([判定车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE '%${escapedPlateNumber}%'
+                            AND [手机号] IS NOT NULL 
+                            AND LTRIM(RTRIM([手机号])) != ''
+                    ) combined
+                ) t
+                WHERE t.rn = 1
+                ORDER BY t.[充电结束时间] DESC
             `;
             
             // 使用带重试的查询函数来处理偶发的503错误
@@ -10689,7 +10709,7 @@ function updateUnchargedTable() {
                                     <thead>
                                         <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
                                             <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">车牌号</th>
-                                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">车辆所属客户</th>
+                                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">手机号码</th>
                                             <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">最近一次活跃时间</th>
                                         </tr>
                                     </thead>
@@ -10699,13 +10719,13 @@ function updateUnchargedTable() {
                         data.forEach((row, index) => {
                             const bgColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
                             const plateNumber = row['车牌号'] || row['PlateNumber'] || '';
-                            const customer = row['车辆所属客户'] || row['ContactInfo'] || '';
+                            const phoneNumber = row['手机号码'] || row['PhoneNumber'] || '';
                             const lastActiveTime = row['最近一次活跃时间'] || row['LastActiveTime'] || '';
                             
                             tableHTML += `
                                 <tr style="background: ${bgColor};">
                                     <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${escapeHtml(plateNumber)}</td>
-                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${escapeHtml(customer)}</td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${escapeHtml(phoneNumber)}</td>
                                     <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${escapeHtml(formatDateTime(lastActiveTime))}</td>
                                 </tr>
                             `;
