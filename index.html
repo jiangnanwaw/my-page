@@ -2568,13 +2568,13 @@
                         <!-- 开始时间 -->
                         <div style="position:relative; width:220px;">
                             <input id="start-datetime" type="text" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px;" />
-                            <button id="start-date-btn" title="选择日期" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <button id="start-datetime-btn" title="选择日期" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                         </div>
 
                         <!-- 结束时间 -->
                         <div style="position:relative; width:220px;">
                             <input id="end-datetime" type="text" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px;" />
-                            <button id="end-date-btn" title="选择日期" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <button id="end-datetime-btn" title="选择日期" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                         </div>
 
                         <!-- 操作按钮 -->
@@ -2823,17 +2823,17 @@
                             <!-- 开始日期 -->
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
-                                <input type="text" id="start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('start-date', this)">
-                                <button id="start-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('start-date', document.getElementById('start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
-                                <div id="start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
+                                <input type="text" id="report-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('report-start-date', this)">
+                                <button id="report-start-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('report-start-date', document.getElementById('report-start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <div id="report-start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
                             <!-- 结束日期 -->
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
-                                <input type="text" id="end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('end-date', this)">
-                                <button id="end-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('end-date', document.getElementById('end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
-                                <div id="end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
+                                <input type="text" id="report-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('report-end-date', this)">
+                                <button id="report-end-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('report-end-date', document.getElementById('report-end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <div id="report-end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
                             <!-- 查询按钮 -->
@@ -11947,7 +11947,7 @@ function updateUnchargedTable() {
                     }
 
                     // 允许手动输入；点击旁边📅按钮时弹出日期选择器
-                    const triggerBtn = document.getElementById(isEnd ? 'end-date-btn' : 'start-date-btn');
+                    const triggerBtn = document.getElementById(isEnd ? 'end-datetime-btn' : 'start-datetime-btn');
                     if (triggerBtn) {
                         triggerBtn.addEventListener('click', function(ev){ ev.preventDefault(); openPicker(); });
                     }
@@ -16531,8 +16531,10 @@ function updateUnchargedTable() {
         document.addEventListener('DOMContentLoaded', function() {
             const now = new Date();
             const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            document.getElementById('start-date').value = currentYearMonth;
-            document.getElementById('end-date').value = currentYearMonth;
+            const reportStartInput = document.getElementById('report-start-date');
+            const reportEndInput = document.getElementById('report-end-date');
+            if (reportStartInput) reportStartInput.value = currentYearMonth;
+            if (reportEndInput) reportEndInput.value = currentYearMonth;
         });
 
         // 站点选择相关功能
@@ -16595,8 +16597,10 @@ function updateUnchargedTable() {
         // 月份选择器相关功能
         function showMonthPicker(targetId, inputElement) {
             // 关闭其他选择器
-            document.getElementById('start-date-picker').style.display = 'none';
-            document.getElementById('end-date-picker').style.display = 'none';
+            const reportStartPicker = document.getElementById('report-start-date-picker');
+            const reportEndPicker = document.getElementById('report-end-date-picker');
+            if (reportStartPicker) reportStartPicker.style.display = 'none';
+            if (reportEndPicker) reportEndPicker.style.display = 'none';
             document.getElementById('month-picker-modal').style.display = 'none';
             
             currentPickerTarget = targetId;
@@ -16610,7 +16614,7 @@ function updateUnchargedTable() {
             }
 
             // 确定使用哪个选择器容器
-            const pickerId = targetId === 'start-date' ? 'start-date-picker' : 'end-date-picker';
+            const pickerId = targetId === 'report-start-date' ? 'report-start-date-picker' : 'report-end-date-picker';
             const pickerContainer = document.getElementById(pickerId);
             
             // 设置选择器宽度与输入框一致
@@ -16652,11 +16656,11 @@ function updateUnchargedTable() {
             
             // 点击外部区域关闭选择器
             setTimeout(() => {
-                const startDateBtn = document.getElementById('start-date-btn');
-                const endDateBtn = document.getElementById('end-date-btn');
+                const startDateBtn = document.getElementById('report-start-date-btn');
+                const endDateBtn = document.getElementById('report-end-date-btn');
                 const closeOnClickOutside = (e) => {
-                    const isStartDateBtn = e.target === startDateBtn || startDateBtn.contains(e.target);
-                    const isEndDateBtn = e.target === endDateBtn || endDateBtn.contains(e.target);
+                    const isStartDateBtn = e.target === startDateBtn || (startDateBtn && startDateBtn.contains(e.target));
+                    const isEndDateBtn = e.target === endDateBtn || (endDateBtn && endDateBtn.contains(e.target));
                     if (!pickerContainer.contains(e.target) && e.target !== targetInput && !isStartDateBtn && !isEndDateBtn) {
                         pickerContainer.style.display = 'none';
                         document.removeEventListener('click', closeOnClickOutside);
@@ -16690,8 +16694,11 @@ function updateUnchargedTable() {
         }
         
         function closeMonthPickerForInput(targetId) {
-            const pickerId = targetId === 'start-date' ? 'start-date-picker' : 'end-date-picker';
-            document.getElementById(pickerId).style.display = 'none';
+            const pickerId = targetId === 'report-start-date' ? 'report-start-date-picker' : 'report-end-date-picker';
+            const picker = document.getElementById(pickerId);
+            if (picker) {
+                picker.style.display = 'none';
+            }
             currentPickerTarget = null;
         }
 
