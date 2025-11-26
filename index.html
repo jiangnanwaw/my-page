@@ -4884,7 +4884,7 @@
                 startBtn.textContent = month;
                 startBtn.dataset.month = index + 1;
                 startBtn.addEventListener('click', function() {
-                    selectMonth('start', index + 1);
+                    selectDataQueryMonth('start', index + 1);
                 });
                 startMonthGrid.appendChild(startBtn);
                 
@@ -4893,7 +4893,7 @@
                 endBtn.textContent = month;
                 endBtn.dataset.month = index + 1;
                 endBtn.addEventListener('click', function() {
-                    selectMonth('end', index + 1);
+                    selectDataQueryMonth('end', index + 1);
                 });
                 endMonthGrid.appendChild(endBtn);
             });
@@ -4959,7 +4959,7 @@
         }
         
         // 选择月份
-        function selectMonth(type, month) {
+        function selectDataQueryMonth(type, month) {
             const year = type === 'start' ? startYear : endYear;
             const formattedMonth = month.toString().padStart(2, '0');
             const dateString = `${year}-${formattedMonth}`;
