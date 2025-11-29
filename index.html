@@ -2526,26 +2526,26 @@
                                     <input type="checkbox" id="station-all" checked onchange="onToggleAllStations()"> 全选
                                 </label>
                                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:14px;">
-                                    <input type="checkbox" class="station-group" data-group="east" checked onchange="onStationChange()"> 长沙飞狐东区站
+                                    <input type="checkbox" class="station-group" data-group="east" checked onchange="onStationChange()"> 长沙飞狐四方坪东区站
                                 </label>
                                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:14px;">
-                                    <input type="checkbox" class="station-group" data-group="west" checked onchange="onStationChange()"> 长沙飞狐西区站
+                                    <input type="checkbox" class="station-group" data-group="west" checked onchange="onStationChange()"> 长沙飞狐四方坪西区站
                                 </label>
                                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:14px;">
-                                    <input type="checkbox" class="station-group" data-group="south" checked onchange="onStationChange()"> 长沙飞狐南区站
+                                    <input type="checkbox" class="station-group" data-group="south" checked onchange="onStationChange()"> 长沙飞狐四方坪南区站
                                 </label>
                                 <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
-                                    <input type="checkbox" class="station-group" data-group="gaoling" checked onchange="onStationChange()"> 长沙飞狐高岭充电站
+                                    <input type="checkbox" class="station-group" data-group="gaoling" checked onchange="onStationChange()"> 长沙飞狐高岭站
                                 </label>
                                 <div style="text-align:right; margin-top:8px;">
                                     <button onclick="applyStationSelection()" style="background:#007bff; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">确定</button>
                                 </div>
                             </div>
                         </div>
-                        <!-- 充电设备选择（改为多选checkbox，移到第二位） -->
+                        <!-- 充电平台选择（改为多选checkbox，移到第二位） -->
                         <div id="device-box" style="width:220px; border:1px solid #e5e5e5; border-radius:8px; padding:8px; position:relative; height:36px; display:flex; align-items:center; justify-content:space-between;">
-                            <div style="font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; font-size:14px;" id="device-display">充电设备</div>
-                            <button id="device-menu-btn" onclick="toggleDeviceMenu()" title="选择充电设备" style="background:transparent; border:none; cursor:pointer; font-size:18px; line-height:1; color:#666;">⋯</button>
+                            <div style="font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; font-size:14px;" id="device-display">充电平台</div>
+                            <button id="device-menu-btn" onclick="toggleDeviceMenu()" title="选择充电平台" style="background:transparent; border:none; cursor:pointer; font-size:18px; line-height:1; color:#666;">⋯</button>
                             <div id="device-menu" style="position:absolute; top:44px; left:0; background:#fff; border:1px solid #ddd; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,0.08); padding:10px; width:200px; z-index:1100; display:none;">
                                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:14px;">
                                     <input type="checkbox" class="device-option" value="特来电" checked> 特来电
@@ -10368,7 +10368,7 @@ function updateUnchargedTable() {
                     hideAllPages();
                     pageCd.style.display = 'block';
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
-                    // 初始化充电设备选项显示
+                    // 初始化充电平台选项显示
                     if (typeof onStationChange === 'function') {
                         onStationChange();
                     }
@@ -10798,10 +10798,10 @@ function updateUnchargedTable() {
             if (!conditionsText) return;
             
             try {
-                // 获取充电设备（多选）
+                // 获取充电平台（多选）
                 const devices = getSelectedDevices();
                 if (devices.length === 0) {
-                    conditionsText.textContent = '请选择充电设备';
+                    conditionsText.textContent = '请选择充电平台';
                     return;
                 }
                 const deviceText = devices.join('、');
@@ -10810,16 +10810,16 @@ function updateUnchargedTable() {
                 const allBox = document.getElementById('station-all');
                 const items = Array.from(document.querySelectorAll('#station-menu .station-group'));
                 const stationMapToLabel = { 
-                    east: '长沙飞狐东区站', 
-                    west: '长沙飞狐西区站', 
-                    south: '长沙飞狐南区站', 
+                    east: '长沙飞狐四方坪东区站', 
+                    west: '长沙飞狐四方坪西区站', 
+                    south: '长沙飞狐四方坪南区站', 
                     gaoling: '长沙飞狐高岭站' 
                 };
                 
                 let stationText = '';
                 if (allBox && allBox.checked) {
                     // 全选：显示所有站点名称
-                    stationText = '长沙飞狐东区站、长沙飞狐西区站、长沙飞狐南区站、长沙飞狐高岭站';
+                    stationText = '长沙飞狐四方坪东区站、长沙飞狐四方坪西区站、长沙飞狐四方坪南区站、长沙飞狐高岭站';
                 } else {
                     // 显示选中的站点
                     const checked = items.filter(i => i.checked).map(i => i.getAttribute('data-group'));
@@ -10839,10 +10839,10 @@ function updateUnchargedTable() {
                 const startTime = (startEl && startEl.value) ? startEl.value.trim() : '';
                 const endTime = (endEl && endEl.value) ? endEl.value.trim() : '';
                 
-                // 构建条件文本（站点在前，充电设备在后，与页面布局顺序一致）
+                // 构建条件文本（站点在前，充电平台在后，与页面布局顺序一致）
                 const conditions = [
                     `站点：${stationText}`,
-                    `充电设备：${deviceText}`,
+                    `充电平台：${deviceText}`,
                     `查询充电时间：${timeField}`,
                     startTime ? `充电开始时间：${startTime}` : '',
                     endTime ? `充电结束时间：${endTime}` : ''
@@ -12070,7 +12070,7 @@ function updateUnchargedTable() {
             const all = document.getElementById('station-all');
             const items = document.querySelectorAll('#station-menu .station-group');
             items.forEach(i => { i.checked = all.checked; });
-            onStationChange(); // 电站选择变化时更新充电设备选项
+            onStationChange(); // 电站选择变化时更新充电平台选项
         }
 
         function applyStationSelection() {
@@ -12084,7 +12084,7 @@ function updateUnchargedTable() {
             }
             // 显示已选择的电站名称
             const display = document.getElementById('station-display');
-            const mapToLabel = { east: '长沙飞狐东区站', west: '长沙飞狐西区站', south: '长沙飞狐南区站', gaoling: '长沙飞狐高岭充电站' };
+            const mapToLabel = { east: '长沙飞狐四方坪东区站', west: '长沙飞狐四方坪西区站', south: '长沙飞狐四方坪南区站', gaoling: '长沙飞狐高岭站' };
             if (display) {
                 if (all.checked) {
                     display.textContent = '电站：全选';
@@ -12094,25 +12094,25 @@ function updateUnchargedTable() {
                     display.textContent = '电站：未选择';
                 }
             }
-            onStationChange(); // 电站选择变化时更新充电设备选项
+            onStationChange(); // 电站选择变化时更新充电平台选项
             toggleStationMenu();
         }
 
-        // 电站选择变化时，动态更新充电设备选项
+        // 电站选择变化时，动态更新充电平台选项
         function onStationChange() {
             const all = document.getElementById('station-all');
             const items = Array.from(document.querySelectorAll('#station-menu .station-group'));
             const checked = items.filter(i => i.checked).map(i => i.getAttribute('data-group'));
             const hasEast = all && all.checked ? true : checked.includes('east');
             
-            // 获取充电设备选项
+            // 获取充电平台选项
             const teldOption = document.querySelector('#device-menu .device-option[value="特来电"]');
             const nkOption = document.querySelector('#device-menu .device-option[value="能科"]');
             const teldLabel = teldOption ? teldOption.closest('label') : null;
             const nkLabel = nkOption ? nkOption.closest('label') : null;
             
             if (hasEast) {
-                // 包含"长沙飞狐东区站"：显示特来电和能科
+                // 包含"长沙飞狐四方坪东区站"：显示特来电和能科
                 if (teldLabel) teldLabel.style.display = 'flex';
                 if (nkLabel) nkLabel.style.display = 'flex';
                 // 确保至少有一个被选中
@@ -12120,7 +12120,7 @@ function updateUnchargedTable() {
                     teldOption.checked = true;
                 }
             } else {
-                // 不包含"长沙飞狐东区站"：只显示特来电
+                // 不包含"长沙飞狐四方坪东区站"：只显示特来电
                 if (teldLabel) teldLabel.style.display = 'flex';
                 if (nkLabel) nkLabel.style.display = 'none';
                 if (nkOption) nkOption.checked = false;
@@ -12133,7 +12133,7 @@ function updateUnchargedTable() {
             updateDeviceDisplay();
         }
 
-        // 更新充电设备显示文本（不弹出菜单）
+        // 更新充电平台显示文本（不弹出菜单）
         function updateDeviceDisplay() {
             const items = Array.from(document.querySelectorAll('#device-menu .device-option'));
             const checked = items.filter(i => i.checked).map(i => i.value);
@@ -12141,16 +12141,16 @@ function updateUnchargedTable() {
             const display = document.getElementById('device-display');
             if (display) {
                 if (checked.length === 0) {
-                    display.textContent = '充电设备：未选择';
+                    display.textContent = '充电平台：未选择';
                 } else if (checked.length === 1) {
-                    display.textContent = '充电设备：' + checked[0];
+                    display.textContent = '充电平台：' + checked[0];
                 } else {
-                    display.textContent = '充电设备：' + checked.join('、');
+                    display.textContent = '充电平台：' + checked.join('、');
                 }
             }
         }
 
-        // 充电设备菜单切换
+        // 充电平台菜单切换
         function toggleDeviceMenu() {
             const menu = document.getElementById('device-menu');
             if (!menu) return;
@@ -12175,7 +12175,7 @@ function updateUnchargedTable() {
             }
         }
 
-        // 应用充电设备选择
+        // 应用充电平台选择
         function applyDeviceSelection() {
             // 更新显示文本
             updateDeviceDisplay();
@@ -12183,7 +12183,7 @@ function updateUnchargedTable() {
             toggleDeviceMenu();
         }
 
-        // 获取选中的充电设备
+        // 获取选中的充电平台
         function getSelectedDevices() {
             const items = Array.from(document.querySelectorAll('#device-menu .device-option'));
             return items.filter(i => i.checked).map(i => i.value);
@@ -12229,7 +12229,7 @@ function updateUnchargedTable() {
             };
             
             return {
-                '电站名称': '长沙飞狐东区站',
+                '电站名称': '长沙飞狐四方坪东区站',
                 '终端名称': row['充电桩名称'] || row['终端名称'] || '',
                 '充电开始时间': row['开始日期时间'] || row['充电开始时间'] || '',
                 '充电结束时间': row['结束日期时间'] || row['充电结束时间'] || '',
@@ -12273,7 +12273,7 @@ function updateUnchargedTable() {
             const allBox = document.getElementById('station-all');
             const isAllStations = !!(allBox && allBox.checked);
 
-            // 检查是否包含"长沙飞狐东区站"
+            // 检查是否包含"长沙飞狐四方坪东区站"
             const checkedGroups = allBox && allBox.checked
                 ? ['east', 'west', 'south', 'gaoling']
                 : Array.from(document.querySelectorAll('#station-menu .station-group'))
@@ -12282,7 +12282,7 @@ function updateUnchargedTable() {
             const hasEast = checkedGroups.includes('east');
 
             if (devices.length === 0) {
-                return { ok: false, error: '请选择充电设备' };
+                return { ok: false, error: '请选择充电平台' };
             }
             if (!start || !end) {
                 return { ok: false, error: '请选择开始与结束时间' };
@@ -12298,9 +12298,9 @@ function updateUnchargedTable() {
                 let tableName, timeField, whereParts = [];
 
             if (device === '能科') {
-                    // 能科：只能查询"长沙飞狐东区站"
+                    // 能科：只能查询"长沙飞狐四方坪东区站"
                     if (!hasEast) {
-                        // 如果不包含"长沙飞狐东区站"，跳过能科查询
+                        // 如果不包含"长沙飞狐四方坪东区站"，跳过能科查询
                         return;
                     }
                 tableName = '[能科]';
@@ -12346,7 +12346,7 @@ function updateUnchargedTable() {
             });
             
             if (queries.length === 0) {
-                return { ok: false, error: '能科设备只能查询"长沙飞狐东区站"，请选择正确的电站' };
+                return { ok: false, error: '能科设备只能查询"长沙飞狐四方坪东区站"，请选择正确的电站' };
             }
             
             return { ok: true, queries, devices, timeField: timeUi, isAllStations };
@@ -12959,10 +12959,10 @@ function updateUnchargedTable() {
                     : items.filter(i => i.checked).map(i => i.getAttribute('data-group'));
                 
                 const stationMapToLabel = { 
-                    east: '长沙飞狐东区站', 
-                    west: '长沙飞狐西区站', 
-                    south: '长沙飞狐南区站', 
-                    gaoling: '长沙飞狐高岭充电站' 
+                    east: '长沙飞狐四方坪东区站', 
+                    west: '长沙飞狐四方坪西区站', 
+                    south: '长沙飞狐四方坪南区站', 
+                    gaoling: '长沙飞狐高岭站' 
                 };
                 
                 // 按站点分组统计
@@ -13477,7 +13477,7 @@ function updateUnchargedTable() {
 
         }
 
-        // 判断是否为单选（电站和充电设备都是单选）
+        // 判断是否为单选（电站和充电平台都是单选）
         function isSingleSelection() {
             // 检查电站选择
             const stationAllBox = document.getElementById('station-all');
@@ -13485,7 +13485,7 @@ function updateUnchargedTable() {
             const checkedStations = stationItems.filter(i => i.checked);
             const isStationSingle = !(stationAllBox && stationAllBox.checked) && checkedStations.length === 1;
             
-            // 检查充电设备选择
+            // 检查充电平台选择
             const deviceItems = Array.from(document.querySelectorAll('#device-menu .device-option'));
             const checkedDevices = deviceItems.filter(i => i.checked);
             const isDeviceSingle = checkedDevices.length === 1;
