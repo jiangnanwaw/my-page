@@ -14869,11 +14869,11 @@ function updateUnchargedTable() {
             }
         }
 
-        // 赛菲姆道闸统计：按支付方式统计支付金额
+        // 赛菲姆道闸统计：按支付方式统计支付金额（排除线下现金）
         async function calculateSaifeimuStats() {
             const query = buildZhQuery();
             const sql = `SELECT [支付方式], SUM([支付金额]) as 支付金额合计 
-                        FROM ${query.tableName} ${query.whereClause} 
+                        FROM ${query.tableName} ${query.whereClause} AND [支付方式] != '线下现金'
                         GROUP BY [支付方式] 
                         ORDER BY [支付方式]`;
             
