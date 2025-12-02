@@ -1,4 +1,4 @@
-﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -272,6 +272,12 @@
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: white; /* 将字体颜色设置为白色 */
+            border: 1px solid #bee5eb;
         }
         
         #registerForm, #resetForm {
@@ -10937,7 +10943,7 @@ function updateUnchargedTable() {
                     <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 4px; color: #0c5460;">
                         <h4>查询成功</h4>
                         <p>查询语句: ${result.query}</p>
-                        <p>结果: 无数据返回</p>
+                        <p>结果: 无任何数据可查询</p>
                     </div>
                 `;
                 return;
@@ -11829,7 +11835,7 @@ function updateUnchargedTable() {
                     tableContainer.innerHTML = `
                         <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 4px; color: #0c5460;">
                             <h4>查询成功</h4>
-                            <p>结果: 无数据返回</p>
+                            <p>结果: 无任何数据可查询</p>
                         </div>`;
                 }
                 return;
@@ -13379,8 +13385,9 @@ function updateUnchargedTable() {
                 // 使用原来的单设备查询逻辑
             setExportEnabled(false);
             // 单设备查询时，确保表格已清空（runStationQuery开始时已清空，这里再次确认）
+            // 不再显示"准备加载第 1 页..."，而是等待统计查询结果来决定显示什么内容
             if (resultContent) {
-                resultContent.innerHTML = '<p style="padding:20px; text-align:center; color:#666;"><i class="fas fa-spinner fa-spin"></i> 准备加载第 1 页...</p>';
+                resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#666;"><i class="fas fa-spinner fa-spin"></i> 正在查询数据，请稍候...</div>';
             }
 
                 const timeFieldSel = timeField;
@@ -13442,14 +13449,23 @@ function updateUnchargedTable() {
                         };
                         updateStatsOnly();
                         
-                        if (total > 0) {
+                        // 如果没有数据，显示提示信息
+                        if (total === 0) {
+                            if (resultContent) {
+                                resultContent.innerHTML = `
+                                    <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 4px; color: #0c5460; text-align: center;">
+                                        <h4>查询完成</h4>
+                                        <p>未找到符合条件的数据</p>
+                                    </div>`;
+                            }
+                        } else if (total > 0) {
                             calculateNkDuration(whereClause, tableName, timeFieldSel).then(duration => {
                                 if (__statsTotals) {
                                     __statsTotals.duration = duration || 0;
                                     updateStatsOnly();
                                 }
                             });
-                }
+                        }
             }).catch(err => {
                     });
                 } else {
@@ -13478,6 +13494,17 @@ function updateUnchargedTable() {
                             duration: Number(row.minutes_total) || 0
                         };
                         updateStatsOnly();
+                        
+                        // 如果没有数据，显示提示信息
+                        if (total === 0) {
+                            if (resultContent) {
+                                resultContent.innerHTML = `
+                                    <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 4px; color: #0c5460; text-align: center;">
+                                        <h4>查询完成</h4>
+                                        <p>未找到符合条件的数据</p>
+                                    </div>`;
+                            }
+                        }
                     }).catch(err => {
                     });
                 }
