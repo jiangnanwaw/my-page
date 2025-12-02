@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -737,7 +737,8 @@
         
         .table-container {
             /* 报表在桌面和移动端均支持双向滚动 */
-            overflow: auto;
+            overflow-x: auto; /* 只允许横向滚动 */
+            overflow-y: hidden; /* 禁止纵向滚动以移除右侧滚动条 */
             max-height: 600px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -764,7 +765,7 @@
         }
         
         .table-container th, .table-container td {
-            padding: 12px 15px;
+            padding: 6px 10px; /* 减小行距 */
             text-align: center;
             border: 1px solid #ddd;
             /* 移除最小宽度限制 */
@@ -772,7 +773,7 @@
             /* 确保内容完整显示 */
             white-space: normal;
             word-break: break-word;
-            line-height: 1.5;
+            line-height: 1.2; /* 减小行高 */
             vertical-align: middle;
             /* 添加最大宽度限制防止内容过长 */
             max-width: 300px;
@@ -837,6 +838,13 @@
         #charging-board-table-container .num-cell,
         #charging-board-table-container .num-col {
             text-align: center !important;
+        }
+        
+        /* 充电数据看板表格容器样式 */
+        #charging-board-table-container {
+            overflow-x: auto; /* 允许横向滚动 */
+            overflow-y: hidden; /* 禁止纵向滚动以移除右侧滚动条 */
+            max-height: 600px;
         }
         
         /* 实时数据表格数字列居中对齐 */
