@@ -14147,7 +14147,13 @@ function updateUnchargedTable() {
                 if (payload && payload.success) {
                     __lastBillQueryResults = payload;
                     displayBillQueryResult(payload);
-                    setBillExportEnabled(true);
+                    // 只有当有数据时才启用导出按钮
+                    const rows = payload.results || [];
+                    if (rows.length > 0) {
+                        setBillExportEnabled(true);
+                    } else {
+                        setBillExportEnabled(false);
+                    }
                 } else {
                     const msg = payload.message || payload.error || '未知错误';
                     resultContent.innerHTML = '<div style="color:#c00; padding:12px;">查询失败: ' + msg + '</div>';
@@ -14604,10 +14610,6 @@ function updateUnchargedTable() {
                     })
                     .then(dataResult => {
 
-                        if (dataResult && dataResult.results && dataResult.results.length > 0) {
-
-                        } else {
-                        }
                         if (dataResult && dataResult.results) {
                             // 根据项目类别过滤列
                             let cleanedResults = dataResult.results;
@@ -14645,25 +14647,16 @@ function updateUnchargedTable() {
                                     return filtered;
                                 });
                             } else if (query.project === '智小盟') {
-                                if (dataResult.results.length > 0) {
-
-                                }
                                 const allowedCols = ['设备名称', '实收金额 ', '支付方式', '支付时间'];
                                 cleanedResults = dataResult.results.map((row, idx) => {
                                     const filtered = {};
                                     allowedCols.forEach(col => {
                                         if (row.hasOwnProperty(col)) {
                                             filtered[col] = row[col];
-                                        } else if (idx === 0) {
-                                            // 智小盟：第一条数据缺少字段，记录日志
                                         }
                                     });
-                                    if (idx === 0 && Object.keys(filtered).length === 0) {
-                                    }
                                     return filtered;
                                 });
-                                if (cleanedResults.length > 0) {
-                                }
                             } else if (query.project === '车海洋洗车') {
                                 // 车海洋洗车：输出车海洋洗车消费表的所有列，不需要过滤
                                 cleanedResults = dataResult.results;
@@ -14698,7 +14691,13 @@ function updateUnchargedTable() {
                             calculateZhStats(query.project, cleanedResults);
                             
                             displayZhQueryResult({ ...dataResult, results: cleanedResults });
-                            setZhExportEnabled(true);
+                            
+                            // 只有当有数据时才启用导出按钮
+                            if (cleanedResults.length > 0) {
+                                setZhExportEnabled(true);
+                            } else {
+                                setZhExportEnabled(false);
+                            }
                         } else {
                             throw new Error('查询结果格式错误');
                         }
