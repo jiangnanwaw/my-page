@@ -5486,6 +5486,17 @@
             document.getElementById('user-display').textContent = username;
             initMainSystem();
             
+            // 登录成功后再初始化较耗时的数据和图表，避免阻塞登录页面加载
+            try {
+                loadOverviewData();
+                initVisualizationAnalysis();
+                initUserBehaviorAnalysis();
+                initEfficiencyAnalysis();
+            } catch (e) {
+                // 忽略单个初始化失败，不影响主界面其它功能
+                console.error('初始化数据分析模块失败', e);
+            }
+            
             // 启动用户活动跟踪
             initActivityTracking();
         }
@@ -8058,21 +8069,10 @@ function updateUnchargedTable() {
             }
         }
 
-        // 页面加载完成后加载整体情况概要数据
+        // 页面加载完成后仅初始化星空背景（用于登录页视觉效果）
+        // 其余耗时的数据加载与图表初始化放在登录成功后执行（见 showMainPage）
         document.addEventListener('DOMContentLoaded', function() {
-            loadOverviewData();
-            
-            // 初始化星空背景
             initStarfield();
-            
-            // 初始化数据可视化分析
-            initVisualizationAnalysis();
-            
-            // 初始化用户充电行为分析
-            initUserBehaviorAnalysis();
-            
-            // 初始化经营效率分析
-            initEfficiencyAnalysis();
         });
 
         // 数据可视化分析相关变量
