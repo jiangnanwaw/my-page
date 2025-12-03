@@ -10294,9 +10294,10 @@ function updateUnchargedTable() {
 
             function init() {
                 stars = [];
-                var starCount = 200;
+                // 在原有基础上将星星数量减少一半，降低首屏渲染压力
+                var starCount = 100; // 原为 200
                 if (window.innerWidth < 600) {
-                    starCount = 50;
+                    starCount = 25; // 原为 50
                 }
                 for (let i = 0; i < starCount; i++) {
                     stars.push(new Star());
@@ -10304,18 +10305,23 @@ function updateUnchargedTable() {
             }
 
             function connect() {
+                // 为每颗星限制最多连线数量，将整体连线数量减少到原来的约 1/3
+                const maxConnectionsPerStar = 3;
+                const maxDistance = 100;
                 for (let a = 0; a < stars.length; a++) {
-                    for (let b = a + 1; b < stars.length; b++) {
+                    let connections = 0;
+                    for (let b = a + 1; b < stars.length && connections < maxConnectionsPerStar; b++) {
                         const dx = stars[a].x - stars[b].x;
                         const dy = stars[a].y - stars[b].y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 100) {
+                        if (dist < maxDistance) {
                             ctx.strokeStyle = 'rgba(255,255,255,0.15)';
                             ctx.lineWidth = 0.5;
                             ctx.beginPath();
                             ctx.moveTo(stars[a].x, stars[a].y);
                             ctx.lineTo(stars[b].x, stars[b].y);
                             ctx.stroke();
+                            connections++;
                         }
                     }
                 }
