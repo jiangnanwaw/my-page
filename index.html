@@ -17295,8 +17295,10 @@ function updateUnchargedTable() {
             }
 
             const totalRevenue = parseFloat(stationData.chargingTotalIncome || 0) + parseFloat(stationData.otherIncome || 0);
+            // 计算交易手续费：充电收入 * 0.6%
+            const transactionFee = parseFloat(stationData.chargingTotalIncome || 0) * 0.006;
             const totalCost = parseFloat(stationData.electricityCost || 0) + parseFloat(stationData.platformServiceFee || 0) +
-                            parseFloat(stationData.couponCost || 0) + parseFloat(stationData.otherCost || 0);
+                            parseFloat(stationData.couponCost || 0) + transactionFee + parseFloat(stationData.otherCost || 0);
             const grossProfit = totalRevenue - totalCost;
             const grossMargin = totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(2) : '0.00';
 
@@ -17325,7 +17327,12 @@ function updateUnchargedTable() {
                                 <td style="padding:8px 12px; border:1px solid #dee2e6;"></td>
                             </tr>
                             <tr>
-                                <td style="padding:8px 12px 8px 30px; border:1px solid #dee2e6;">4、其他成本</td>
+                                <td style="padding:8px 12px 8px 30px; border:1px solid #dee2e6;">4、交易手续费</td>
+                                <td style="padding:8px 12px; border:1px solid #dee2e6; text-align:right;">${formatMoney(transactionFee)}</td>
+                                <td style="padding:8px 12px; border:1px solid #dee2e6;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px 12px 8px 30px; border:1px solid #dee2e6;">5、其他成本</td>
                                 <td style="padding:8px 12px; border:1px solid #dee2e6; text-align:right;">${formatMoney(stationData.otherCost)}</td>
                                 <td style="padding:8px 12px; border:1px solid #dee2e6;"></td>
                             </tr>
@@ -17446,8 +17453,13 @@ function updateUnchargedTable() {
             const glElectricity = parseFloat(glData.electricityCost || 0);
             const totalElectricity = sfpElectricity + glElectricity;
 
-            const sfpOtherCost = parseFloat(sfpData.platformServiceFee || 0) + parseFloat(sfpData.couponCost || 0) + parseFloat(sfpData.otherCost || 0);
-            const glOtherCost = parseFloat(glData.platformServiceFee || 0) + parseFloat(glData.couponCost || 0) + parseFloat(glData.otherCost || 0);
+            // 计算交易手续费：充电收入 * 0.6%
+            const sfpTransactionFee = parseFloat(sfpData.chargingTotalIncome || 0) * 0.006;
+            const glTransactionFee = parseFloat(glData.chargingTotalIncome || 0) * 0.006;
+            const totalTransactionFee = sfpTransactionFee + glTransactionFee;
+
+            const sfpOtherCost = parseFloat(sfpData.platformServiceFee || 0) + parseFloat(sfpData.couponCost || 0) + sfpTransactionFee + parseFloat(sfpData.otherCost || 0);
+            const glOtherCost = parseFloat(glData.platformServiceFee || 0) + parseFloat(glData.couponCost || 0) + glTransactionFee + parseFloat(glData.otherCost || 0);
             const totalOtherCost = sfpOtherCost + glOtherCost;
 
             const sfpGrossProfit = sfpRevenue - sfpElectricity - sfpOtherCost;
