@@ -16867,12 +16867,11 @@ function updateUnchargedTable() {
                 // 4. 查询其他收入
                 console.log('3. 查询其他收入...');
                 if (station === '四方坪站') {
+                    // 四方坪无占位费，强制为 0
                     stationData.parkingFee = 0;
                     stationData.monthlyCard = 0;
-
-                    console.log('   查询占位费...');
-                    stationData.occupancyFee = await queryOccupancyFee(startDateFormatted, endDateFormatted);
-                    console.log(`   占位费: ${stationData.occupancyFee}`);
+                    stationData.occupancyFee = 0;
+                    console.log('   四方坪站无占位费，跳过查询');
                 } else if (station === '高岭站') {
                     stationData.parkingFee = 0;
                     stationData.monthlyCard = 0;
