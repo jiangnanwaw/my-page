@@ -1173,7 +1173,7 @@
             }
             
             /* 移动端空白页调整 */
-            #page-cd-data, #page-zh-data, #page-bill-data, #page-user-data, #page-report-charging, #page-report-comprehensive, #page-report-user {
+            #page-cd-data, #page-zh-data, #page-bill-data, #page-user-data, #page-report-charging, #page-report-comprehensive, #page-report-user, #page-report-efficiency {
                 left: 0 !important;
                 top: 60px !important;
             }
@@ -2496,6 +2496,10 @@
                         <i class="fas fa-chart-line"></i>
                         <span>综合数据报表</span>
                     </a>
+                    <a href="#" class="submenu-item" id="menu-report-efficiency">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>充电效率分析</span>
+                    </a>
                     <a href="#" class="submenu-item" id="menu-report-user">
                         <i class="fas fa-mobile-alt"></i>
                         <span>用户号码查询</span>
@@ -2965,6 +2969,81 @@
 
                     <!-- 报表显示区域 -->
                     <div id="report-result" style="display:none;">
+                        <!-- 报表内容将动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 覆盖式空白页面：充电效率分析 -->
+                <div id="page-report-efficiency" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
+                    <!-- 面包屑导航 -->
+                    <div style="font-size:14px; color:#666; margin-bottom:12px;">
+                        <a href="#" onclick="navigateHome()" style="color:#007bff; text-decoration:none;">首页</a>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <span>报表查询</span>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <strong style="color:#333;">充电效率分析</strong>
+                    </div>
+
+                    <!-- 查询表单 -->
+                    <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin-bottom:20px;">
+                        <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
+                            <!-- 站点选择 -->
+                            <div style="position:relative;">
+                                <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">站点</label>
+                                <div id="eff-station-selector" class="multi-select-box" style="min-width:200px; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer; position:relative; display:flex; align-items:center; box-sizing:border-box; min-height:38px;" onclick="toggleEffStationDropdown(event)">
+                                    <span id="eff-station-display" style="font-size:12px;">全选</span>
+                                    <i class="fas fa-chevron-down" style="position:absolute; right:10px; top:50%; transform:translateY(-50%);"></i>
+                                </div>
+                                <div id="eff-station-dropdown" style="display:none; position:absolute; top:100%; left:0; z-index:1001; background:#fff; border:1px solid #ddd; border-radius:4px; margin-top:2px; min-width:200px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                                    <div style="padding:8px;">
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" id="eff-station-all" value="全部" onchange="toggleEffStationAll()" style="margin-right:8px;" checked>
+                                            全选
+                                        </label>
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" class="eff-station-option" value="四方坪站" onchange="updateEffStationSelection()" style="margin-right:8px;" checked>
+                                            四方坪站
+                                        </label>
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" class="eff-station-option" value="高岭站" onchange="updateEffStationSelection()" style="margin-right:8px;" checked>
+                                            高岭站
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 开始日期 -->
+                            <div style="position:relative; width:220px;">
+                                <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
+                                <input type="text" id="eff-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('eff-start-date', this)">
+                                <button id="eff-start-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('eff-start-date', document.getElementById('eff-start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <div id="eff-start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
+                            </div>
+
+                            <!-- 结束日期 -->
+                            <div style="position:relative; width:220px;">
+                                <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
+                                <input type="text" id="eff-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('eff-end-date', this)">
+                                <button id="eff-end-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('eff-end-date', document.getElementById('eff-end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <div id="eff-end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
+                            </div>
+
+                            <!-- 查询按钮 -->
+                            <div style="margin-top:23px; display:flex; gap:10px;">
+                                <button onclick="queryEfficiencyReport()" style="padding:8px 20px; background:#007bff; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:8px; transition:background 0.3s;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
+                                    <i class="fas fa-search"></i>
+                                    <span>查询</span>
+                                </button>
+                                <button id="efficiency-report-export-btn" onclick="exportEfficiencyReport()" disabled style="padding:8px 20px; background:#adb5bd; color:#fff; border:none; border-radius:4px; cursor:not-allowed; font-size:14px; display:flex; align-items:center; gap:8px; transition:background 0.3s;">
+                                    <i class="fas fa-download"></i>
+                                    <span>导出数据</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 报表显示区域 -->
+                    <div id="efficiency-report-result" style="display:none;">
                         <!-- 报表内容将动态生成 -->
                     </div>
                 </div>
@@ -10469,9 +10548,11 @@ function updateUnchargedTable() {
                 var btnReportCharging = document.getElementById('menu-report-charging');
                 var btnReportComprehensive = document.getElementById('menu-report-comprehensive');
                 var btnReportUser = document.getElementById('menu-report-user');
+                var btnReportEfficiency = document.getElementById('menu-report-efficiency');
                 var pageReportCharging = document.getElementById('page-report-charging');
                 var pageReportComprehensive = document.getElementById('page-report-comprehensive');
                 var pageReportUser = document.getElementById('page-report-user');
+                var pageReportEfficiency = document.getElementById('page-report-efficiency');
 
                 if (!btnCd || !btnZh || !btnHome || !pageCd || !pageZh) return;
 
@@ -10484,6 +10565,7 @@ function updateUnchargedTable() {
                     if (pageReportCharging) pageReportCharging.style.display = 'none';
                     if (pageReportComprehensive) pageReportComprehensive.style.display = 'none';
                     if (pageReportUser) pageReportUser.style.display = 'none';
+                    if (pageReportEfficiency) pageReportEfficiency.style.display = 'none';
                 }
 
                 function showCd() {
@@ -10562,6 +10644,12 @@ function updateUnchargedTable() {
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
                 }
 
+                function showReportEfficiency() {
+                    hideAllPages();
+                    if (pageReportEfficiency) pageReportEfficiency.style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+                }
+
                 function showHome() {
                     hideAllPages();
                 }
@@ -10590,6 +10678,9 @@ function updateUnchargedTable() {
                 }
                 if (btnReportUser) {
                     btnReportUser.addEventListener('click', function(e) { e.preventDefault(); showReportUser(); });
+                }
+                if (btnReportEfficiency) {
+                    btnReportEfficiency.addEventListener('click', function(e) { e.preventDefault(); showReportEfficiency(); });
                 }
                 btnHome.addEventListener('click', function() { showHome(); });
             }
@@ -12168,6 +12259,8 @@ function updateUnchargedTable() {
             if (overlayReportComprehensive) overlayReportComprehensive.style.display = 'none';
             const overlayReportUser = document.getElementById('page-report-user');
             if (overlayReportUser) overlayReportUser.style.display = 'none';
+            const overlayReportEfficiency = document.getElementById('page-report-efficiency');
+            if (overlayReportEfficiency) overlayReportEfficiency.style.display = 'none';
             window.scrollTo(0, 0);
         }
 
@@ -16309,9 +16402,9 @@ function updateUnchargedTable() {
                 const endEl = document.getElementById('user-end-datetime');
                 if (!startEl || !endEl) return;
 
-                // 设置默认值(最近7天)
+                // 设置默认值：开始为当天 00:00:00，结束为当天 23:59:59
                 const now = new Date();
-                const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                const startDate = now;
                 startEl.value = startDate.toISOString().slice(0, 10) + ' 00:00:00';
                 endEl.value = now.toISOString().slice(0, 10) + ' 23:59:59';
 
@@ -16696,6 +16789,10 @@ function updateUnchargedTable() {
             const reportEndInput = document.getElementById('report-end-date');
             if (reportStartInput) reportStartInput.value = currentYearMonth;
             if (reportEndInput) reportEndInput.value = currentYearMonth;
+            const effStartInput = document.getElementById('eff-start-date');
+            const effEndInput = document.getElementById('eff-end-date');
+            if (effStartInput) effStartInput.value = currentYearMonth;
+            if (effEndInput) effEndInput.value = currentYearMonth;
         });
 
         // 站点选择相关功能
@@ -16762,10 +16859,14 @@ function updateUnchargedTable() {
             const reportEndPicker = document.getElementById('report-end-date-picker');
             const defaultStartPicker = document.getElementById('start-date-picker');
             const defaultEndPicker = document.getElementById('end-date-picker');
+            const effStartPicker = document.getElementById('eff-start-date-picker');
+            const effEndPicker = document.getElementById('eff-end-date-picker');
             if (reportStartPicker) reportStartPicker.style.display = 'none';
             if (reportEndPicker) reportEndPicker.style.display = 'none';
             if (defaultStartPicker) defaultStartPicker.style.display = 'none';
             if (defaultEndPicker) defaultEndPicker.style.display = 'none';
+            if (effStartPicker) effStartPicker.style.display = 'none';
+            if (effEndPicker) effEndPicker.style.display = 'none';
             document.getElementById('month-picker-modal').style.display = 'none';
             
             currentPickerTarget = targetId;
@@ -16778,9 +16879,16 @@ function updateUnchargedTable() {
                 currentPickerYear = new Date().getFullYear();
             }
 
-            // 确定使用哪个选择器容器
-            const pickerId = targetId === 'report-start-date' ? 'report-start-date-picker' : 'report-end-date-picker';
+            // 确定使用哪个选择器容器（支持报表和充电效率页面）
+            let pickerId = '';
+            if (targetId === 'report-start-date') pickerId = 'report-start-date-picker';
+            else if (targetId === 'report-end-date') pickerId = 'report-end-date-picker';
+            else if (targetId === 'eff-start-date') pickerId = 'eff-start-date-picker';
+            else if (targetId === 'eff-end-date') pickerId = 'eff-end-date-picker';
+            else pickerId = 'report-start-date-picker';
+
             const pickerContainer = document.getElementById(pickerId);
+            if (!pickerContainer) return;
             
             // 设置选择器宽度与输入框一致
             const inputWidth = targetInput.offsetWidth;
@@ -16823,10 +16931,14 @@ function updateUnchargedTable() {
             setTimeout(() => {
                 const startDateBtn = document.getElementById('report-start-date-btn');
                 const endDateBtn = document.getElementById('report-end-date-btn');
+                const effStartBtn = document.getElementById('eff-start-date-btn');
+                const effEndBtn = document.getElementById('eff-end-date-btn');
                 const closeOnClickOutside = (e) => {
                     const isStartDateBtn = e.target === startDateBtn || (startDateBtn && startDateBtn.contains(e.target));
                     const isEndDateBtn = e.target === endDateBtn || (endDateBtn && endDateBtn.contains(e.target));
-                    if (!pickerContainer.contains(e.target) && e.target !== targetInput && !isStartDateBtn && !isEndDateBtn) {
+                    const isEffStartBtn = e.target === effStartBtn || (effStartBtn && effStartBtn.contains(e.target));
+                    const isEffEndBtn = e.target === effEndBtn || (effEndBtn && effEndBtn.contains(e.target));
+                    if (!pickerContainer.contains(e.target) && e.target !== targetInput && !isStartDateBtn && !isEndDateBtn && !isEffStartBtn && !isEffEndBtn) {
                         pickerContainer.style.display = 'none';
                         document.removeEventListener('click', closeOnClickOutside);
                     }
@@ -16859,7 +16971,12 @@ function updateUnchargedTable() {
         }
         
         function closeMonthPickerForInput(targetId) {
-            const pickerId = targetId === 'report-start-date' ? 'report-start-date-picker' : 'report-end-date-picker';
+            let pickerId = '';
+            if (targetId === 'report-start-date') pickerId = 'report-start-date-picker';
+            else if (targetId === 'report-end-date') pickerId = 'report-end-date-picker';
+            else if (targetId === 'eff-start-date') pickerId = 'eff-start-date-picker';
+            else if (targetId === 'eff-end-date') pickerId = 'eff-end-date-picker';
+            else pickerId = 'report-start-date-picker';
             const picker = document.getElementById(pickerId);
             if (picker) {
                 picker.style.display = 'none';
@@ -16880,7 +16997,7 @@ function updateUnchargedTable() {
             const modal = document.getElementById('month-picker-modal');
             if (modal) modal.style.display = 'none';
 
-            ['start-date-picker', 'end-date-picker', 'report-start-date-picker', 'report-end-date-picker'].forEach(id => {
+            ['start-date-picker', 'end-date-picker', 'report-start-date-picker', 'report-end-date-picker', 'eff-start-date-picker', 'eff-end-date-picker'].forEach(id => {
                 const picker = document.getElementById(id);
                 if (picker) picker.style.display = 'none';
             });
@@ -17547,6 +17664,314 @@ function updateUnchargedTable() {
             ws['!cols'] = colWidths;
 
             XLSX.utils.book_append_sheet(wb, ws, '充电数据报表');
+            XLSX.writeFile(wb, fileName);
+        }
+
+        // ========== 充电效率分析 ==========
+        let efficiencyReportData = null;
+
+        function toggleEffStationDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('eff-station-dropdown');
+            if (!dropdown) return;
+            dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'block' : 'none';
+        }
+
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('eff-station-dropdown');
+            const selector = document.getElementById('eff-station-selector');
+            if (!dropdown || !selector) return;
+            if (dropdown.style.display === 'none' || dropdown.style.display === '') return;
+            if (!selector.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        function toggleEffStationAll() {
+            const all = document.getElementById('eff-station-all');
+            const items = document.querySelectorAll('.eff-station-option');
+            items.forEach(i => { i.checked = all.checked; });
+            updateEffStationSelection();
+        }
+
+        function updateEffStationSelection() {
+            const all = document.getElementById('eff-station-all');
+            const items = Array.from(document.querySelectorAll('.eff-station-option'));
+            const checked = items.filter(i => i.checked).map(i => i.value);
+            const display = document.getElementById('eff-station-display');
+
+            if (checked.length === items.length) {
+                if (all) all.checked = true;
+                if (display) display.textContent = '全选';
+            } else {
+                if (all) all.checked = false;
+                if (display) display.textContent = checked.length > 0 ? checked.join('、') : '未选择';
+            }
+        }
+
+        function getEffSelectedStations() {
+            const all = document.getElementById('eff-station-all');
+            const items = Array.from(document.querySelectorAll('.eff-station-option'));
+            if (all && all.checked) return ['四方坪站', '高岭站'];
+            return items.filter(i => i.checked).map(i => i.value);
+        }
+
+        async function queryEfficiencyReport() {
+            const resultDiv = document.getElementById('efficiency-report-result');
+            const exportBtn = document.getElementById('efficiency-report-export-btn');
+            const selected = getEffSelectedStations();
+            const startDate = (document.getElementById('eff-start-date') || {}).value || '';
+            const endDate = (document.getElementById('eff-end-date') || {}).value || '';
+
+            if (exportBtn) {
+                exportBtn.disabled = true;
+                exportBtn.style.background = '#adb5bd';
+                exportBtn.style.cursor = 'not-allowed';
+            }
+
+            if (resultDiv) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px; color:#007bff;"></i><br><br>正在查询数据，请稍候...</div>';
+            }
+
+            if (selected.length === 0) {
+                if (resultDiv) resultDiv.innerHTML = '<div style="color:#c00; padding:12px;">请至少选择一个站点</div>';
+                return;
+            }
+            if (!startDate || !endDate) {
+                if (resultDiv) resultDiv.innerHTML = '<div style="color:#c00; padding:12px;">请选择开始日期和结束日期</div>';
+                return;
+            }
+            if (startDate > endDate) {
+                if (resultDiv) resultDiv.innerHTML = '<div style="color:#c00; padding:12px;">开始日期不能大于结束日期</div>';
+                return;
+            }
+
+            try {
+                const result = {};
+                for (const st of selected) {
+                    result[st] = await queryEfficiencyMetrics(st, startDate, endDate);
+                }
+                efficiencyReportData = { data: result, stations: selected, startDate, endDate };
+                generateEfficiencyReport(result, selected, startDate, endDate);
+
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.style.background = '#28a745';
+                    exportBtn.style.cursor = 'pointer';
+                    exportBtn.onmouseover = function() { this.style.background = '#218838'; };
+                    exportBtn.onmouseout = function() { this.style.background = '#28a745'; };
+                }
+            } catch (err) {
+                console.error('充电效率分析失败', err);
+                if (resultDiv) resultDiv.innerHTML = `<div style="color:#c00; padding:12px;">查询失败：${err.message || '未知错误'}</div>`;
+            }
+        }
+
+        function calcDayCount(startDateStr, endDateStr) {
+            const start = new Date(startDateStr);
+            const end = new Date(endDateStr);
+            const diff = end.getTime() - start.getTime();
+            return diff >= 0 ? Math.floor(diff / (24 * 3600 * 1000)) + 1 : 0;
+        }
+
+        function buildStationCondition(station) {
+            if (station === '四方坪站') {
+                return "AND [电站名称] NOT LIKE N'%华为飞狐特来电高岭超充站%' AND [电站名称] NOT LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%'";
+            }
+            if (station === '高岭站') {
+                return "AND ([电站名称] LIKE N'%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')";
+            }
+            return '';
+        }
+
+        async function queryEfficiencyMetrics(station, startDate, endDate) {
+            const startDateFormatted = `${startDate}-01`;
+            const endParts = endDate.split('-');
+            const lastDay = new Date(parseInt(endParts[0]), parseInt(endParts[1]), 0).getDate();
+            const endDateFormatted = `${endDate}-${lastDay}`;
+            const stationCondition = buildStationCondition(station);
+            const dayCount = calcDayCount(startDateFormatted, endDateFormatted);
+            if (dayCount <= 0) throw new Error('日期范围无效');
+
+            const terminalSql = `
+                SELECT COUNT(DISTINCT [电站名称] + N'&' + [终端名称]) AS terminals
+                FROM [特来电]
+                WHERE [充电结束时间] >= '${startDateFormatted}'
+                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
+                ${stationCondition}
+            `;
+            const terminalsRes = await executeLeanCloudSQL(terminalSql);
+            const terminals = terminalsRes && terminalsRes[0] && terminalsRes[0].terminals ? parseInt(terminalsRes[0].terminals) : 0;
+
+            const sumSql = `
+                SELECT 
+                    SUM(CAST([充电时长(分钟)] AS FLOAT)) AS totalDuration,
+                    SUM(CAST([充电电量(度)] AS FLOAT)) AS totalKwh,
+                    SUM(CAST([充电服务费(元)] AS FLOAT)) AS totalServiceFee,
+                    COUNT(1) AS totalSessions
+                FROM [特来电]
+                WHERE [充电结束时间] >= '${startDateFormatted}'
+                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
+                ${stationCondition}
+            `;
+            const sumRes = await executeLeanCloudSQL(sumSql);
+            const totalDuration = sumRes && sumRes[0] && sumRes[0].totalDuration ? parseFloat(sumRes[0].totalDuration) : 0;
+            const totalKwh = sumRes && sumRes[0] && sumRes[0].totalKwh ? parseFloat(sumRes[0].totalKwh) : 0;
+            const totalServiceFee = sumRes && sumRes[0] && sumRes[0].totalServiceFee ? parseFloat(sumRes[0].totalServiceFee) : 0;
+            const totalSessions = sumRes && sumRes[0] && sumRes[0].totalSessions ? parseInt(sumRes[0].totalSessions) : 0;
+
+            const [startYear, startMonth] = startDate.split('-');
+            const [endYear, endMonth] = endDate.split('-');
+            const meterKwh = await queryMeterKwhForEfficiency(station, startYear, startMonth, endYear, endMonth);
+
+            const safeTerminals = terminals > 0 ? terminals : 1;
+            const terminalDailyMinutes = (totalDuration / dayCount) / safeTerminals;
+            const terminalUtilization = terminalDailyMinutes / 1440 * 100;
+            const terminalDailyKwh = (totalKwh / dayCount) / safeTerminals;
+            const terminalDailyRevenue = (totalServiceFee / dayCount) / safeTerminals;
+            const dailyDurationHours = (totalDuration / dayCount) / 60;
+            const dailyKwh = totalKwh / dayCount;
+            const avgPower = dailyDurationHours > 0 ? dailyKwh / dailyDurationHours : 0;
+            const sessionsPerGun = (totalSessions / dayCount) / safeTerminals;
+            const lossKwh = meterKwh - totalKwh;
+            const lossRate = meterKwh > 0 ? (lossKwh / meterKwh) * 100 : 0;
+
+            return {
+                terminalDailyMinutes,
+                terminalUtilization,
+                terminalDailyKwh,
+                terminalDailyRevenue,
+                avgPower,
+                sessionsPerGun,
+                meterKwh,
+                chargeKwh: totalKwh,
+                lossKwh,
+                lossRate
+            };
+        }
+
+        async function queryMeterKwhForEfficiency(station, startYear, startMonth, endYear, endMonth) {
+            let transformers = '';
+            if (station === '四方坪站') {
+                transformers = "'3118481453', '3111439077'";
+            } else {
+                transformers = "'4350001671599'";
+            }
+            const query = `
+                SELECT SUM(CAST([电量] AS FLOAT)) AS total
+                FROM [电力局]
+                WHERE [变压器编号] IN (${transformers})
+                AND ((CAST([年] AS INT) > ${startYear} OR (CAST([年] AS INT) = ${startYear} AND CAST([月] AS INT) >= ${startMonth}))
+                AND (CAST([年] AS INT) < ${endYear} OR (CAST([年] AS INT) = ${endYear} AND CAST([月] AS INT) <= ${endMonth})))
+            `;
+            const res = await executeLeanCloudSQL(query);
+            return res && res[0] && res[0].total ? parseFloat(res[0].total) : 0;
+        }
+
+        function formatNumber(val, decimals = 2) {
+            const num = typeof val === 'number' ? val : parseFloat(val || 0);
+            return isNaN(num) ? '0.00' : num.toFixed(decimals);
+        }
+
+        function generateEfficiencyReport(data, stations, startDate, endDate) {
+            const resultDiv = document.getElementById('efficiency-report-result');
+            if (!resultDiv) return;
+
+            const columns = [];
+            if (stations.length === 2) {
+                columns.push('四方坪站', '高岭站');
+            } else {
+                columns.push(stations[0]);
+            }
+
+            const rowsDef = [
+                { key: 'terminalDailyMinutes', label: '终端日均充电时长(分钟)', isPercent: false },
+                { key: 'terminalUtilization', label: '终端日均利用率', isPercent: true },
+                { key: 'terminalDailyKwh', label: '终端日均充电电量(kwh)', isPercent: false },
+                { key: 'terminalDailyRevenue', label: '终端日均充电收益(元)', isPercent: false },
+                { key: 'avgPower', label: '平均每小时充电功率(kw)', isPercent: false },
+                { key: 'sessionsPerGun', label: '单枪日均充电次数', isPercent: false },
+                { key: 'meterKwh', label: '本期抄表电量(度)', isPercent: false },
+                { key: 'chargeKwh', label: '本期充电电量(度)', isPercent: false },
+                { key: 'lossKwh', label: '本期电量损耗(度)', isPercent: false },
+                { key: 'lossRate', label: '本期电损率', isPercent: true }
+            ];
+
+            let html = `<div style="background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <h2 style="text-align:center; margin-bottom:20px; color:#333; font-size:22px;">充电效率分析</h2>
+                <div style="width:100%; color:#666; font-size:14px; display:flex; box-sizing:border-box; margin-bottom:12px; align-items:center;">
+                    <div style="flex:1; padding:8px; text-align:left; box-sizing:border-box;">单位：长沙飞狐电动汽车充电服务有限公司</div>
+                    <div style="padding:8px; text-align:right; box-sizing:border-box; min-width:200px;">报表周期：${startDate === endDate ? startDate : `${startDate}至${endDate}`}</div>
+                </div>
+                <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                    <thead>
+                        <tr style="background:#f8f9fa;">
+                            <th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600; width:30%;">指标</th>`;
+            columns.forEach(col => {
+                html += `<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">${col}</th>`;
+            });
+            html += `</tr>
+                    </thead>
+                    <tbody>`;
+
+            rowsDef.forEach(row => {
+                html += `<tr>`;
+                html += `<td style="padding:10px; border:1px solid #dee2e6;">${row.label}</td>`;
+                columns.forEach(col => {
+                    const metrics = data[col] || {};
+                    let val = metrics[row.key] || 0;
+                    if (row.isPercent) {
+                        val = `${formatNumber(val, 2)}%`;
+                    } else {
+                        val = formatNumber(val, 2);
+                    }
+                    html += `<td style="padding:10px; border:1px solid #dee2e6; text-align:right;">${val}</td>`;
+                });
+                html += `</tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = html;
+        }
+
+        function exportEfficiencyReport() {
+            if (!efficiencyReportData) {
+                alert('没有可导出的数据，请先查询报表');
+                return;
+            }
+            const resultDiv = document.getElementById('efficiency-report-result');
+            const table = resultDiv ? resultDiv.querySelector('table') : null;
+            if (!table) {
+                alert('没有找到报表数据');
+                return;
+            }
+
+            const headers = [];
+            const rows = [];
+            const headerRow = table.querySelector('thead tr');
+            if (headerRow) {
+                headerRow.querySelectorAll('th').forEach(th => headers.push(th.textContent.trim()));
+            }
+            const dataRows = table.querySelectorAll('tbody tr');
+            dataRows.forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td').forEach(td => row.push(td.textContent.trim()));
+                if (row.length) rows.push(row);
+            });
+
+            const { startDate, endDate } = efficiencyReportData;
+            const fileName = `充电效率分析_${startDate === endDate ? startDate : startDate + '至' + endDate}.xlsx`;
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            ws['!cols'] = headers.map((h, idx) => {
+                if (idx === 0) return { wch: 30 };
+                return { wch: 18 };
+            });
+            XLSX.utils.book_append_sheet(wb, ws, '充电效率分析');
             XLSX.writeFile(wb, fileName);
         }
 
@@ -18732,7 +19157,8 @@ function updateUnchargedTable() {
             pageSize: 20,
             total: 0,
             totalPages: 0,
-            data: []
+            data: [],
+            categoryLabel: '数据类别'
         };
 
         // 其它数据页面查询函数
@@ -18888,6 +19314,7 @@ function updateUnchargedTable() {
                 __otherPagination.total = processedData.length;
                 __otherPagination.totalPages = Math.ceil(processedData.length / __otherPagination.pageSize);
                 __otherPagination.currentPage = 1;
+                __otherPagination.categoryLabel = dataCategory || '数据类别';
                 
                 // 渲染分页和表格
                 renderOtherPagination();
@@ -18922,11 +19349,13 @@ function updateUnchargedTable() {
                 const kwh = parseFloat(row['充电电量(度)'] || 0);
                 return sum + kwh;
             }, 0);
+
+            const categoryLabel = __otherPagination.categoryLabel || '数据类别';
             
             // 构建表格HTML
             let html = '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
             html += '<thead><tr style="background:#f8f9fa;">';
-            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">数据类别</th>';
+            html += `<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">${categoryLabel}</th>`;
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电电量(度)</th>';
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">占比</th>';
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电电费(元)</th>';
@@ -19046,6 +19475,7 @@ function updateUnchargedTable() {
             const dataCategory = document.getElementById('other-data-category')?.value || '数据类别';
             const startTime = document.getElementById('other-start-datetime')?.value || '';
             const endTime = document.getElementById('other-end-datetime')?.value || '';
+            const categoryLabel = __otherPagination.categoryLabel || dataCategory || '数据类别';
             
             // 计算所有数据的总电量（用于计算占比）
             const totalKwh = data.reduce((sum, row) => {
@@ -19054,7 +19484,7 @@ function updateUnchargedTable() {
             }, 0);
             
             // 准备Excel数据
-            const headers = ['数据类别', '充电电量(度)', '占比', '充电电费(元)', '充电服务费(元)', '充电费用(元)'];
+            const headers = [categoryLabel, '充电电量(度)', '占比', '充电电费(元)', '充电服务费(元)', '充电费用(元)'];
             const rows = data.map(row => {
                 const kwh = parseFloat(row['充电电量(度)'] || 0);
                 const percentage = totalKwh > 0 ? ((kwh / totalKwh) * 100).toFixed(2) : '0.00';
