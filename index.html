@@ -2475,6 +2475,10 @@
                         <i class="fas fa-user"></i>
                         <span>用户数据</span>
                     </a>
+                    <a href="#" class="submenu-item" id="menu-other-data">
+                        <i class="fas fa-database"></i>
+                        <span>其它数据</span>
+                    </a>
                 </div>
 
                 <!-- 报表查询（带子菜单） -->
@@ -2730,6 +2734,101 @@
                         </div>
                         <div id="user-stats-container" style="margin-bottom: 12px;"></div>
                         <div id="user-query-result-content" style="flex: 1; overflow: auto; border: 1px solid #ddd; border-radius: 6px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 覆盖式空白页面：其它数据 -->
+                <div id="page-other-data" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
+                    <!-- 面包屑导航 -->
+                    <div style="font-size:14px; color:#666; margin-bottom:12px;">
+                        <a href="#" onclick="navigateHome()" style="color:#007bff; text-decoration:none;">首页</a>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <span id="breadcrumb-section-other">数据查询</span>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <strong id="breadcrumb-leaf-other" style="color:#333;">其它数据</strong>
+                    </div>
+
+                    <!-- 查询条件栏 -->
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;">
+                        <!-- 电站选择 -->
+                        <div id="other-station-box" style="width:220px; border:1px solid #e5e5e5; border-radius:8px; padding:8px; position:relative; height:36px; display:flex; align-items:center; justify-content:space-between;">
+                            <div style="font-weight:600; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; font-size:14px;" id="other-station-display">电站</div>
+                            <button id="other-station-menu-btn" onclick="toggleOtherStationMenu()" title="选择电站" style="background:transparent; border:none; cursor:pointer; font-size:18px; line-height:1; color:#666;">⋯</button>
+                            <div id="other-station-menu" style="position:absolute; top:44px; right:10px; background:#fff; border:1px solid #ddd; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,0.08); padding:10px; width:200px; z-index:1100; display:none;">
+                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:14px;">
+                                    <input type="checkbox" id="other-station-all" checked onchange="onToggleAllOtherStations()"> 全选
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:14px;">
+                                    <input type="checkbox" class="other-station-option" value="四方坪站" checked onchange="onOtherStationChange()"> 四方坪站
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
+                                    <input type="checkbox" class="other-station-option" value="高岭站" checked onchange="onOtherStationChange()"> 高岭站
+                                </label>
+                                <div style="text-align:right; margin-top:8px;">
+                                    <button onclick="applyOtherStationSelection()" style="background:#007bff; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">确定</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 数据类别选择（单选） -->
+                        <select id="other-data-category" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;">
+                            <option value="" disabled selected hidden>数据类别</option>
+                            <option value="判定车牌号">判定车牌号</option>
+                            <option value="终端名称">终端名称</option>
+                            <option value="扣费企业名称">扣费企业名称</option>
+                            <option value="充电启动方式">充电启动方式</option>
+                            <option value="二级来源">二级来源</option>
+                            <option value="扣费账户类型">扣费账户类型</option>
+                            <option value="用户分类">用户分类</option>
+                            <option value="会员等级">会员等级</option>
+                            <option value="判定结束原因">判定结束原因</option>
+                        </select>
+
+                        <!-- 排序方式选择（单选） -->
+                        <select id="other-sort-order" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;">
+                            <option value="升序" selected>升序</option>
+                            <option value="降序">降序</option>
+                        </select>
+                        
+                        <!-- 时间字段选择 -->
+                        <select id="other-time-field-select" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;">
+                            <option value="充电结束时间" selected>充电结束时间</option>
+                            <option value="充电开始时间">充电开始时间</option>
+                        </select>
+
+                        <!-- 开始时间 -->
+                        <div style="position:relative; width:220px;">
+                            <input id="other-start-datetime" type="text" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px;" />
+                            <button id="other-start-datetime-btn" title="选择日期" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                        </div>
+
+                        <!-- 结束时间 -->
+                        <div style="position:relative; width:220px;">
+                            <input id="other-end-datetime" type="text" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px;" />
+                            <button id="other-end-datetime-btn" title="选择日期" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div style="display:flex; gap:10px; align-items:flex-end;">
+                            <button onclick="runOtherDataQuery()" style="background:#28a745; color:#fff; border:none; padding:10px 16px; border-radius:6px; cursor:pointer;">查询</button>
+                        </div>
+                    </div>
+                            
+                    <!-- 查询结果 -->
+                    <div id="other-query-result" style="margin-top: 16px; height: calc(100vh - 200px); display: flex; flex-direction: column;">
+                        <div id="other-current-conditions" style="margin-bottom: 12px; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; font-size: 14px;">
+                            <strong style="color: #495057;">当前条件：</strong><span id="other-current-conditions-text" style="color: #6c757d;">请选择查询条件后点击查询</span>
+                        </div>
+                        <!-- 分页和导出按钮 -->
+                        <div id="other-pagination-controls" style="margin-bottom: 12px; display: none; justify-content: space-between; align-items: center; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px;">
+                            <div id="other-pagination-buttons" style="display: flex; gap: 8px; align-items: center;"></div>
+                            <div style="display: flex; gap: 8px;">
+                                <button id="other-export-current-btn" onclick="exportOtherDataCurrentPage()" style="background:#17a2b8; color:#fff; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; font-size:14px;">导出当前页</button>
+                                <button id="other-export-all-btn" onclick="exportOtherDataAll()" style="background:#17a2b8; color:#fff; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; font-size:14px;">导出全部</button>
+                            </div>
+                        </div>
+                        <div id="other-query-result-content" style="flex: 1; overflow: auto; border: 1px solid #ddd; border-radius: 6px;">
                         </div>
                     </div>
                 </div>
@@ -10357,11 +10456,13 @@ function updateUnchargedTable() {
                 var btnZh = document.getElementById('menu-zh-data');
                 var btnBill = document.getElementById('menu-bill-data');
                 var btnUserData = document.getElementById('menu-user-data');
+                var btnOtherData = document.getElementById('menu-other-data');
                 var btnHome = document.getElementById('menu-home');
                 var pageCd = document.getElementById('page-cd-data');
                 var pageZh = document.getElementById('page-zh-data');
                 var pageBill = document.getElementById('page-bill-data');
                 var pageUserData = document.getElementById('page-user-data');
+                var pageOtherData = document.getElementById('page-other-data');
                 var breadcrumbLeaf = document.getElementById('breadcrumb-leaf');
 
                 // 报表查询菜单按钮
@@ -10379,6 +10480,7 @@ function updateUnchargedTable() {
                     pageZh.style.display = 'none';
                     if (pageBill) pageBill.style.display = 'none';
                     if (pageUserData) pageUserData.style.display = 'none';
+                    if (pageOtherData) pageOtherData.style.display = 'none';
                     if (pageReportCharging) pageReportCharging.style.display = 'none';
                     if (pageReportComprehensive) pageReportComprehensive.style.display = 'none';
                     if (pageReportUser) pageReportUser.style.display = 'none';
@@ -10417,6 +10519,20 @@ function updateUnchargedTable() {
                     // 初始化用户数据页面的日期选择器
                     if (typeof initUserDatetimePickers === 'function') {
                         initUserDatetimePickers();
+                    }
+                }
+
+                function showOtherData() {
+                    hideAllPages();
+                    if (pageOtherData) pageOtherData.style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+                    // 初始化其它数据页面的日期选择器
+                    if (typeof initOtherDatetimePickers === 'function') {
+                        initOtherDatetimePickers();
+                    }
+                    // 初始化电站选择显示
+                    if (typeof onOtherStationChange === 'function') {
+                        onOtherStationChange();
                     }
                 }
 
@@ -10462,6 +10578,9 @@ function updateUnchargedTable() {
                 }
                 if (btnUserData) {
                     btnUserData.addEventListener('click', function(e) { e.preventDefault(); showUserData(); });
+                }
+                if (btnOtherData) {
+                    btnOtherData.addEventListener('click', function(e) { e.preventDefault(); showOtherData(); });
                 }
                 if (btnReportCharging) {
                     btnReportCharging.addEventListener('click', function(e) { e.preventDefault(); showReportCharging(); });
@@ -12039,6 +12158,8 @@ function updateUnchargedTable() {
             if (overlayBill) overlayBill.style.display = 'none';
             const overlayUserData = document.getElementById('page-user-data');
             if (overlayUserData) overlayUserData.style.display = 'none';
+            const overlayOtherData = document.getElementById('page-other-data');
+            if (overlayOtherData) overlayOtherData.style.display = 'none';
             const overlayZh = document.getElementById('page-zh-data');
             if (overlayZh) overlayZh.style.display = 'none';
             const overlayReportCharging = document.getElementById('page-report-charging');
@@ -18454,6 +18575,521 @@ function updateUnchargedTable() {
             ws['!cols'] = colWidths;
 
             XLSX.utils.book_append_sheet(wb, ws, '综合数据报表');
+            XLSX.writeFile(wb, fileName);
+        }
+
+        // ========== 其它数据页面相关函数 ==========
+        
+        // 其它数据页面电站选择菜单切换
+        function toggleOtherStationMenu() {
+            const menu = document.getElementById('other-station-menu');
+            if (!menu) return;
+            menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
+        }
+
+        // 点击页面空白处隐藏其它数据电站下拉
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('other-station-menu');
+            const box = document.getElementById('other-station-box');
+            if (!menu || !box) return;
+            if (menu.style.display === 'none' || menu.style.display === '') return;
+            const target = e.target;
+            if (!box.contains(target) && !menu.contains(target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+        // 其它数据页面全选/取消全选电站
+        function onToggleAllOtherStations() {
+            const all = document.getElementById('other-station-all');
+            const items = document.querySelectorAll('#other-station-menu .other-station-option');
+            items.forEach(i => { i.checked = all.checked; });
+            onOtherStationChange();
+        }
+
+        // 其它数据页面应用电站选择
+        function applyOtherStationSelection() {
+            const all = document.getElementById('other-station-all');
+            const items = Array.from(document.querySelectorAll('#other-station-menu .other-station-option'));
+            const checked = items.filter(i => i.checked).map(i => i.value);
+            if (checked.length === items.length) {
+                all.checked = true;
+            } else {
+                all.checked = false;
+            }
+            // 显示已选择的电站名称
+            const display = document.getElementById('other-station-display');
+            if (display) {
+                if (all.checked) {
+                    display.textContent = '电站：全选';
+                } else if (checked.length > 0) {
+                    display.textContent = '电站：' + checked.join('、');
+                } else {
+                    display.textContent = '电站：未选择';
+                }
+            }
+            onOtherStationChange();
+            toggleOtherStationMenu();
+        }
+
+        // 其它数据页面电站选择变化
+        function onOtherStationChange() {
+            const all = document.getElementById('other-station-all');
+            const items = Array.from(document.querySelectorAll('#other-station-menu .other-station-option'));
+            const checked = items.filter(i => i.checked).map(i => i.value);
+            if (checked.length === items.length) {
+                if (all) all.checked = true;
+            } else {
+                if (all) all.checked = false;
+            }
+            // 更新显示文本
+            const display = document.getElementById('other-station-display');
+            if (display) {
+                if (all && all.checked) {
+                    display.textContent = '电站：全选';
+                } else if (checked.length > 0) {
+                    display.textContent = '电站：' + checked.join('、');
+                } else {
+                    display.textContent = '电站：未选择';
+                }
+            }
+        }
+
+        // 初始化其它数据页面日期选择器
+        function initOtherDatetimePickers() {
+            try {
+                const startEl = document.getElementById('other-start-datetime');
+                const endEl = document.getElementById('other-end-datetime');
+                if (!startEl || !endEl) return;
+
+                // 设置默认值(最近7天)
+                const now = new Date();
+                const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                if (!startEl.value) startEl.value = startDate.toISOString().slice(0, 10) + ' 00:00:00';
+                if (!endEl.value) endEl.value = now.toISOString().slice(0, 10) + ' 23:59:59';
+
+                // 添加日期选择器
+                function attachDateBehavior(input, isEnd) {
+                    const btn = document.getElementById(isEnd ? 'other-end-datetime-btn' : 'other-start-datetime-btn');
+                    if (!btn) return;
+
+                    const hiddenPicker = document.createElement('input');
+                    hiddenPicker.type = 'date';
+                    hiddenPicker.style.position = 'fixed';
+                    hiddenPicker.style.opacity = '0';
+                    hiddenPicker.style.pointerEvents = 'none';
+                    hiddenPicker.style.width = '0';
+                    hiddenPicker.style.height = '0';
+                    document.body.appendChild(hiddenPicker);
+
+                    function openPicker() {
+                        const rect = input.getBoundingClientRect();
+                        hiddenPicker.style.left = `${Math.max(0, rect.left)}px`;
+                        hiddenPicker.style.top = `${Math.max(0, rect.bottom)}px`;
+
+                        const currentValue = input.value;
+                        if (currentValue && /^\d{4}-\d{2}-\d{2}/.test(currentValue)) {
+                            hiddenPicker.value = currentValue.slice(0, 10);
+                        }
+
+                        hiddenPicker.focus();
+                        try {
+                            if (hiddenPicker.showPicker) {
+                                hiddenPicker.showPicker();
+                            }
+                        } catch (e) {
+                            // 如果showPicker不支持，尝试点击
+                        }
+                        hiddenPicker.click();
+                    }
+
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openPicker();
+                    });
+
+                    hiddenPicker.addEventListener('change', function() {
+                        const v = hiddenPicker.value;
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                            input.value = isEnd ? `${v} 23:59:59` : `${v} 00:00:00`;
+                        }
+                        input.focus();
+                    });
+                }
+
+                attachDateBehavior(startEl, false);
+                attachDateBehavior(endEl, true);
+            } catch (e) {
+                console.error('初始化其它数据页面日期选择器失败:', e);
+            }
+        }
+
+        // 其它数据页面分页相关变量
+        let __otherPagination = {
+            enabled: false,
+            currentPage: 1,
+            pageSize: 20,
+            total: 0,
+            totalPages: 0,
+            data: []
+        };
+
+        // 其它数据页面查询函数
+        async function runOtherDataQuery() {
+            const resultContent = document.getElementById('other-query-result-content');
+            const conditionsText = document.getElementById('other-current-conditions-text');
+            const paginationControls = document.getElementById('other-pagination-controls');
+            
+            // 隐藏分页控件
+            if (paginationControls) {
+                paginationControls.style.display = 'none';
+            }
+            
+            // 清空结果
+            if (resultContent) {
+                resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#666;"><i class="fas fa-spinner fa-spin"></i> 正在查询数据，请稍候...</div>';
+            }
+            
+            // 获取查询条件
+            const allCheckbox = document.getElementById('other-station-all');
+            const stationOptions = Array.from(document.querySelectorAll('#other-station-menu .other-station-option'));
+            const selectedStations = allCheckbox && allCheckbox.checked 
+                ? ['四方坪站', '高岭站'] 
+                : stationOptions.filter(opt => opt.checked).map(opt => opt.value);
+            
+            const dataCategory = document.getElementById('other-data-category')?.value;
+            const sortOrder = document.getElementById('other-sort-order')?.value || '升序';
+            const timeField = document.getElementById('other-time-field-select')?.value || '充电结束时间';
+            const startTime = document.getElementById('other-start-datetime')?.value;
+            const endTime = document.getElementById('other-end-datetime')?.value;
+            
+            // 验证条件
+            if (selectedStations.length === 0) {
+                if (resultContent) {
+                    resultContent.innerHTML = '<div style="color:#c00; padding:12px;">请至少选择一个电站</div>';
+                }
+                if (conditionsText) {
+                    conditionsText.textContent = '请至少选择一个电站';
+                }
+                return;
+            }
+            
+            if (!dataCategory) {
+                if (resultContent) {
+                    resultContent.innerHTML = '<div style="color:#c00; padding:12px;">请选择数据类别</div>';
+                }
+                if (conditionsText) {
+                    conditionsText.textContent = '请选择数据类别';
+                }
+                return;
+            }
+            
+            if (!startTime || !endTime) {
+                if (resultContent) {
+                    resultContent.innerHTML = '<div style="color:#c00; padding:12px;">请选择时间范围</div>';
+                }
+                if (conditionsText) {
+                    conditionsText.textContent = '请选择时间范围';
+                }
+                return;
+            }
+            
+            // 验证时间
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+            if (endDate < startDate) {
+                if (resultContent) {
+                    resultContent.innerHTML = '<div style="color:#c00; padding:12px;">结束时间不能小于开始时间</div>';
+                }
+                if (conditionsText) {
+                    conditionsText.textContent = '结束时间不能小于开始时间';
+                }
+                return;
+            }
+            
+            // 更新当前条件显示
+            const stationText = selectedStations.length === 2 ? '全选' : selectedStations.join('、');
+            const timeText = `${startTime} 至 ${endTime}`;
+            if (conditionsText) {
+                conditionsText.textContent = `电站：${stationText} | 数据类别：${dataCategory} | ${timeField}：${timeText} | 排序：${sortOrder}`;
+            }
+            
+            try {
+                // 构建电站条件
+                let stationCondition = '';
+                if (selectedStations.length === 2) {
+                    // 全选，不添加条件
+                    stationCondition = '';
+                } else if (selectedStations.includes('四方坪站') && !selectedStations.includes('高岭站')) {
+                    // 只选四方坪站
+                    stationCondition = "AND [电站名称] NOT LIKE N'%华为飞狐特来电高岭超充站%' AND [电站名称] NOT LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%'";
+                } else if (selectedStations.includes('高岭站') && !selectedStations.includes('四方坪站')) {
+                    // 只选高岭站
+                    stationCondition = "AND ([电站名称] LIKE N'%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')";
+                }
+                
+                // 构建字段名（特殊处理终端名称）
+                let groupByField = `[${dataCategory}]`;
+                let selectField = `[${dataCategory}]`;
+                if (dataCategory === '终端名称') {
+                    // 终端名称需要显示电站名称&终端名称
+                    selectField = `[电站名称] + N'&' + [终端名称]`;
+                    groupByField = `[电站名称], [终端名称]`;
+                }
+                
+                // 构建排序
+                const orderBy = sortOrder === '升序' ? 'ASC' : 'DESC';
+                
+                // 格式化时间
+                const formattedStartTime = toSqlDateTime(startTime, false);
+                const formattedEndTime = toSqlDateTime(endTime, true);
+                
+                // 构建SQL查询
+                const sql = `SELECT 
+                    ${selectField} AS [数据类别],
+                    SUM(CAST([充电电量(度)] AS FLOAT)) AS [充电电量(度)],
+                    SUM(CAST([充电电费(元)] AS FLOAT)) AS [充电电费(元)],
+                    SUM(CAST([充电服务费(元)] AS FLOAT)) AS [充电服务费(元)],
+                    SUM(CAST([充电费用(元)] AS FLOAT)) AS [充电费用(元)]
+                FROM [特来电]
+                WHERE [${timeField}] >= '${formattedStartTime}'
+                AND [${timeField}] <= '${formattedEndTime}'
+                ${stationCondition}
+                GROUP BY ${groupByField}
+                ORDER BY SUM(CAST([充电电量(度)] AS FLOAT)) ${orderBy}`;
+                
+                // 执行查询
+                const results = await executeLeanCloudSQL(sql);
+                
+                if (!results || results.length === 0) {
+                    if (resultContent) {
+                        resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">未查询到数据</div>';
+                    }
+                    __otherPagination.enabled = false;
+                    __otherPagination.data = [];
+                    __otherPagination.total = 0;
+                    renderOtherPagination();
+                    return;
+                }
+                
+                // 处理数据（确保数值字段正确）
+                const processedData = results.map(row => ({
+                    '数据类别': row['数据类别'] || '',
+                    '充电电量(度)': parseFloat(row['充电电量(度)'] || 0).toFixed(2),
+                    '充电电费(元)': parseFloat(row['充电电费(元)'] || 0).toFixed(2),
+                    '充电服务费(元)': parseFloat(row['充电服务费(元)'] || 0).toFixed(2),
+                    '充电费用(元)': parseFloat(row['充电费用(元)'] || 0).toFixed(2)
+                }));
+                
+                // 设置分页数据
+                __otherPagination.enabled = true;
+                __otherPagination.data = processedData;
+                __otherPagination.total = processedData.length;
+                __otherPagination.totalPages = Math.ceil(processedData.length / __otherPagination.pageSize);
+                __otherPagination.currentPage = 1;
+                
+                // 渲染分页和表格
+                renderOtherPagination();
+                renderOtherDataTable();
+                
+            } catch (error) {
+                console.error('查询其它数据失败:', error);
+                if (resultContent) {
+                    resultContent.innerHTML = `<div style="color:#c00; padding:12px;">查询失败：${error.message || '未知错误'}</div>`;
+                }
+                __otherPagination.enabled = false;
+                renderOtherPagination();
+            }
+        }
+
+        // 渲染其它数据表格
+        function renderOtherDataTable() {
+            const resultContent = document.getElementById('other-query-result-content');
+            if (!resultContent || !__otherPagination.enabled) return;
+            
+            const start = (__otherPagination.currentPage - 1) * __otherPagination.pageSize;
+            const end = start + __otherPagination.pageSize;
+            const pageData = __otherPagination.data.slice(start, end);
+            
+            if (pageData.length === 0) {
+                resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">暂无数据</div>';
+                return;
+            }
+            
+            // 计算所有数据的总电量（用于计算占比）
+            const totalKwh = __otherPagination.data.reduce((sum, row) => {
+                const kwh = parseFloat(row['充电电量(度)'] || 0);
+                return sum + kwh;
+            }, 0);
+            
+            // 构建表格HTML
+            let html = '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+            html += '<thead><tr style="background:#f8f9fa;">';
+            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">数据类别</th>';
+            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电电量(度)</th>';
+            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">占比</th>';
+            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电电费(元)</th>';
+            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电服务费(元)</th>';
+            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电费用(元)</th>';
+            html += '</tr></thead><tbody>';
+            
+            pageData.forEach((row, index) => {
+                const bgColor = index % 2 === 0 ? '#fff' : '#f8f9fa';
+                const kwh = parseFloat(row['充电电量(度)'] || 0);
+                // 计算占比（百分比）
+                const percentage = totalKwh > 0 ? ((kwh / totalKwh) * 100).toFixed(2) : '0.00';
+                
+                html += `<tr style="background:${bgColor};">`;
+                html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['数据类别'] || ''}</td>`;
+                html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电电量(度)'] || '0.00'}</td>`;
+                html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${percentage}%</td>`;
+                html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电电费(元)'] || '0.00'}</td>`;
+                html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电服务费(元)'] || '0.00'}</td>`;
+                html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电费用(元)'] || '0.00'}</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            resultContent.innerHTML = html;
+        }
+
+        // 渲染其它数据分页按钮
+        function renderOtherPagination() {
+            const paginationDiv = document.getElementById('other-pagination-buttons');
+            const paginationControls = document.getElementById('other-pagination-controls');
+            if (!paginationDiv || !paginationControls) return;
+            
+            if (!__otherPagination.enabled || __otherPagination.totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                paginationControls.style.display = 'none';
+                return;
+            }
+            
+            // 显示分页控件
+            paginationControls.style.display = 'flex';
+            
+            const current = __otherPagination.currentPage;
+            const total = __otherPagination.totalPages;
+            
+            let html = '';
+            
+            // 首页按钮
+            if (current > 1) {
+                html += `<button onclick="goToOtherPage(1)" style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-right:4px;">首页</button>`;
+            } else {
+                html += `<button disabled style="background:#ccc; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:not-allowed; margin-right:4px;">首页</button>`;
+            }
+            
+            // 上一页按钮
+            if (current > 1) {
+                html += `<button onclick="goToOtherPage(${current - 1})" style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-right:4px;">上一页</button>`;
+            } else {
+                html += `<button disabled style="background:#ccc; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:not-allowed; margin-right:4px;">上一页</button>`;
+            }
+            
+            // 当前页/共x页显示
+            html += `<span style="margin:0 12px; color:#666; font-size:14px;">当前${current}页/共${total}页</span>`;
+            
+            // 下一页按钮
+            if (current < total) {
+                html += `<button onclick="goToOtherPage(${current + 1})" style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-right:4px;">下一页</button>`;
+            } else {
+                html += `<button disabled style="background:#ccc; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:not-allowed; margin-right:4px;">下一页</button>`;
+            }
+            
+            // 末页按钮
+            if (current < total) {
+                html += `<button onclick="goToOtherPage(${total})" style="background:#007bff; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">末页</button>`;
+            } else {
+                html += `<button disabled style="background:#ccc; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:not-allowed;">末页</button>`;
+            }
+            
+            paginationDiv.innerHTML = html;
+        }
+
+        // 跳转到其它数据指定页
+        function goToOtherPage(page) {
+            if (!__otherPagination.enabled || page < 1 || page > __otherPagination.totalPages) return;
+            __otherPagination.currentPage = page;
+            renderOtherPagination();
+            renderOtherDataTable();
+        }
+
+        // 导出其它数据当前页
+        function exportOtherDataCurrentPage() {
+            if (!__otherPagination.enabled || __otherPagination.data.length === 0) return;
+            
+            const start = (__otherPagination.currentPage - 1) * __otherPagination.pageSize;
+            const end = start + __otherPagination.pageSize;
+            const pageData = __otherPagination.data.slice(start, end);
+            
+            exportOtherDataToExcel(pageData, '当前页');
+        }
+
+        // 导出其它数据全部
+        function exportOtherDataAll() {
+            if (!__otherPagination.enabled || __otherPagination.data.length === 0) return;
+            exportOtherDataToExcel(__otherPagination.data, '全部');
+        }
+
+        // 导出其它数据到Excel
+        function exportOtherDataToExcel(data, type) {
+            if (!data || data.length === 0) return;
+            
+            // 获取查询条件用于文件名
+            const allCheckbox = document.getElementById('other-station-all');
+            const stationOptions = Array.from(document.querySelectorAll('#other-station-menu .other-station-option'));
+            const selectedStations = allCheckbox && allCheckbox.checked 
+                ? ['四方坪站', '高岭站'] 
+                : stationOptions.filter(opt => opt.checked).map(opt => opt.value);
+            const dataCategory = document.getElementById('other-data-category')?.value || '数据类别';
+            const startTime = document.getElementById('other-start-datetime')?.value || '';
+            const endTime = document.getElementById('other-end-datetime')?.value || '';
+            
+            // 计算所有数据的总电量（用于计算占比）
+            const totalKwh = data.reduce((sum, row) => {
+                const kwh = parseFloat(row['充电电量(度)'] || 0);
+                return sum + kwh;
+            }, 0);
+            
+            // 准备Excel数据
+            const headers = ['数据类别', '充电电量(度)', '占比', '充电电费(元)', '充电服务费(元)', '充电费用(元)'];
+            const rows = data.map(row => {
+                const kwh = parseFloat(row['充电电量(度)'] || 0);
+                const percentage = totalKwh > 0 ? ((kwh / totalKwh) * 100).toFixed(2) : '0.00';
+                return [
+                    row['数据类别'] || '',
+                    row['充电电量(度)'] || '0.00',
+                    percentage + '%',
+                    row['充电电费(元)'] || '0.00',
+                    row['充电服务费(元)'] || '0.00',
+                    row['充电费用(元)'] || '0.00'
+                ];
+            });
+            
+            const excelData = [headers, ...rows];
+            
+            // 生成文件名
+            const stationName = selectedStations.length === 2 ? '全站' : selectedStations.join('和');
+            const timeStr = startTime && endTime ? `${startTime.split(' ')[0]}_${endTime.split(' ')[0]}` : '';
+            const fileName = `其它数据_${dataCategory}_${stationName}_${type}_${timeStr || '数据'}.xlsx`;
+            
+            // 创建工作簿和工作表
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            
+            // 设置列宽
+            const colWidths = headers.map((header, index) => {
+                // 数据类别列需要更宽
+                if (index === 0) return { wch: 30 };
+                // 占比列可以稍窄
+                if (index === 2) return { wch: 12 };
+                return { wch: 18 };
+            });
+            ws['!cols'] = colWidths;
+            
+            XLSX.utils.book_append_sheet(wb, ws, '其它数据');
             XLSX.writeFile(wb, fileName);
         }
 
