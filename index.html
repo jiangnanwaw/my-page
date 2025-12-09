@@ -18240,8 +18240,6 @@ function updateUnchargedTable() {
             const lastDay = new Date(parseInt(endParts[0]), parseInt(endParts[1]), 0).getDate();
             const endDateFormatted = `${endDate}-${lastDay}`;
             const stationCondition = buildStationCondition(station);
-            const dayCount = calcDayCount(startDateFormatted, endDateFormatted);
-            if (dayCount <= 0) throw new Error('日期范围无效');
 
             const terminalSql = `
                 SELECT COUNT(DISTINCT [电站名称] + N'&' + [终端名称]) AS terminals
@@ -18269,6 +18267,29 @@ function updateUnchargedTable() {
             const totalKwh = sumRes && sumRes[0] && sumRes[0].totalKwh ? parseFloat(sumRes[0].totalKwh) : 0;
             const totalServiceFee = sumRes && sumRes[0] && sumRes[0].totalServiceFee ? parseFloat(sumRes[0].totalServiceFee) : 0;
             const totalSessions = sumRes && sumRes[0] && sumRes[0].totalSessions ? parseInt(sumRes[0].totalSessions) : 0;
+
+            // 查询实际数据中"充电结束时间"的最大值和最小值
+            const dateRangeSql = `
+                SELECT 
+                    MIN(CAST([充电结束时间] AS DATE)) AS minDate,
+                    MAX(CAST([充电结束时间] AS DATE)) AS maxDate
+                FROM [特来电]
+                WHERE [充电结束时间] >= '${startDateFormatted}'
+                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
+                ${stationCondition}
+            `;
+            const dateRangeRes = await executeLeanCloudSQL(dateRangeSql);
+            let dayCount = 0;
+            if (dateRangeRes && dateRangeRes[0] && dateRangeRes[0].minDate && dateRangeRes[0].maxDate) {
+                // 根据实际数据中的最小和最大日期计算天数
+                const minDateStr = dateRangeRes[0].minDate;
+                const maxDateStr = dateRangeRes[0].maxDate;
+                dayCount = calcDayCount(minDateStr, maxDateStr);
+            } else {
+                // 如果没有数据，使用原来的计算方式作为后备
+                dayCount = calcDayCount(startDateFormatted, endDateFormatted);
+            }
+            if (dayCount <= 0) throw new Error('日期范围无效或无数据');
 
             const [startYear, startMonth] = startDate.split('-');
             const [endYear, endMonth] = endDate.split('-');
