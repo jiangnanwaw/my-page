@@ -5882,9 +5882,10 @@
             document.getElementById('main-container').style.display = 'block';
             document.getElementById('login-header-title').style.display = 'none';
             document.getElementById('login-footer-copyright').style.display = 'none';
-            // 隐藏星空背景
+            // 隐藏星空背景并停止动画
             document.getElementById('nebula').style.display = 'none';
             document.getElementById('starfield').style.display = 'none';
+            stopStarfield(); // 停止星空动画，释放资源
             document.getElementById('user-display').textContent = username;
             initMainSystem();
             
@@ -10633,6 +10634,12 @@ function updateUnchargedTable() {
                 efficiencyRefreshInterval = null;
             }
         }
+        // 星空背景动画相关变量
+        let starfieldAnimationId = null;
+        let starfieldMouseMoveHandler = null;
+        let starfieldTouchMoveHandler = null;
+        let starfieldResizeHandler = null;
+
         // 星空背景动画
         function initStarfield() {
             const canvas = document.getElementById('starfield');
@@ -10647,7 +10654,8 @@ function updateUnchargedTable() {
                 canvas.height = window.innerHeight;
             }
 
-            window.addEventListener('resize', resize);
+            starfieldResizeHandler = resize;
+            window.addEventListener('resize', starfieldResizeHandler);
             resize();
 
             class Star {
@@ -10735,21 +10743,57 @@ function updateUnchargedTable() {
                     star.update();
                 }
                 connect();
-                requestAnimationFrame(animate);
+                starfieldAnimationId = requestAnimationFrame(animate);
             }
 
-            window.addEventListener('mousemove', (e) => {
+            starfieldMouseMoveHandler = (e) => {
                 mouse.x = e.x;
                 mouse.y = e.y;
-            });
+            };
+            window.addEventListener('mousemove', starfieldMouseMoveHandler);
+            
             // 移动端触控支持
-            window.addEventListener('touchmove', (e) => {
+            starfieldTouchMoveHandler = (e) => {
                 const touch = e.touches[0];
                 mouse.x = touch.clientX;
                 mouse.y = touch.clientY;
-            });
+            };
+            window.addEventListener('touchmove', starfieldTouchMoveHandler);
+            
             init();
             animate();
+        }
+
+        // 停止星空背景动画
+        function stopStarfield() {
+            // 取消动画循环
+            if (starfieldAnimationId !== null) {
+                cancelAnimationFrame(starfieldAnimationId);
+                starfieldAnimationId = null;
+            }
+            
+            // 移除事件监听器
+            if (starfieldMouseMoveHandler) {
+                window.removeEventListener('mousemove', starfieldMouseMoveHandler);
+                starfieldMouseMoveHandler = null;
+            }
+            
+            if (starfieldTouchMoveHandler) {
+                window.removeEventListener('touchmove', starfieldTouchMoveHandler);
+                starfieldTouchMoveHandler = null;
+            }
+            
+            if (starfieldResizeHandler) {
+                window.removeEventListener('resize', starfieldResizeHandler);
+                starfieldResizeHandler = null;
+            }
+            
+            // 清空画布
+            const canvas = document.getElementById('starfield');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
         }
 
         // 左侧"数据查询"二级菜单与"平台首页"点击逻辑：显示/隐藏空白覆盖页
