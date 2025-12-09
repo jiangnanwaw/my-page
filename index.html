@@ -1,2429 +1,13 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>长沙飞狐智能数据平台</title>
-    <script id="chartjs-cdn" src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" onerror="this.onerror=null; this.src='https://cdn.staticfile.org/Chart.js/4.4.1/chart.umd.min.js'; this.onerror=function(){ this.onerror=null; this.src='https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js'; };"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
     <!-- 引入 LeanCloud SDK（含多CDN回退） -->
-    <script id="leancloud-cdn" src="https://unpkg.com/leancloud-storage@4.13.2/dist/av-min.js" onerror="this.onerror=null; this.src='https://cdn.staticfile.org/leancloud-storage/4.13.2/av-min.js'; this.onerror=function(){ this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js'; };"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-        }
-        
-        :root {
-            --primary: #1a73e8;
-            --secondary: #0d47a1;
-            --accent: #00c853;
-            --dark: #0a1929;
-            --light: #f5f9ff;
-            --gray: #e0e0e0;
-            --card-bg: rgba(255, 255, 255, 0.85);
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            --success: #28a745;
-            --warning: #ffc107;
-            --danger: #dc3545;
-        }
-        
-        body {
-            background: #ffffff;
-            color: #333;
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* 星空背景样式 - 只在登录页面显示 */
-        #nebula {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: radial-gradient(ellipse at center, #1B2735 0%, #090A0F 100%);
-        }
-        
-        #starfield {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-        
-        /* 确保主页面有白色背景 */
-        #main-container {
-            background: #ffffff;
-        }
-        
-        /* 添加头部标题样式 */
-        .header-title {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            z-index: 1001;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .header-logo {
-            height: 35px; /* 调整图片大小与文字一致 */
-            vertical-align: middle;
-             margin-top: 40px; /* 添加与文字相同的上边距 */
-        }
-        
-       .header-text {
-    color: white;
-    font-size: 35px; /* 增大字体 */
-    font-weight: bold; /* 这里修改字体粗细 */
-    font-family: "SimSun", serif; /* 宋体 */
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-    margin: 0;
-    vertical-align: middle;
-    letter-spacing: 2px; /* 添加字符间距 */
-    margin-top: 40px;   /* 或者: margin-bottom: 10px; 会使文字向上移动 */
-}
-        
-        /* 修改底部版权信息样式 */
-        .footer-copyright {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            text-align: center;
-            padding: 15px 0;
-            color: white;
-            font-size: 14px;
-            z-index: 1001;
-            background: transparent; /* 移除背景 */
-        }
-        
-        /* 调整登录容器的z-index以确保它在标题上方 */
-        #login-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            z-index: 1000;
-        }
-        
-        .login-container {
-            width: 100%;
-            max-width: 330px;  /* 调整登录窗体宽度 */
-            background: transparent;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            position: relative;
-            margin-right: 160px; /* 调整这个值来控制向左移动的距离 */
-            margin-bottom:180px;  /* 这里控制垂直位置 */
-        }
-        
-        .form-container {
-            padding: 8px;
-            transition: transform 0.6s ease-in-out;
-        }
-        
-        #login-container .logo {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        
-        #login-container .logo i {
-            font-size: 42px;
-            color: #764ba2;
-            margin-bottom: 10px;
-        }
-        
-        #login-container .logo h2 {
-            color: white;
-            font-size: 28px;
-        }
-        
-        .form-group {
-            margin-bottom: 7px;
-            position: relative;
-        }
-        
-        .form-group i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #764ba2;
-            z-index: 2;
-            font-size: 16px;
-            width: 20px;
-            text-align: center;
-            display: block;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 12px 15px 12px 45px; /* 保持左侧内边距 */
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s;
-            box-sizing: border-box;
-        }
-        
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-            outline: none;
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        .btn:hover {
-            background: #5a6fd5;
-        }
-        
-        .links {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-        
-        .links a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s;
-            cursor: pointer;
-        }
-        
-        .links a:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-        
-        .divider {
-            text-align: center;
-            margin: 25px 0;
-            position: relative;
-        }
-        
-        .divider:before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 100%;
-            height: 1px;
-            background: #ddd;
-        }
-        
-        .divider span {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 0 15px;
-            color: #777;
-            position: relative;
-        }
-        
-        .message {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 7px;
-            text-align: center;
-            display: none;
-        }
-        
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .info {
-            background: #d1ecf1;
-            color: white; /* 将字体颜色设置为白色 */
-            border: 1px solid #bee5eb;
-        }
-        
-        #registerForm, #resetForm {
-            display: none;
-        }
-        
-        .back-to-login {
-            text-align: center;
-            margin-top: 20px;
-            color: white;
-        }
-        
-        .back-to-login a {
-            color: white !important;
-            text-decoration: none;
-        }
-        
-        .back-to-login a:hover {
-            color: white !important;
-            text-decoration: underline;
-        }
-        
-        .info-text {
-            font-size: 13px;
-            color: #666;
-            text-align: center;
-            margin-top: 15px;
-        }
-        
-        @media (max-width: 480px) {
-            .login-container {
-                border-radius: 12px;
-            }
-            
-            .form-container {
-                padding: 20px;
-            }
-        }
-        
-        /* 主页面布局 */
-        #main-container {
-            display: none;
-            min-height: 100vh;
-            flex: 1;
-            flex-direction: column;
-            padding-top: 70px; /* 添加这行，为固定的header腾出空间 */
-        }
-        
-        /* 移动端菜单按钮 */
-        .mobile-menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-            margin-right: 15px;
-        }
-        
-        header {
-            position: fixed; /* 修改为fixed */
-            top: 0; 
-            left: 0;
-            width: 100%; /* 确保宽度为100% */
-            z-index: 1000;
-            background: linear-gradient(90deg, var(--dark), var(--secondary));
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            height: 70px;
-            box-sizing: border-box;
-        }
-        
-        header .logo {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .logo img {
-            height: 40px;
-        }
-        
-        .logo h1 {
-            font-size: 24px;
-            font-weight: 600;
-        }
-        
-        .time-display {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.9);
-            background: var(--glass-bg);
-            padding: 8px 15px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-        }
-        
-        /* 用户信息区域 */
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--glass-bg);
-            padding: 5px 15px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-        }
-        
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .username {
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .layout {
-            display: flex;
-            flex: 1;
-            min-height: calc(100vh - 70px);
-            margin-left: 250px; /* 添加这行，为固定的sidebar腾出空间 */
-        }
-        
-        /* 左侧菜单 */
-        .sidebar {
-            position: fixed; /* 修改为fixed */
-            top: 70px; /* 与header高度一致 */
-            left: 0;
-            height: calc(100vh - 70px); /* 减去header高度 */
-            background: linear-gradient(180deg, var(--dark), #0c1e32);
-            padding: 25px 0;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-            overflow-y: auto; /* 确保菜单内容可滚动 */
-            width: 250px;
-            z-index: 999; /* 确保在内容之上，但在header之下 */
-        }
-        
-        .menu-item {
-            padding: 15px 30px;
-            color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
-            cursor: pointer;
-            position: relative;
-            font-size: 16px;
-        }
-        
-        .menu-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-        
-        .menu-item.active {
-            background: rgba(26, 115, 232, 0.2);
-            color: white;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .menu-item i {
-            width: 24px;
-            text-align: center;
-        }
-        
-        /* 子菜单样式 */
-        .submenu {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            background: rgba(0, 0, 0, 0.2);
-        }
-        
-        .submenu.expanded {
-            max-height: 500px;
-        }
-        
-        .submenu-item {
-            padding: 12px 20px 12px 60px;
-            color: rgba(255, 255, 255, 0.7);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-            font-size: 14px;
-            text-decoration: none; /* 添加这行移除下划线 */
-        }
-        
-        .submenu-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: white;
-            text-decoration: none; /* 添加这行确保hover时也没有下划线 */
-        }
-        
-        .submenu-item i {
-            font-size: 12px;
-        }
-        
-        .submenu .submenu {
-            background: rgba(0, 0, 0, 0.3);
-        }
-        
-        .submenu .submenu .submenu-item {
-            padding-left: 80px;
-        }
-        .menu-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            transition: transform 0.3s;
-        }
-        
-        .menu-item.expanded .menu-toggle {
-            transform: translateY(-50%) rotate(90deg);
-        }
-        
-        /* 主内容区 */
-        .main-content {
-            flex: 1;
-            padding: 20px;
-            background: transparent;
-            overflow-y: auto;
-        }
-        
-        .section-title {
-            font-size: 22px;
-            margin-top: 7px;
-            margin-bottom: 5px;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--primary);
-        }
-        
-        /* 第一个section-title不需要上边距 */
-        .main-content > .section-title:first-child {
-            margin-top: 0;
-        }
-        
-        .section-title i {
-            color: var(--primary);
-        }
-        
-        /* 数据查询区域 - 修改部分 */
-        .query-section {
-            background: transparent;
-            border-radius: 12px;
-            padding: 8px;
-            margin-bottom: 7px;
-            box-shadow: none;
-            border: none;
-            width: 100%;
-            height: auto;
-        }
-        
-        .query-form {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 8px;
-            align-items: center;
-        }
-
-        #data-query-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-        }
-        
-        .form-group {
-    width: 100%; /* 确保宽度100% */
-    margin-bottom: 20px;
-    position: relative;
-}
-        .form-group label {
-            font-weight: 500;
-            color: #555;
-            font-size: 14px; /* 减小字体 */
-        }
-        
-        #data-query-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-        }
-
-        #data-query-container .form-group {
-            flex: 0 0 22%; /* 固定宽度约为原来的1/3 */
-            margin: 0;
-        }
-
-        #data-query-container .form-group input,
-        #data-query-container .form-group select {
-            width: 100%;
-            padding: 8px 10px;
-            height: 36px;
-            box-sizing: border-box;
-        }
-
-        #data-query-container .btn-group {
-            flex: 0 0 auto;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            height: 36px;
-        }
-
-        .form-group input, .form-group select {
-            padding: 8px 10px;
-            border: 1px solid var(--gray);
-            border-radius: 8px;
-            font-size: 14px;
-            background: white;
-            transition: all 0.3s;
-            height: 36px;
-            width: 100%;
-        }
-        
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
-            outline: none;
-        }
-        
-        #data-query-container .btn-group {
-            display: flex;
-            gap: 8px;
-            margin-left: 0;
-            padding-bottom: 0;
-        }
-        
-        .query-btn, .export-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 15px; /* 减小内边距 */
-            border-radius: 8px;
-            font-size: 14px; /* 减小字体 */
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px; /* 减小间距 */
-            height: 36px; /* 固定高度 */
-            white-space: nowrap; /* 防止文本换行 */
-        }
-        
-        .export-btn {
-            background: var(--success);
-        }
-        
-        .query-btn:hover {
-            background: var(--secondary);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(26, 115, 232, 0.3);
-        }
-        
-        .export-btn:hover {
-            background: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-        }
-        
-        .query-btn:disabled, .export-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .query-btn .spinner {
-            display: none;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .query-btn.loading .spinner {
-            display: inline-block;
-        }
-        
-        .query-btn.loading span {
-            vertical-align: middle;
-        }
-        
-        .query-info {
-            margin-top: 10px; /* 减小上边距 */
-            color: #666;
-            font-size: 13px; /* 减小字体 */
-            padding: 6px; /* 减小内边距 */
-            border-radius: 8px;
-            background-color: transparent;
-            border-left: none;
-        }
-        
-        .query-info.error {
-            background-color: transparent;
-            border-left-color: none;
-            color: var(--danger);
-        }
-        
-        .query-info.error i {
-            color: var(--danger);
-        }
-        
-        .query-info.success {
-            background-color: transparent;
-            border-left-color: none;
-            color: var(--success);
-        }
-        
-        .query-info.success i {
-            color: var(--success);
-        }
-        
-        /* Excel 表格区域 */
-        .excel-section {
-            background: transparent;
-            border-radius: 12px;
-            padding: 8px;
-            box-shadow: none;
-            border: none;
-            margin-bottom: 7px;
-        }
-        
-        .excel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 7px;
-        }
-        
-        .table-container {
-            /* 报表在桌面和移动端均支持双向滚动 */
-            overflow-x: auto; /* 只允许横向滚动 */
-            overflow-y: hidden; /* 禁止纵向滚动以移除右侧滚动条 */
-            max-height: 600px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            position: relative;
-        }
-        
-        .table-container table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1000px; /* 确保表格不会过窄 */
-            /* 移除固定布局，让列宽自适应 */
-            table-layout: auto; 
-        }
-        
-        .table-container th {
-            background-color: var(--primary);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            white-space: nowrap;
-            padding: 12px 15px;
-        }
-        
-        .table-container th, .table-container td {
-            padding: 6px 10px; /* 减小行距 */
-            text-align: center;
-            border: 1px solid #ddd;
-            /* 移除最小宽度限制 */
-            min-width: 0;
-            /* 确保内容完整显示 */
-            white-space: normal;
-            word-break: break-word;
-            line-height: 1.2; /* 减小行高 */
-            vertical-align: middle;
-            /* 添加最大宽度限制防止内容过长 */
-            max-width: 300px;
-        }
-        
-        /* 确保数字列也居中对齐 */
-        .table-container .num-cell,
-        .table-container .num-col {
-            text-align: center !important;
-        }
-        
-        /* 综合数据报表数字列居中对齐 */
-        #comprehensive-table-container .num-cell,
-        #comprehensive-table-container .num-col {
-            text-align: center !important;
-        }
-        
-        /* 综合数据报表表格样式 */
-        #comprehensive-table-container {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            overflow: auto;
-            max-height: 600px;
-            position: relative;
-        }
-        
-        #comprehensive-table-container table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1000px;
-            table-layout: auto;
-        }
-        
-        #comprehensive-table-container th, #comprehensive-table-container td {
-            padding: 12px 15px;
-            text-align: center;
-            border: 1px solid #ddd;
-            min-width: 0;
-            white-space: normal;
-            word-break: break-word;
-            line-height: 1.5;
-            vertical-align: middle;
-            max-width: 300px;
-        }
-        
-        #comprehensive-table-container th {
-            background-color: var(--primary);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            white-space: nowrap;
-        }
-        
-        /* 单位信息左对齐 */
-        .unit-info-cell {
-            text-align: left !important;
-        }
-        
-        /* 充电数据看板表格数字列居中对齐 */
-        #charging-board-table-container .num-cell,
-        #charging-board-table-container .num-col {
-            text-align: center !important;
-        }
-        
-        /* 充电数据看板表格容器样式 */
-        #charging-board-table-container {
-            overflow-x: auto; /* 允许横向滚动 */
-            overflow-y: hidden; /* 禁止纵向滚动以移除右侧滚动条 */
-            max-height: 600px;
-        }
-        
-        /* 实时数据表格数字列居中对齐 */
-        #realtime-table .num-cell,
-        #realtime-table .num-col {
-            text-align: center !important;
-        }
-        
-        /* 站点数据统计板块样式 */
-        .site-stats-section {
-            margin-bottom: 7px;
-            background: transparent;
-            border-radius: 12px;
-            box-shadow: none;
-            border: none;
-            padding: 8px;
-        }
-        
-        .site-stats-container {
-            width: 100%;
-        }
-        
-        .stats-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding: 15px;
-            background: transparent;
-            border-radius: 8px;
-        }
-        
-        .data-mode-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .mode-btn {
-            padding: 8px 16px;
-            border: 2px solid #e9ecef;
-            background: #fff;
-            color: #6c757d;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .mode-btn:hover {
-            border-color: #007bff;
-            color: #007bff;
-        }
-        
-        .mode-btn.active {
-            background: #007bff;
-            border-color: #007bff;
-            color: #fff;
-        }
-        
-        .pagination-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .page-btn {
-            width: 35px;
-            height: 35px;
-            border: 2px solid #e9ecef;
-            background: #fff;
-            color: #6c757d;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .page-btn:hover:not(:disabled) {
-            border-color: #007bff;
-            color: #007bff;
-        }
-        
-        .page-btn:disabled {
-            background: #f8f9fa;
-            border-color: #e9ecef;
-            color: #adb5bd;
-            cursor: not-allowed;
-        }
-        
-        .page-info {
-            font-weight: 600;
-            color: #495057;
-            min-width: 80px;
-            text-align: center;
-        }
-        
-        .stats-data-container {
-            display: flex;
-            flex-direction: column;
-            gap: 0px;
-        }
-        
-        .site-data-section {
-            background: transparent;
-            border-radius: 0;
-            padding: 8px;
-            border: none;
-            margin-bottom: 0;
-        }
-        
-        .site-name-header {
-            font-size: 18px;
-            font-weight: 700;
-            color: #495057;
-            margin-bottom: 5px;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #007bff;
-            text-align: center;
-        }
-        
-        .data-item {
-            margin-bottom: 4px;
-            padding: 5px;
-            background: transparent;
-            border-radius: 0;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .site-name {
-            font-size: 14px;
-            color: #007bff;
-            font-weight: 700;
-            min-width: 80px;
-            flex-shrink: 0;
-            text-align: center;
-            background: transparent;
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: none;
-        }
-        
-        .site-name-spacer {
-            min-width: 80px;
-            flex-shrink: 0;
-        }
-        .data-label {
-            font-size: 14px;
-            color: #495057;
-            font-weight: 600;
-            min-width: 120px;
-            flex-shrink: 0;
-        }
-        .data-content {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-        }
-        
-        .progress-bar {
-            flex: 1;
-            height: 12px;
-            background: #e9ecef;
-            border-radius: 0px;  /* 改为方形：从6px改为0px */
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: #4b6bc4;  /* 改为纯绿色：删除渐变效果 */
-            border-radius: 0px;  /* 改为方形：从6px改为0px */
-            transition: width 0.8s ease;
-            position: relative;
-        }
-        
-        /* 移除渐变效果 */
-        .progress-fill::after {
-            display: none;
-        }
-        
-        /* 删除shimmer动画，因为不再需要渐变效果 */
-        
-        .progress-value {
-            min-width: 60px;
-            text-align: right;
-            font-weight: bold;
-            color: #495057;
-            font-size: 12px;
-        }
-        
-        /* 百分比颜色样式 */
-        .percentage-increase {
-            color: #28a745;
-            font-weight: bold;
-        }
-        
-        .percentage-decrease {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .stats-controls {
-                flex-direction: column;
-                gap: 5px;
-            }
-            
-            .stats-data-container {
-                flex-direction: column;
-            }
-            
-            .site-data-section {
-                width: 100%;
-            }
-            
-            .data-content {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .progress-bar {
-                width: 100%;
-            }
-        }
-        
-        /* 未充电时长统计表格数字列居中对齐 */
-        #uncharged-table .num-cell,
-        #uncharged-table .num-col {
-            text-align: center !important;
-        }
-        
-        .table-container tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        
-        .table-container tr:hover {
-            background-color: #f1f7ff;
-        }
-        
-        .table-container td:first-child {
-            font-weight: bold;
-            background-color: #f0f5ff;
-        }
-        
-        .data-info {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #666;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        /* 综合数据报表样式 */
-        .comprehensive-section {
-            background: transparent;
-            border-radius: 12px;
-            padding: 8px;
-            box-shadow: none;
-            border: none;
-            margin-bottom: 7px;
-        }
-        
-        .comprehensive-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 7px;
-        }
-        
-        /* 页脚 */
-        footer {
-            background: linear-gradient(90deg, var(--dark), var(--secondary));
-            color: white;
-            text-align: center;
-            padding: 20px;
-            font-size: 14px;
-            margin-top: auto;
-            width: 100%;
-        }
-        
-        /* ==================== 常用样式类（替代内联样式）==================== */
-        
-        /* 表格样式 */
-        .table-cell {
-            padding: 12px;
-            border: 1px solid #dee2e6;
-        }
-        
-        .table-cell-left {
-            padding: 12px;
-            border: 1px solid #dee2e6;
-            text-align: left;
-        }
-        
-        .table-cell-right {
-            padding: 12px;
-            border: 1px solid #dee2e6;
-            text-align: right;
-        }
-        
-        .table-header {
-            padding: 12px;
-            border: 1px solid #dee2e6;
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-        
-        .table-header-left {
-            padding: 12px;
-            border: 1px solid #dee2e6;
-            background: #f8f9fa;
-            font-weight: 600;
-            text-align: left;
-        }
-        
-        .table-header-right {
-            padding: 12px;
-            border: 1px solid #dee2e6;
-            background: #f8f9fa;
-            font-weight: 600;
-            text-align: right;
-        }
-        
-        .table-row-even {
-            background: #fff;
-        }
-        
-        .table-row-odd {
-            background: #f8f9fa;
-        }
-        
-        /* 按钮样式 */
-        .btn-primary {
-            background: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-        
-        .btn-primary:hover {
-            background: #0056b3;
-        }
-        
-        .btn-primary:disabled {
-            background: #adb5bd;
-            cursor: not-allowed;
-        }
-        
-        .btn-success {
-            background: #28a745;
-            color: #fff;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .btn-success:hover {
-            background: #218838;
-        }
-        
-        .btn-info {
-            background: #17a2b8;
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .btn-info:hover {
-            background: #138496;
-        }
-        
-        /* 容器样式 */
-        .container-flex {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
-        
-        .container-bg {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 10px;
-        }
-        
-        .container-bg-lg {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 15px;
-        }
-        
-        /* 文本样式 */
-        .text-muted {
-            color: #6c757d;
-        }
-        
-        .text-primary {
-            color: #495057;
-        }
-        
-        .text-center {
-            text-align: center;
-        }
-        
-        .text-right {
-            text-align: right;
-        }
-        
-        .text-left {
-            text-align: left;
-        }
-        
-        /* 间距样式 */
-        .mb-12 {
-            margin-bottom: 12px;
-        }
-        
-        .mb-16 {
-            margin-bottom: 16px;
-        }
-        
-        .mt-16 {
-            margin-top: 16px;
-        }
-        
-        .p-10 {
-            padding: 10px;
-        }
-        
-        .p-12 {
-            padding: 12px;
-        }
-        
-        .p-20 {
-            padding: 20px;
-        }
-        
-        /* 输入框样式 */
-        .input-field {
-            width: 220px;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        
-        .input-field-datetime {
-            width: 220px;
-            padding: 8px 30px 8px 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        
-        /* 选择框样式 */
-        .select-field {
-            width: 220px;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        
-        /* 加载提示 */
-        .loading-spinner {
-            padding: 20px;
-            text-align: center;
-            color: #666;
-        }
-        
-        .loading-spinner i {
-            font-size: 32px;
-            color: #007bff;
-        }
-        
-        /* 错误提示 */
-        .error-message {
-            color: #c00;
-            padding: 12px;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 6px;
-        }
-        
-        /* 成功提示 */
-        .success-message {
-            color: #155724;
-            padding: 12px;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 6px;
-        }
-        
-        /* 响应式调整 */
-        @media (max-width: 1200px) {
-            .chart-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .metric-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
-            
-            .income-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        @media (max-width: 900px) {
-            .layout {
-                margin-left: 0;
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-                top: 0;
-                order: 2;
-                display: none; /* 默认隐藏 */
-            }
-            
-            .sidebar.mobile-open {
-                display: block;
-            }
-            
-            /* 移动端空白页调整 */
-            #page-cd-data, #page-zh-data, #page-bill-data, #page-user-data, #page-other-data, #page-report-charging, #page-report-comprehensive, #page-report-user, #page-report-efficiency {
-                left: 0 !important;
-                top: 60px !important;
-            }
-            
-            .main-content {
-                order: 1;
-                width: 100%;
-            }
-            
-            #main-container {
-                padding-top: 60px;
-            }
-            
-            header {
-                height: 60px;
-                padding: 10px 15px;
-                position: relative;
-            }
-            
-            .logo h1 {
-                font-size: 18px;
-            }
-            
-            .mobile-menu-toggle {
-                display: block;
-                background: none;
-                border: none;
-                color: white;
-                font-size: 20px;
-                cursor: pointer;
-                padding: 5px;
-            }
-            
-            .query-form {
-                flex-direction: column;
-                gap: 5px;
-            }
-            
-            #data-query-container {
-                flex-direction: column;
-                gap: 5px;
-            }
-            
-            #data-query-container .form-group {
-                flex: 1;
-                width: 100%;
-            }
-            
-            #data-query-container .btn-group {
-                flex: none;
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .form-group {
-                width: 100% !important;
-                min-width: unset !important;
-            }
-            
-            .btn-group {
-                width: 100% !important;
-                justify-content: center !important;
-                flex-wrap: wrap;
-            }
-            
-            .query-btn, .export-btn {
-                min-width: 120px;
-                flex: 1;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .metric-grid {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-            
-            .income-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .metrics-row {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .metric-card {
-                min-width: unset;
-                width: 100%;
-            }
-            
-            .user-info .username {
-                display: none;
-            }
-            
-            .time-display {
-                font-size: 12px;
-                padding: 5px 8px;
-            }
-            
-            .logo h1 {
-                font-size: 16px;
-            }
-            
-            .chart-title {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .chart-title > div {
-                display: flex;
-                gap: 10px;
-                align-items: center;
-                width: 100%;
-                justify-content: flex-start;
-            }
-            
-            .table-container {
-                font-size: 12px;
-            }
-            
-            .table-container th, .table-container td {
-                padding: 8px 5px;
-                min-width: 80px;
-            }
-            
-            .metric-value {
-                font-size: 18px;
-            }
-            
-            .metric-label {
-                font-size: 12px;
-            }
-        }
-        @media (max-width: 480px) {
-            .login-container {
-                width: 95%;
-                margin: 10px;
-            }
-            
-            .form-container {
-                padding: 20px 15px;
-            }
-            
-            header {
-                padding: 8px 10px;
-                height: 50px;
-            }
-            
-            #main-container {
-                padding-top: 50px;
-            }
-            
-            .main-content {
-                padding: 10px;
-            }
-            
-            .query-section {
-                padding: 10px;
-            }
-            
-            .metric-card {
-                padding: 15px;
-            }
-            
-            .chart-container {
-                padding: 15px;
-            }
-            
-            .logo h1 {
-                font-size: 14px;
-            }
-            
-            .time-display {
-                font-size: 10px;
-                padding: 4px 6px;
-            }
-            
-            .section-title {
-                font-size: 18px;
-            }
-            
-            .metric-value {
-                font-size: 16px;
-            }
-            
-            .metric-label {
-                font-size: 11px;
-            }
-            
-            .query-btn, .export-btn {
-                padding: 10px 12px;
-                font-size: 14px;
-            }
-            
-            .table-container th, .table-container td {
-                padding: 6px 4px;
-                font-size: 11px;
-            }
-            
-            .chart-wrapper {
-                height: 250px;
-            }
-        }
-        /* 移动端日期选择器优化 */
-        @media (max-width: 768px) {
-            .custom-picker {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 90%;
-                max-width: 300px;
-                z-index: 2000;
-            }
-            
-            .date-picker-container {
-                position: relative;
-            }
-            
-            .table-container {
-                border-radius: 4px;
-            }
-            
-            .realtime-table-container {
-                height: 300px;
-            }
-            
-            .uncharged-table-container {
-                max-height: 300px;
-            }
-            
-            /* 表格左右滚动提示 */
-            .table-container::before {
-                content: "← 左右滚动查看更多";
-                position: absolute;
-                top: 5px;
-                right: 10px;
-                font-size: 10px;
-                color: #999;
-                z-index: 5;
-                background: rgba(255, 255, 255, 0.9);
-                padding: 2px 5px;
-                border-radius: 3px;
-            }
-        }
-
-        /* 登录表单图标显示样式 */
-#login-container .form-group i {
-    display: block;
-}
-#login-container .form-control {
-    padding: 12px 15px 12px 45px !important; /* 保持左侧内边距 */
-}
-
-/* 其他表单隐藏图标样式 */
-.main-content .form-group i {
-    display: none;
-}
-.main-content .form-control {
-    padding: 12px 15px !important; /* 移除左侧内边距 */
-}
-
-/* 短信验证码登录样式 */
-#smsLoginForm {
-    display: none;
-}
-
-#smsLoginForm .form-group {
-    position: relative;
-}
-
-#smsLoginForm .form-group:has(#smsCode) {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-#smsLoginForm #smsCode {
-    flex: 1;
-    padding: 12px 15px 12px 45px !important;
-}
-
-.btn-sms {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-    min-width: 100px;
-}
-
-.btn-sms:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-}
-
-.btn-sms:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-
-.btn-sms.countdown {
-    background: #999;
-    cursor: not-allowed;
-}
-
-/* 手机号输入框样式 */
-#smsPhone {
-    padding: 12px 15px 12px 45px !important;
-}
-
-/* 验证码输入框样式 */
-#smsCode {
-    padding: 12px 15px 12px 45px !important;
-}
-        /* 图表加载指示器 */
-        .chart-loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: #666;
-        }
-        
-        .chart-loading i {
-            font-size: 36px;
-            margin-bottom: 10px;
-            color: var(--primary);
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 0.5; transform: scale(0.9); }
-            50% { opacity: 1; transform: scale(1.1); }
-            100% { opacity: 0.5; transform: scale(0.9); }
-        }
-        
-        /* 数据加载指示器 */
-        .data-loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            color: var(--primary);
-            font-size: 16px;
-        }
-        
-        .data-loading i {
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-        
-        .data-type-select {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        /* 日期选择器改进 */
-        .form-group input[type="month"] {
-            cursor: pointer;
-            position: relative;
-        }
-        
-        .form-group input[type="month"]::-webkit-calendar-picker-indicator {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: auto;
-            height: auto;
-            color: transparent;
-            background: transparent;
-        }
-        
-        /* 自定义日期选择器容器 */
-        .custom-date-picker {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .date-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px;
-            background: #f5f5f5;
-            border-radius: 4px;
-        }
-        
-        .year-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .year-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px; /* 提升可见度 */
-            padding: 0 8px;
-            color: #555;
-            width: 28px;
-            height: 28px;
-            line-height: 28px;
-            text-align: center;
-        }
-        
-        .year-btn:hover {
-            color: var(--primary);
-        }
-        
-        .year-display {
-            font-weight: 600;
-            min-width: 60px;
-            text-align: center;
-        }
-        
-        .month-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-top: 10px;
-        }
-        
-        .month-btn {
-            padding: 8px 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            cursor: pointer;
-            text-align: center;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        
-        .month-btn:hover {
-            background: #f0f5ff;
-            border-color: var(--primary);
-        }
-        
-        .month-btn.selected {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        
-        /* 日期选择器容器 */
-        .date-picker-container {
-            position: relative;
-        }
-        
-        .custom-picker {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            width: 100%;
-            min-width: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-            display: none;
-        }
-        
-        /* 功能提示弹窗 */
-        .feature-popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 8px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            z-index: 3000;
-            text-align: center;
-            max-width: 90%;
-            width: 400px;
-            display: none;
-        }
-        
-        .feature-popup h3 {
-            margin-bottom: 7px;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .feature-popup .close-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 20px;
-            cursor: pointer;
-            color: #777;
-            background: none;
-            border: none;
-        }
-        
-        .feature-popup .popup-content {
-            margin-bottom: 7px;
-            font-size: 18px;
-            color: #555;
-        }
-        
-        .feature-popup .confirm-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .feature-popup .confirm-btn:hover {
-            background: var(--secondary);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(26, 115, 232, 0.3);
-        }
-
-        #metrics-container {
-            padding: 20px;
-            background: #f0f5ff;
-        }
-
-        .metrics-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .metrics-section {
-            margin-bottom: 25px;
-        }
-        
-        .metrics-section > .metrics-row {
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-/* 调整指标卡片宽度 */
-.metrics-section > .metrics-row:nth-child(1) .metric-item {
-    background: linear-gradient(135deg, rgba(26, 115, 232, 0.15), rgba(26, 115, 232, 0.05));
-    border-left: 4px solid var(--primary);
-}
-
-.metrics-section > .metrics-row:nth-child(2) .metric-item {
-    background: linear-gradient(135deg, rgba(0, 200, 83, 0.15), rgba(0, 200, 83, 0.05));
-    border-left: 4px solid var(--accent);
-}
-
-.metrics-section > .metrics-row:nth-child(3) .metric-item {
-    background: linear-gradient(135deg, rgba(156, 39, 176, 0.15), rgba(156, 39, 176, 0.05));
-    border-left: 4px solid #9c27b0;
-}
-
-.metrics-section > .metrics-row:nth-child(4) .metric-item {
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.05));
-    border-left: 4px solid #ffc107;
-}
-/* 悬停效果增强 */
-.metric-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-
-/* 调整指标值的颜色与卡片主题匹配 */
-.metrics-section > .metrics-row:nth-child(1) .metric-value {
-    color: var(--primary) !important;
-}
-
-.metrics-section > .metrics-row:nth-child(2) .metric-value {
-    color: var(--accent) !important;
-}
-
-.metrics-section > .metrics-row:nth-child(3) .metric-value {
-    color: #9c27b0 !important;
-}
-
-.metrics-section > .metrics-row:nth-child(4) .metric-value {
-    color: #ff9800 !important;
-}
-        .metrics-row {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .metric-card {
-            background: transparent;
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: none;
-            border: none;
-            flex: 1;
-            min-width: 300px;
-        }
-
-        .metric-card-title {
-            font-size: 16px;
-            margin-bottom: 5px;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding-bottom: 5px;
-            /* 移除了下面的横线 */
-    /* border-bottom: 2px solid var(--primary); */
-        }
-
-        .metric-card-title i {
-            color: var(--primary);
-        }
-
-       /* 修改网格布局为一行的四个项目 */
-.metric-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 改为4列 */
-    gap: 8px; /* 可以根据需要调整间距 */
-}
-
-/* 修改指标项背景为透明 */
-.metric-item {
-    padding: 8px;
-    border-radius: 8px;
-    background: transparent; /* 改为透明背景 */
-    text-align: center;
-    transition: all 0.3s;
-}
-
-        
-        /* 综合收入数据显示在一行 */
-        .income-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-
-        .metric-item {
-            padding: 8px;
-            border-radius: 8px;
-            background: transparent;
-            text-align: center;
-            transition: all 0.3s;
-        }
-
-        .metric-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .metric-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--primary);
-            margin: 5px 0;
-            white-space: nowrap;
-        }
-/* 在这里添加您的自定义颜色代码 */
-/* 本月充电数据数字颜色 */
-#month-charge, #month-electricity, #month-service, #month-orders {
-    color: #000000; /* 红色系 */
-}
-
-/* 本年度充电数据数字颜色 */
-#year-charge, #year-electricity, #year-service, #year-orders {
-    color: #0c0c0c; /* 青色系 */
-}
-
-/* 累计充电数据数字颜色 */
-#total-charge, #total-electricity, #total-service, #total-orders {
-    color: #0c0c0c; /* 蓝色系 */
-}
-/* 累计综合业务收入数字颜色 */
-#month-income, #year-income, #total-income {
-    color: #0c0c0c; /* 蓝色系 */
-}
-        .metric-label {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .chart-container {
-            background: transparent;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: none;
-            border: none;
-            margin-bottom: 7px;
-        }
-
-        .chart-title {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chart-title i {
-            color: var(--primary);
-        }
-
-        .chart-wrapper {
-            height: 300px;
-            position: relative;
-        }
-
-        .chart-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .chart-action-btn {
-            padding: 8px 15px;
-            background: #f0f5ff;
-            border: 1px solid var(--primary);
-            border-radius: 6px;
-            color: var(--primary);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        /* 综合收入看板特定样式 */
-        .chart-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 7px;
-            gap: 5px;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .control-group label {
-            font-weight: 600;
-            color: var(--dark);
-            white-space: nowrap;
-        }
-
-        .form-select {
-            padding: 8px 12px;
-            border: 1px solid var(--gray);
-            border-radius: 6px;
-            background: white;
-            min-width: 100px;
-        }
-
-        .table-wrapper {
-            margin-bottom: 7px;
-            overflow-x: auto;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .data-table th {
-            background: var(--primary);
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        .data-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--gray);
-        }
-
-        .data-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .data-table tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .chart-action-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        #report-section {
-            padding-top: 50px;
-        }
-        
-        /* 数据加载动画 */
-        .data-loading-indicator {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
-            color: var(--primary);
-        }
-        
-        .data-loading-indicator i {
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-/* 实时数据表格样式 */
-.realtime-table-container {
-    height: 400px; /* 将max-height改为固定高度 */
-    overflow: auto; /* 改为auto以便内容超出时可以滚动 */
-    position: relative;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-}
-
-#realtime-loading {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    padding: 20px;
-    color: var(--primary);
-    font-size: 16px;
-    width: 100%;
-    z-index: 5;
-}
-
-#realtime-loading i {
-    animation: spin 1s linear infinite;
-    margin-right: 10px;
-}
-
-#realtime-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-#realtime-table th {
-    background-color: var(--primary);
-    color: white;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    padding: 12px 15px;
-    text-align: center;
-}
-
-#realtime-table td {
-    padding: 10px 15px;
-    text-align: center;
-    border-bottom: 1px solid #eee;
-}
-
-#realtime-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-
-#realtime-table tr.highlight {
-    background-color:   #e0d0ff!important;
-    transition: background-color 0.5s ease;
-}
-
-#realtime-table tr:hover {
-    background-color: #f1f7ff;
-    cursor: pointer;
-}
- /* 未充电时长统计表格表头样式 */
-        #uncharged-table th {
-            background-color: #1a73e8 !important; /* 深蓝色背景 */
-            color: #ffffff !important; /* 白色文字 */
-            border: 1px solid #0d47a1 !important; /* 深蓝色边框 */
-            font-weight: 600;
-            padding: 12px 8px;
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        
-        /* 表格行样式 */
-        #uncharged-table tr:nth-child(even) {
-            background-color: #f8fbff;
-        }
-        
-        #uncharged-table tr:hover {
-            background-color: #e8f0fe;
-        }
-
-        /* 桌面端：报表容器显示底部横向滚动条并禁止单元格换行 */
-        @media (min-width: 901px) {
-            #table-container,
-            #comprehensive-table-container,
-            .table-wrapper {
-                overflow: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            #table-container th, #table-container td,
-            #comprehensive-table-container th, #comprehensive-table-container td {
-                white-space: nowrap;
-                word-break: keep-all;
-                max-width: none;
-            }
-
-            /* 让表格在内容较多时能触发横向滚动 */
-            #table-container table,
-            #comprehensive-table-container table {
-                table-layout: auto;
-                min-width: 1000px;
-            }
-        }
-
-        /* 整体情况概要 */
-        .overview-section {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 8px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow);
-        }
-        
-        .overview-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-        }
-        
-        .overview-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .overview-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-        }
-        
-        .overview-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-        }
-        
-        .overview-value-large {
-            font-size: 22px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 8px;
-        }
-        
-        .overview-name-large {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        
-        .overview-subtext {
-            font-size: 14px;
-            color: #888;
-            line-height: 1.4;
-        }
-
-        /* 响应式调整 */
-        @media (max-width: 1200px) {
-            .overview-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .overview-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* 按钮禁用状态样式 */
-        button:disabled {
-            background-color: #ccc !important;
-            cursor: not-allowed !important;
-            opacity: 0.6;
-        }
-
-        button:disabled:hover {
-            background-color: #ccc !important;
-            cursor: not-allowed !important;
-        }
-
-    </style>
+    <script id="leancloud-cdn" src="https://unpkg.com/leancloud-storage@4.13.2/dist/av-min.js" defer onerror="this.onerror=null; this.src='https://cdn.staticfile.org/leancloud-storage/4.13.2/av-min.js'; this.onerror=function(){ this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js'; };"></script>
 </head>
 <body>
     <!-- 星空背景 -->
@@ -2881,15 +465,15 @@
 
                         <!-- 开始时间（年月格式） -->
                         <div style="position:relative; width:220px;">
-                            <input id="bill-start-month" type="text" placeholder="开始年月" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showBillMonthPicker('bill-start-month', this)" />
-                            <button id="bill-start-month-btn" title="选择年月" onclick="showBillMonthPicker('bill-start-month', document.getElementById('bill-start-month'))" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <input id="bill-start-month" type="text" placeholder="开始年月" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('bill-start-month').show(this)" />
+                            <button id="bill-start-month-btn" title="选择年月" onclick="event.stopPropagation(); MonthPicker.getInstance('bill-start-month').show()" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                             <div id="bill-start-month-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                         </div>
 
                         <!-- 结束时间（年月格式） -->
                         <div style="position:relative; width:220px;">
-                            <input id="bill-end-month" type="text" placeholder="结束年月" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showBillMonthPicker('bill-end-month', this)" />
-                            <button id="bill-end-month-btn" title="选择年月" onclick="showBillMonthPicker('bill-end-month', document.getElementById('bill-end-month'))" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <input id="bill-end-month" type="text" placeholder="结束年月" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('bill-end-month').show(this)" />
+                            <button id="bill-end-month-btn" title="选择年月" onclick="event.stopPropagation(); MonthPicker.getInstance('bill-end-month').show()" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                             <div id="bill-end-month-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                         </div>
 
@@ -3091,15 +675,15 @@
 
                         <!-- 开始时间 -->
                         <div style="position:relative; width:220px;">
-                            <input id="zh-start-datetime" type="text" placeholder="开始时间" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" />
-                            <button id="zh-start-date-btn" title="选择日期" onclick="showZhMonthPicker('zh-start-datetime', document.getElementById('zh-start-datetime'))" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <input id="zh-start-datetime" type="text" placeholder="开始时间" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('zh-start-datetime').show(this)" />
+                            <button id="zh-start-date-btn" title="选择日期" onclick="event.stopPropagation(); MonthPicker.getInstance('zh-start-datetime').show()" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                             <div id="zh-start-datetime-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                         </div>
 
                         <!-- 结束时间 -->
                         <div style="position:relative; width:220px;">
-                            <input id="zh-end-datetime" type="text" placeholder="结束时间" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" />
-                            <button id="zh-end-date-btn" title="选择日期" onclick="showZhMonthPicker('zh-end-datetime', document.getElementById('zh-end-datetime'))" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                            <input id="zh-end-datetime" type="text" placeholder="结束时间" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('zh-end-datetime').show(this)" />
+                            <button id="zh-end-date-btn" title="选择日期" onclick="event.stopPropagation(); MonthPicker.getInstance('zh-end-datetime').show()" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                             <div id="zh-end-datetime-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                         </div>
 
@@ -3164,16 +748,16 @@
                             <!-- 开始日期 -->
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
-                                <input type="text" id="report-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('report-start-date', this)">
-                                <button id="report-start-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('report-start-date', document.getElementById('report-start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <input type="text" id="report-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('report-start-date').show(this)">
+                                <button id="report-start-date-btn" title="选择日期" onclick="event.stopPropagation(); MonthPicker.getInstance('report-start-date').show()" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="report-start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
                             <!-- 结束日期 -->
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
-                                <input type="text" id="report-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('report-end-date', this)">
-                                <button id="report-end-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('report-end-date', document.getElementById('report-end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <input type="text" id="report-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('report-end-date').show(this)">
+                                <button id="report-end-date-btn" title="选择日期" onclick="event.stopPropagation(); MonthPicker.getInstance('report-end-date').show()" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="report-end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
@@ -3239,16 +823,16 @@
                             <!-- 开始日期 -->
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
-                                <input type="text" id="eff-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('eff-start-date', this)">
-                                <button id="eff-start-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('eff-start-date', document.getElementById('eff-start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <input type="text" id="eff-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('eff-start-date').show(this)">
+                                <button id="eff-start-date-btn" title="选择日期" onclick="event.stopPropagation(); MonthPicker.getInstance('eff-start-date').show()" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="eff-start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
                             <!-- 结束日期 -->
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
-                                <input type="text" id="eff-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showMonthPicker('eff-end-date', this)">
-                                <button id="eff-end-date-btn" title="选择日期" onclick="event.stopPropagation(); showMonthPicker('eff-end-date', document.getElementById('eff-end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <input type="text" id="eff-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('eff-end-date').show(this)">
+                                <button id="eff-end-date-btn" title="选择日期" onclick="event.stopPropagation(); MonthPicker.getInstance('eff-end-date').show()" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="eff-end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
@@ -3344,16 +928,16 @@
                             <!-- 开始日期 -->
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
-                                <input type="text" id="comp-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showCompMonthPicker('comp-start-date', this)">
-                                <button id="comp-start-date-btn" title="选择日期" onclick="showCompMonthPicker('comp-start-date', document.getElementById('comp-start-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <input type="text" id="comp-start-date" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('comp-start-date').show(this)">
+                                <button id="comp-start-date-btn" title="选择日期" onclick="event.stopPropagation(); MonthPicker.getInstance('comp-start-date').show()" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="comp-start-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
                             <!-- 结束日期 -->
                             <div style="position:relative; width:220px;">
                                 <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
-                                <input type="text" id="comp-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showCompMonthPicker('comp-end-date', this)">
-                                <button id="comp-end-date-btn" title="选择日期" onclick="showCompMonthPicker('comp-end-date', document.getElementById('comp-end-date'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <input type="text" id="comp-end-date" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="MonthPicker.getInstance('comp-end-date').show(this)">
+                                <button id="comp-end-date-btn" title="选择日期" onclick="event.stopPropagation(); MonthPicker.getInstance('comp-end-date').show()" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
                                 <div id="comp-end-date-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
                             </div>
 
@@ -4127,43 +1711,8 @@
                 <div class="query-section">
                     <h2 class="section-title"><i class="fas fa-search"></i> 数据查询</h2>
                     <div class="query-form" id="data-query-form">
-                        <div class="form-group date-picker-container" style="flex: 0 0 18%;">
-                           <label for="start-date">开始日期</label>
-        <input type="text" id="start-date" placeholder="选择开始日期" style="width: 100%; height: 36px; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white;">
-        <div class="custom-picker" id="start-date-picker" style="width: 100%;">
-                                <div class="custom-date-picker">
-                                    <div class="date-header">
-                                        <div class="year-control">
-                                            <button type="button" class="year-btn prev-year" aria-label="上一年">‹</button>
-                                            <div class="year-display" id="start-year-display">2025</div>
-                                            <button type="button" class="year-btn next-year" aria-label="下一年">›</button>
-                                        </div>
-                                    </div>
-                                    <div class="month-grid" id="start-month-grid">
-                                        <!-- 月份按钮由JS生成 -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group date-picker-container" style="flex: 0 0 18%;">
-                             <label for="end-date">结束日期</label>
-        <input type="text" id="end-date" placeholder="选择结束日期" style="width: 100%; height: 36px; box-sizing: border-box; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white;">
-        <div class="custom-picker" id="end-date-picker" style="width: 100%;">
-                                <div class="custom-date-picker">
-                                    <div class="date-header">
-                                        <div class="year-control">
-                                            <button type="button" class="year-btn prev-year" aria-label="上一年">‹</button>
-                                            <div class="year-display" id="end-year-display">2025</div>
-                                            <button type="button" class="year-btn next-year" aria-label="下一年">›</button>
-                                        </div>
-                                    </div>
-                                    <div class="month-grid" id="end-month-grid">
-                                        <!-- 月份按钮由JS生成 -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- 开始日期和结束日期已在首页主查询区域使用 start-datetime 和 end-datetime -->
+                        <!-- 旧的 start-date 和 end-date 已废弃，统一使用 MonthPicker 类 -->
                         
                         <div class="form-group" style="flex: 0 0 18%;">
                             <label for="data-type">数据类型</label>
@@ -4284,12 +1833,24 @@
         
         // 删除旧的LEANCLOUD_APP_URL配置
         
-        // 初始化 LeanCloud
-        AV.init({
-            appId: APP_ID,
-            appKey: APP_KEY,
-            serverURL: SERVER_URL
-        });
+        // 初始化 LeanCloud（等待SDK加载完成）
+        function initLeanCloud() {
+            if (typeof AV === 'undefined') {
+                console.error('LeanCloud SDK未加载');
+                return false;
+            }
+            try {
+                AV.init({
+                    appId: APP_ID,
+                    appKey: APP_KEY,
+                    serverURL: SERVER_URL
+                });
+                return true;
+            } catch (error) {
+                console.error('LeanCloud初始化失败:', error);
+                return false;
+            }
+        }
         
                 // 登录记录相关函数
         // 记录用户登录
@@ -4565,21 +2126,42 @@
         }
 
         
-        // 获取DOM元素
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const resetForm = document.getElementById('resetForm');
-        const loginMessage = document.getElementById('loginMessage');
+        // 获取DOM元素（在DOM加载后执行）
+        let loginForm, registerForm, resetForm, loginMessage;
+        let showReset, showRegister, showSmsLogin;
+        let backToLoginFromRegister, backToLoginFromReset, backToLoginFromSms;
         
-        const showReset = document.getElementById('showReset');
-        const showRegister = document.getElementById('showRegister');
-        const showSmsLogin = document.getElementById('showSmsLogin');
-        const backToLoginFromRegister = document.getElementById('backToLoginFromRegister');
-        const backToLoginFromReset = document.getElementById('backToLoginFromReset');
-        const backToLoginFromSms = document.getElementById('backToLoginFromSms');
+        function initLoginElements() {
+            loginForm = document.getElementById('loginForm');
+            registerForm = document.getElementById('registerForm');
+            resetForm = document.getElementById('resetForm');
+            loginMessage = document.getElementById('loginMessage');
+            
+            showReset = document.getElementById('showReset');
+            showRegister = document.getElementById('showRegister');
+            showSmsLogin = document.getElementById('showSmsLogin');
+            backToLoginFromRegister = document.getElementById('backToLoginFromRegister');
+            backToLoginFromReset = document.getElementById('backToLoginFromReset');
+            backToLoginFromSms = document.getElementById('backToLoginFromSms');
+            
+            if (!loginForm || !registerForm || !resetForm || !loginMessage) {
+                console.error('登录表单元素未找到');
+                return false;
+            }
+            
+            // 绑定事件监听器
+            bindLoginEvents();
+            return true;
+        }
         
-        // 表单切换
-        showReset.addEventListener('click', (e) => {
+        function bindLoginEvents() {
+            if (!loginForm || !registerForm || !resetForm) {
+                console.error('登录表单元素未初始化');
+                return;
+            }
+            
+            // 表单切换
+            showReset.addEventListener('click', (e) => {
             e.preventDefault();
             loginForm.style.display = 'none';
             resetForm.style.display = 'block';
@@ -4720,8 +2302,8 @@
             }
         });
         
-        // 注册处理
-        registerForm.addEventListener('submit', async (e) => {
+            // 注册处理
+            registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const username = document.getElementById('registerUsername').value;
@@ -4766,8 +2348,8 @@
             }
         });
         
-        // 重置密码处理
-        resetForm.addEventListener('submit', async (e) => {
+            // 重置密码处理
+            resetForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const email = document.getElementById('resetEmail').value;
@@ -4787,14 +2369,19 @@
             }
         });
         
-        // 短信验证码登录处理
-        const smsLoginForm = document.getElementById('smsLoginForm');
-        const sendSmsCodeBtn = document.getElementById('sendSmsCode');
-        const smsPhoneInput = document.getElementById('smsPhone');
-        const smsCodeInput = document.getElementById('smsCode');
-        
-        // 发送验证码
-        sendSmsCodeBtn.addEventListener('click', async (e) => {
+            // 短信验证码登录处理
+            const smsLoginForm = document.getElementById('smsLoginForm');
+            const sendSmsCodeBtn = document.getElementById('sendSmsCode');
+            const smsPhoneInput = document.getElementById('smsPhone');
+            const smsCodeInput = document.getElementById('smsCode');
+            
+            if (!smsLoginForm || !sendSmsCodeBtn || !smsPhoneInput || !smsCodeInput) {
+                console.error('短信登录元素未找到');
+                return;
+            }
+            
+            // 发送验证码
+            sendSmsCodeBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             
             const phone = smsPhoneInput.value.trim();
@@ -4832,8 +2419,8 @@
             }
         });
         
-        // 短信验证码登录提交
-        smsLoginForm.addEventListener('submit', async (e) => {
+            // 短信验证码登录提交
+            smsLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const phone = smsPhoneInput.value.trim();
@@ -4885,33 +2472,48 @@
             } catch (error) {
                 showMessage('登录失败，请重试', 'error');
             }
-        });
-        // 倒计时功能
-        function startCountdown() {
-            let countdown = 60;
-            sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
-            sendSmsCodeBtn.classList.add('countdown');
+            });
             
-            const timer = setInterval(() => {
-                countdown--;
+            // 倒计时功能
+            function startCountdown() {
+                let countdown = 60;
                 sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
+                sendSmsCodeBtn.classList.add('countdown');
                 
-                if (countdown <= 0) {
-                    clearInterval(timer);
-                    sendSmsCodeBtn.disabled = false;
-                    sendSmsCodeBtn.textContent = '发送验证码';
-                    sendSmsCodeBtn.classList.remove('countdown');
-                }
-            }, 1000);
+                const timer = setInterval(() => {
+                    countdown--;
+                    sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
+                    
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+                        sendSmsCodeBtn.disabled = false;
+                        sendSmsCodeBtn.textContent = '发送验证码';
+                        sendSmsCodeBtn.classList.remove('countdown');
+                    }
+                }, 1000);
+            }
+            
+            // 将startCountdown函数暴露到全局作用域，以便其他地方可以调用
+            window.startCountdown = startCountdown;
         }
         
         // 初始化主页面系统函数（优化版：延迟加载）
+        // 首页数据加载状态标志
+        let homeDataLoaded = {
+            metrics: false,
+            income: false,
+            chargingBoard: false,
+            realtime: false,
+            siteStats: false,
+            uncharged: false
+        };
+
         function initMainSystem() {
             // 立即执行的初始化（不涉及网络请求）
             initMobileMenu();
             initMenuEvents();
             initDatePickers();
-            initCustomDatePickers();
+            // initCustomDatePickers() 已废弃，统一使用 MonthPicker 类
             initCharts();
             startClock();
             initChargingBoardExport();
@@ -4921,20 +2523,38 @@
 
             // 优先级1：立即加载主页可见的关键数据（延迟100ms，让页面先渲染）
             setTimeout(() => {
+                if (!homeDataLoaded.metrics) {
                 loadMetricsData(); // 主页指标数据
+                    homeDataLoaded.metrics = true;
+                }
+                if (!homeDataLoaded.income) {
                 loadIncomeDashboardData(); // 主页收入看板
+                    homeDataLoaded.income = true;
+                }
             }, 100);
             
             // 优先级2：延迟加载主页其他数据（延迟500ms）
             setTimeout(() => {
+                if (!homeDataLoaded.chargingBoard) {
                 loadChargingBoardData(); // 充电数据看板
+                    homeDataLoaded.chargingBoard = true;
+                }
+                if (!homeDataLoaded.realtime) {
                 loadRealtimeData(); // 实时数据
+                    homeDataLoaded.realtime = true;
+                }
             }, 500);
             
-            // 优先级3：延迟加载非关键数据（延迟1000ms，或在用户访问时加载）
+            // 优先级3：延迟加载站点统计和未充电时长统计数据（延迟1000ms，避免阻塞关键数据加载）
             setTimeout(() => {
-                loadSiteStatsData(); // 站点数据统计（在站点统计页面才需要）
-                loadUnchargedData(); // 未充电时长统计（在相应页面才需要）
+                if (!homeDataLoaded.siteStats) {
+                    loadSiteStatsData(); // 站点数据统计
+                    homeDataLoaded.siteStats = true;
+                }
+                if (!homeDataLoaded.uncharged) {
+                    loadUnchargedData(); // 未充电时长统计
+                    homeDataLoaded.uncharged = true;
+                }
             }, 1000);
             
 			// 添加页面关闭相关事件监听器，尽量在卸载前完成登出记录
@@ -5032,8 +2652,8 @@
         // 主页面相关变量
         const mainContainer = document.getElementById('main-container');
         const userDisplay = document.getElementById('user-display');
-        const startDateInput = document.getElementById('start-date');
-        const endDateInput = document.getElementById('end-date');
+        const startDateInput = document.getElementById('start-datetime');
+        const endDateInput = document.getElementById('end-datetime');
         const dataTypeSelect = document.getElementById('data-type');
         const queryBtn = document.getElementById('query-btn');
         const exportBtn = document.getElementById('report-export-btn');
@@ -5071,11 +2691,7 @@
         let currentExportFileName = '';
         let currentExportDataType = '';
         
-        // 自定义日期选择器变量
-        let startYear = 2025;
-        let startMonth = null;
-        let endYear = 2025;
-        let endMonth = null;
+        // 自定义日期选择器变量（已废弃，统一使用 MonthPicker 类）
 
         
         // 图表实例
@@ -5091,6 +2707,35 @@
         // GitHub数据文件URL
         const metricsDataUrl = 'https://www.csfhcdz.cn/data/homepage.xlsx';
         
+        // ========== 统一数据加载层：Excel文件加载和解析 ==========
+        /**
+         * 统一的Excel文件加载和解析函数
+         * @param {string} url - Excel文件URL
+         * @param {Object} options - 选项
+         * @param {boolean} options.useCache - 是否使用缓存（默认true，通过resourceCache）
+         * @param {boolean} options.forceCache - 是否强制缓存（默认false）
+         * @returns {Promise<Workbook>} - 返回解析后的XLSX Workbook对象
+         */
+        async function fetchAndParseExcel(url, options = {}) {
+            // 默认使用resourceCache进行缓存管理
+            const useCache = options.useCache !== false;
+            
+            if (useCache) {
+                // 使用resourceCache，它已经实现了缓存、去重等优化
+                return resourceCache.get(url, options);
+            } else {
+                // 不使用缓存，直接fetch（用于需要实时数据的场景）
+                const response = await fetch(url, options.fetchOptions || {});
+                if (!response.ok) {
+                    throw new Error(`Failed to load ${url}: ${response.statusText} (${response.status})`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                return workbook;
+            }
+        }
+
         // ========== 性能优化：资源缓存管理器 ==========
         const resourceCache = {
             cache: new Map(),
@@ -5282,134 +2927,10 @@
         }
         
         // 初始化自定义日期选择器
-        function initCustomDatePickers() {
-            const now = new Date();
-            startYear = now.getFullYear();
-            endYear = now.getFullYear();
-            
-            // 生成月份网格
-            const months = ['一月', '二月', '三月', '四月', '五月', '六月', 
-                            '七月', '八月', '九月', '十月', '十一月', '十二月'];
-            
-            const startMonthGrid = document.getElementById('start-month-grid');
-            const endMonthGrid = document.getElementById('end-month-grid');
-            
-            months.forEach((month, index) => {
-                const startBtn = document.createElement('button');
-                startBtn.className = 'month-btn';
-                startBtn.textContent = month;
-                startBtn.dataset.month = index + 1;
-                startBtn.addEventListener('click', function() {
-                    selectDataQueryMonth('start', index + 1);
-                });
-                startMonthGrid.appendChild(startBtn);
-                
-                const endBtn = document.createElement('button');
-                endBtn.className = 'month-btn';
-                endBtn.textContent = month;
-                endBtn.dataset.month = index + 1;
-                endBtn.addEventListener('click', function() {
-                    selectDataQueryMonth('end', index + 1);
-                });
-                endMonthGrid.appendChild(endBtn);
-            });
-            
-            // 设置年份显示
-            document.getElementById('start-year-display').textContent = startYear;
-            document.getElementById('end-year-display').textContent = endYear;
-            
-            // 年份控制按钮事件
-            document.querySelectorAll('#start-date-picker .prev-year').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    startYear--;
-                    document.getElementById('start-year-display').textContent = startYear;
-                });
-            });
-            
-            document.querySelectorAll('#start-date-picker .next-year').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    startYear++;
-                    document.getElementById('start-year-display').textContent = startYear;
-                });
-            });
-            
-            document.querySelectorAll('#end-date-picker .prev-year').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    endYear--;
-                    document.getElementById('end-year-display').textContent = endYear;
-                });
-            });
-            
-            document.querySelectorAll('#end-date-picker .next-year').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    endYear++;
-                    document.getElementById('end-year-display').textContent = endYear;
-                });
-            });
-            
-            // 点击外部关闭日期选择器
-            document.addEventListener('click', function(e) {
-                const startPicker = document.getElementById('start-date-picker');
-                const endPicker = document.getElementById('end-date-picker');
-                
-                if (!e.target.closest('.date-picker-container')) {
-                    startPicker.style.display = 'none';
-                    endPicker.style.display = 'none';
-                }
-            });
-            
-            // 日期输入框点击事件
-            startDateInput.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const picker = document.getElementById('start-date-picker');
-                picker.style.display = 'block';
-                document.getElementById('end-date-picker').style.display = 'none';
-            });
-            
-            endDateInput.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const picker = document.getElementById('end-date-picker');
-                picker.style.display = 'block';
-                document.getElementById('start-date-picker').style.display = 'none';
-            });
-        }
+        // initCustomDatePickers() 和 selectDataQueryMonth() 已废弃
+        // 统一使用 MonthPicker 类处理日期选择
         
-        // 选择月份
-        function selectDataQueryMonth(type, month) {
-            const year = type === 'start' ? startYear : endYear;
-            const formattedMonth = month.toString().padStart(2, '0');
-            const dateString = `${year}-${formattedMonth}`;
-            
-            if (type === 'start') {
-                startMonth = month;
-                startDateInput.value = dateString;
-                document.getElementById('start-date-picker').style.display = 'none';
-                
-                // 清除结束日期选择状态
-                document.querySelectorAll('#end-date-picker .month-btn').forEach(btn => {
-                    btn.classList.remove('selected');
-                });
-            } else {
-                endMonth = month;
-                endDateInput.value = dateString;
-                document.getElementById('end-date-picker').style.display = 'none';
-                
-                // 清除开始日期选择状态
-                document.querySelectorAll('#start-date-picker .month-btn').forEach(btn => {
-                    btn.classList.remove('selected');
-                });
-            }
-            
-            // 设置选中状态
-            document.querySelectorAll(`#${type}-month-grid .month-btn`).forEach(btn => {
-                btn.classList.remove('selected');
-                if (parseInt(btn.dataset.month) === month) {
-                    btn.classList.add('selected');
-                }
-            });
-        }
-        
-        // 初始化日期选择器
+        // 初始化日期选择器（使用新的 MonthPicker 类）
         function initDatePickers() {
             const now = new Date();
             let year = now.getFullYear();
@@ -5425,34 +2946,15 @@
             
             const defaultDate = `${year}-${(month + 1).toString().padStart(2, '0')}`;
             
-            startDateInput.value = defaultDate;
-            endDateInput.value = defaultDate;
+            // 设置默认日期值
+            if (startDateInput) {
+                startDateInput.value = defaultDate;
+            }
+            if (endDateInput) {
+                endDateInput.value = defaultDate;
+            }
             
-            // 设置自定义选择器状态
-            startYear = year;
-            endYear = year;
-            startMonth = month + 1;
-            endMonth = month + 1;
-            
-            document.getElementById('start-year-display').textContent = startYear;
-            document.getElementById('end-year-display').textContent = endYear;
-            
-            document.querySelectorAll(`#start-month-grid .month-btn`).forEach(btn => {
-                if (parseInt(btn.dataset.month) === startMonth) {
-                    btn.classList.add('selected');
-                } else {
-                    btn.classList.remove('selected');
-                }
-            });
-            
-            document.querySelectorAll(`#end-month-grid .month-btn`).forEach(btn => {
-                if (parseInt(btn.dataset.month) === endMonth) {
-                    btn.classList.add('selected');
-                } else {
-                    btn.classList.remove('selected');
-                }
-            });
-            
+            // 生成默认文件名
             defaultChargingFileName = generateFileName(defaultDate, defaultDate);
             defaultComprehensiveFileName = generateFileName(defaultDate, defaultDate);
         }
@@ -5490,16 +2992,8 @@
             
             loadingElement.style.display = 'block';
             
-            fetch(filePath)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: 文件未找到或无法访问`);
-                    }
-                    return response.arrayBuffer();
-                })
-                .then(arrayBuffer => {
-                    const data = new Uint8Array(arrayBuffer);
-                    const workbook = XLSX.read(data, { type: 'array' });
+            fetchAndParseExcel(filePath, { useCache: false })
+                .then(workbook => {
                     
                     // 获取第一个工作表
                     const firstSheetName = workbook.SheetNames[0];
@@ -5885,6 +3379,10 @@
             // 隐藏星空背景
             document.getElementById('nebula').style.display = 'none';
             document.getElementById('starfield').style.display = 'none';
+            
+            // 彻底停止星空动画，释放资源
+            stopStarfield();
+            
             document.getElementById('user-display').textContent = username;
             initMainSystem();
             
@@ -5977,9 +3475,10 @@
             document.getElementById('login-container').style.display = 'flex';
             document.getElementById('login-header-title').style.display = 'block';
             document.getElementById('login-footer-copyright').style.display = 'block';
-            // 显示星空背景
+            // 显示星空背景并重新启动动画
             document.getElementById('nebula').style.display = 'block';
             document.getElementById('starfield').style.display = 'block';
+            initStarfield();
             
             // 显示会话超时消息
             showMessage('会话超时，请重新登录', 'error');
@@ -6023,15 +3522,51 @@
 
         // 初始化系统
         window.addEventListener('DOMContentLoaded', function() {
-            // 首先检查登录状态
-            if (!checkLoginStatus()) {
-                // 如果没有有效登录状态，显示登录界面
-                document.getElementById('login-container').style.display = 'flex';
-                document.getElementById('main-container').style.display = 'none';
-                // 显示星空背景
-                document.getElementById('nebula').style.display = 'block';
-                document.getElementById('starfield').style.display = 'block';
+            // 等待LeanCloud SDK加载完成
+            function waitForLeanCloud(callback, maxAttempts = 50) {
+                let attempts = 0;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof AV !== 'undefined') {
+                        clearInterval(checkInterval);
+                        if (initLeanCloud()) {
+                            callback();
+                        } else {
+                            console.error('LeanCloud初始化失败');
+                            // 即使初始化失败，也继续初始化页面
+                            callback();
+                        }
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        console.error('LeanCloud SDK加载超时');
+                        // 即使SDK未加载，也继续初始化页面
+                        callback();
+                    }
+                }, 100);
             }
+            
+            // 初始化登录相关元素和事件
+            if (!initLoginElements()) {
+                console.error('登录元素初始化失败');
+                return;
+            }
+            
+            // 等待LeanCloud SDK加载后初始化
+            waitForLeanCloud(() => {
+                // 首先检查登录状态
+                if (!checkLoginStatus()) {
+                    // 如果没有有效登录状态，显示登录界面
+                    document.getElementById('login-container').style.display = 'flex';
+                    document.getElementById('main-container').style.display = 'none';
+                    // 显示星空背景
+                    document.getElementById('nebula').style.display = 'block';
+                    document.getElementById('starfield').style.display = 'block';
+                    // 初始化星空背景动画
+                    setTimeout(() => {
+                        initStarfield();
+                    }, 100);
+                }
+            });
         });
         
         // 时间显示更新
@@ -6248,8 +3783,8 @@ let availablePages = [];
 
 // 加载站点统计数据（优化版：使用缓存）
 function loadSiteStatsData() {
-    // 使用缓存管理器加载数据
-    resourceCache.get('https://www.csfhcdz.cn/data/hzsj.xlsx')
+    // 使用统一数据加载层加载数据
+    fetchAndParseExcel('https://www.csfhcdz.cn/data/hzsj.xlsx')
         .then(workbook => {
             
             // 获取Sheet1工作表
@@ -6626,7 +4161,7 @@ let chargingBoardData = [];
 // 加载充电数据看板数据
 function loadChargingBoardData() {
     // 使用缓存管理器加载数据（与loadMetricsData共享缓存）
-    resourceCache.get('https://www.csfhcdz.cn/data/homepage.xlsx')
+    fetchAndParseExcel('https://www.csfhcdz.cn/data/homepage.xlsx')
         .then(workbook => {
             
             // 获取Chargingdata工作表
@@ -6936,7 +4471,7 @@ function initChargingBoardExport() {
             }
             
             // 使用缓存管理器加载数据
-            resourceCache.get(metricsDataUrl)
+            fetchAndParseExcel(metricsDataUrl)
                 .then(workbook => {
                     // 处理指标数据（Metrics工作表）
                     const metricsSheet = workbook.Sheets['Metrics'];
@@ -7138,7 +4673,7 @@ function loadRealtimeData() {
     
     // 使用缓存管理器加载数据（实时数据，但使用短缓存）
     const url = 'https://www.csfhcdz.cn/data/daydata.xlsx?t=' + new Date().getTime();
-    resourceCache.get(url, { forceCache: false })
+    fetchAndParseExcel(url, { forceCache: false })
         .then(workbook => {
             
             // 获取第一个工作表
@@ -7526,7 +5061,7 @@ let incomeDashboardChart = null;
 async function loadIncomeDashboardData() {
     try {
         // 使用缓存管理器加载数据（与loadMetricsData和loadChargingBoardData共享缓存）
-        const workbook = await resourceCache.get('https://www.csfhcdz.cn/data/homepage.xlsx');
+        const workbook = await fetchAndParseExcel('https://www.csfhcdz.cn/data/homepage.xlsx');
         
         // 查找zgmysj工作表
         const sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('zgmysj'));
@@ -7904,7 +5439,7 @@ function loadUnchargedData() {
     
     // 使用缓存管理器加载数据（实时数据，但使用短缓存）
     const url = 'https://www.csfhcdz.cn/data/wcdsc.xlsx?t=' + new Date().getTime();
-    resourceCache.get(url, { forceCache: false })
+    fetchAndParseExcel(url, { forceCache: false })
         .then(workbook => {
             
             // 获取第一个工作表
@@ -8301,7 +5836,7 @@ function updateUnchargedTable() {
         async function loadOverviewData() {
             try {
                 // 使用缓存管理器加载数据
-                const workbook = await resourceCache.get('https://www.csfhcdz.cn/data/cddata.xlsx');
+                const workbook = await fetchAndParseExcel('https://www.csfhcdz.cn/data/cddata.xlsx');
                 
                 // 解析每个工作表的数据
                 parseOverviewSheetData(workbook);
@@ -8507,7 +6042,7 @@ function updateUnchargedTable() {
         async function getMaxDateFromSheet1() {
             try {
                 // 使用缓存管理器加载数据（与loadSiteStatsData和loadVisualizationData共享缓存）
-                const workbook = await resourceCache.get('https://www.csfhcdz.cn/data/hzsj.xlsx');
+                const workbook = await fetchAndParseExcel('https://www.csfhcdz.cn/data/hzsj.xlsx');
                 
                 // 获取Sheet1工作表
                 if (!workbook.Sheets['Sheet1']) {
@@ -8611,7 +6146,7 @@ function updateUnchargedTable() {
         async function loadVisualizationData() {
             try {
                 // 使用缓存管理器加载数据（与loadSiteStatsData共享缓存）
-                const workbook = await resourceCache.get('https://www.csfhcdz.cn/data/hzsj.xlsx');
+                const workbook = await fetchAndParseExcel('https://www.csfhcdz.cn/data/hzsj.xlsx');
                 
                 // 加载sheet2数据（站点数据）
                 if (workbook.Sheets['Sheet2']) {
@@ -9303,9 +6838,7 @@ function updateUnchargedTable() {
         // 加载行为数据
         async function loadBehaviorData() {
             try {
-                const response = await fetch('https://www.csfhcdz.cn/data/yhxw.xlsx?t=' + new Date().getTime());
-                const data = await response.arrayBuffer();
-                const workbook = XLSX.read(data, { type: 'array' });
+                const workbook = await fetchAndParseExcel('https://www.csfhcdz.cn/data/yhxw.xlsx?t=' + new Date().getTime(), { useCache: false });
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // 调试用
 
@@ -10046,9 +7579,7 @@ function updateUnchargedTable() {
         // 加载经营效率数据
         async function loadEfficiencyData() {
             try {
-                const response = await fetch('https://www.csfhcdz.cn/data/yyxl.xlsx?t=' + new Date().getTime());
-                const data = await response.arrayBuffer();
-                const workbook = XLSX.read(data, { type: 'array' });
+                const workbook = await fetchAndParseExcel('https://www.csfhcdz.cn/data/yyxl.xlsx?t=' + new Date().getTime(), { useCache: false });
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // 调试用
 
@@ -10633,21 +8164,35 @@ function updateUnchargedTable() {
                 efficiencyRefreshInterval = null;
             }
         }
+        // 星空背景动画相关变量
+        let starfieldAnimationId = null;
+        let starfieldResizeHandler = null;
+        let starfieldMouseHandler = null;
+        let starfieldTouchHandler = null;
+        let starfieldIsRunning = false;
+
         // 星空背景动画
         function initStarfield() {
             const canvas = document.getElementById('starfield');
             if (!canvas) return;
+            
+            // 如果已经在运行，先停止
+            if (starfieldIsRunning) {
+                stopStarfield();
+            }
             
             const ctx = canvas.getContext('2d');
             let stars = [];
             let mouse = {x: null, y: null, radius: 50};
 
             function resize() {
+                if (!starfieldIsRunning) return;
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
             }
 
-            window.addEventListener('resize', resize);
+            starfieldResizeHandler = resize;
+            window.addEventListener('resize', starfieldResizeHandler);
             resize();
 
             class Star {
@@ -10673,6 +8218,7 @@ function updateUnchargedTable() {
                 }
 
                 update() {
+                    if (!starfieldIsRunning) return;
                     this.x += this.vx;
                     this.y += this.vy;
                     if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
@@ -10707,6 +8253,7 @@ function updateUnchargedTable() {
             }
 
             function connect() {
+                if (!starfieldIsRunning) return;
                 // 为每颗星限制最多连线数量，将整体连线数量减少到原来的约 1/3
                 const maxConnectionsPerStar = 3;
                 const maxDistance = 100;
@@ -10730,26 +8277,72 @@ function updateUnchargedTable() {
             }
 
             function animate() {
+                if (!starfieldIsRunning) {
+                    // 如果已停止，清理画布并退出
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    return;
+                }
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 for (let star of stars) {
                     star.update();
                 }
                 connect();
-                requestAnimationFrame(animate);
+                starfieldAnimationId = requestAnimationFrame(animate);
             }
 
-            window.addEventListener('mousemove', (e) => {
+            starfieldMouseHandler = (e) => {
+                if (!starfieldIsRunning) return;
                 mouse.x = e.x;
                 mouse.y = e.y;
-            });
+            };
+            window.addEventListener('mousemove', starfieldMouseHandler);
+            
             // 移动端触控支持
-            window.addEventListener('touchmove', (e) => {
+            starfieldTouchHandler = (e) => {
+                if (!starfieldIsRunning) return;
                 const touch = e.touches[0];
                 mouse.x = touch.clientX;
                 mouse.y = touch.clientY;
-            });
+            };
+            window.addEventListener('touchmove', starfieldTouchHandler);
+            
+            starfieldIsRunning = true;
             init();
             animate();
+        }
+
+        // 停止星空动画
+        function stopStarfield() {
+            starfieldIsRunning = false;
+            
+            // 取消动画循环
+            if (starfieldAnimationId !== null) {
+                cancelAnimationFrame(starfieldAnimationId);
+                starfieldAnimationId = null;
+            }
+            
+            // 移除事件监听器
+            if (starfieldResizeHandler) {
+                window.removeEventListener('resize', starfieldResizeHandler);
+                starfieldResizeHandler = null;
+            }
+            
+            if (starfieldMouseHandler) {
+                window.removeEventListener('mousemove', starfieldMouseHandler);
+                starfieldMouseHandler = null;
+            }
+            
+            if (starfieldTouchHandler) {
+                window.removeEventListener('touchmove', starfieldTouchHandler);
+                starfieldTouchHandler = null;
+            }
+            
+            // 清空画布
+            const canvas = document.getElementById('starfield');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
         }
 
         // 左侧"数据查询"二级菜单与"平台首页"点击逻辑：显示/隐藏空白覆盖页
@@ -10796,6 +8389,10 @@ function updateUnchargedTable() {
                     hideAllPages();
                     pageCd.style.display = 'block';
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+                    // 初始化充电数据页面的日期选择器
+                    if (typeof initCdDatetimePickers === 'function') {
+                        initCdDatetimePickers();
+                    }
                     // 初始化充电平台选项显示
                     if (typeof onStationChange === 'function') {
                         onStationChange();
@@ -10876,6 +8473,41 @@ function updateUnchargedTable() {
 
                 function showHome() {
                     hideAllPages();
+                    
+                    // 懒加载首页数据（仅在首次访问或数据未加载时加载）
+                    // 优先级1：立即加载主页可见的关键数据
+                    if (!homeDataLoaded.metrics) {
+                        loadMetricsData();
+                        homeDataLoaded.metrics = true;
+                    }
+                    if (!homeDataLoaded.income) {
+                        loadIncomeDashboardData();
+                        homeDataLoaded.income = true;
+                    }
+                    
+                    // 优先级2：延迟加载主页其他数据
+                    setTimeout(() => {
+                        if (!homeDataLoaded.chargingBoard) {
+                            loadChargingBoardData();
+                            homeDataLoaded.chargingBoard = true;
+                        }
+                        if (!homeDataLoaded.realtime) {
+                            loadRealtimeData();
+                            homeDataLoaded.realtime = true;
+                        }
+                    }, 100);
+                    
+                    // 优先级3：懒加载非关键数据（站点统计和未充电时长统计）
+                    setTimeout(() => {
+                        if (!homeDataLoaded.siteStats) {
+                            loadSiteStatsData();
+                            homeDataLoaded.siteStats = true;
+                        }
+                        if (!homeDataLoaded.uncharged) {
+                            loadUnchargedData();
+                            homeDataLoaded.uncharged = true;
+                        }
+                    }, 300);
                 }
 
                 btnCd.addEventListener('click', function(e) { e.preventDefault(); if (breadcrumbLeaf) breadcrumbLeaf.textContent = '充电数据'; showCd(); });
@@ -11988,6 +9620,258 @@ function updateUnchargedTable() {
 
         // ==================== 统一工具函数 ====================
         
+        // 通用月份选择器类
+        class MonthPicker {
+            static instances = new Map(); // 存储所有实例
+            static activePicker = null;    // 当前活动的选择器
+            
+            constructor(inputId, options = {}) {
+                this.inputId = inputId;
+                this.inputElement = null; // 延迟初始化
+                
+                // 配置选项
+                this.pickerContainerId = options.pickerContainerId || `${inputId}-picker`;
+                this.format = options.format || 'YYYY-MM'; // 'YYYY-MM' 或 'YYYY-MM-DD HH:mm:ss'
+                this.isEndDate = options.isEndDate || false; // 是否为结束日期（用于日期时间格式）
+                this.onSelect = options.onSelect || null;    // 选择后的回调
+                this.buttonIds = options.buttonIds || [];    // 相关按钮ID（用于点击外部关闭判断）
+                
+                this.currentYear = new Date().getFullYear();
+                this.pickerContainer = null;
+                this.closeHandler = null;
+                
+                // 注册实例
+                MonthPicker.instances.set(inputId, this);
+                
+                // 延迟初始化元素（在show时再初始化）
+                this.initElements();
+            }
+            
+            // 初始化元素（延迟加载，因为可能在DOMContentLoaded之前调用）
+            initElements() {
+                if (!this.inputElement) {
+                    this.inputElement = ElementCache.get(this.inputId);
+                    if (!this.inputElement) {
+                        // 如果元素不存在，尝试直接查找（不使用缓存）
+                        this.inputElement = document.getElementById(this.inputId);
+                        if (this.inputElement) {
+                            ElementCache.cache.set(this.inputId, this.inputElement);
+                        }
+                    }
+                }
+                
+                if (!this.pickerContainer) {
+                    this.pickerContainer = ElementCache.get(this.pickerContainerId);
+                    if (!this.pickerContainer) {
+                        // 如果容器不存在，尝试直接查找（不使用缓存）
+                        this.pickerContainer = document.getElementById(this.pickerContainerId);
+                        if (this.pickerContainer) {
+                            ElementCache.cache.set(this.pickerContainerId, this.pickerContainer);
+                        } else {
+                            console.warn(`MonthPicker: 未找到picker容器 #${this.pickerContainerId}`);
+                        }
+                    }
+                }
+            }
+            
+            // 初始化picker容器（已废弃，使用initElements代替）
+            initPickerContainer() {
+                this.initElements();
+            }
+            
+            // 显示选择器
+            show(inputElement = null) {
+                // 确保元素已初始化
+                this.initElements();
+                
+                const targetInput = inputElement || this.inputElement;
+                if (!targetInput) {
+                    console.warn(`MonthPicker: 未找到input元素 #${this.inputId}`);
+                    return;
+                }
+                
+                if (!this.pickerContainer) {
+                    console.warn(`MonthPicker: 未找到picker容器 #${this.pickerContainerId}`);
+                    return;
+                }
+                
+                // 关闭其他选择器
+                MonthPicker.closeAll();
+                MonthPicker.activePicker = this;
+                
+                // 从输入框获取当前年份
+                const currentValue = targetInput.value;
+                if (currentValue) {
+                    const match = currentValue.match(/^\d{4}/);
+                    if (match) {
+                        this.currentYear = parseInt(match[0]);
+                    }
+                }
+                
+                // 设置容器宽度
+                const inputWidth = targetInput.offsetWidth;
+                this.pickerContainer.style.width = inputWidth + 'px';
+                
+                // 生成HTML
+                this.render();
+                
+                // 显示容器
+                this.pickerContainer.style.display = 'block';
+                
+                // 绑定点击外部关闭事件
+                this.bindCloseOnClickOutside(targetInput);
+            }
+            
+            // 渲染选择器HTML
+            render() {
+                const yearSpanId = `picker-year-${this.inputId}`;
+                const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+                
+                let pickerHTML = `
+                    <div style="padding:15px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <button onclick="MonthPicker.getInstance('${this.inputId}').changeYear(-1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="${yearSpanId}" style="font-size:16px; font-weight:bold;">${this.currentYear}年</span>
+                            <button onclick="MonthPicker.getInstance('${this.inputId}').changeYear(1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
+                `;
+                
+                months.forEach(month => {
+                    pickerHTML += `
+                        <button onclick="MonthPicker.getInstance('${this.inputId}').selectMonth(${month})" 
+                                style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" 
+                                onmouseover="this.style.background='#e9ecef'" 
+                                onmouseout="this.style.background='#fff'">${month}月</button>
+                    `;
+                });
+                
+                pickerHTML += `
+                        </div>
+                        <button onclick="MonthPicker.getInstance('${this.inputId}').close()" style="width:100%; padding:6px; background:#6c757d; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:13px;">取消</button>
+                    </div>
+                `;
+                
+                this.pickerContainer.innerHTML = pickerHTML;
+            }
+            
+            // 改变年份
+            changeYear(delta) {
+                this.currentYear += delta;
+                const yearSpan = ElementCache.get(`picker-year-${this.inputId}`);
+                if (yearSpan) {
+                    yearSpan.textContent = this.currentYear + '年';
+                }
+            }
+            
+            // 选择月份
+            selectMonth(month) {
+                const pad = n => (n < 10 ? '0' + n : '' + n);
+                let value = '';
+                
+                if (this.format === 'YYYY-MM-DD HH:mm:ss') {
+                    // 日期时间格式
+                    const firstDay = `${this.currentYear}-${pad(month)}-01`;
+                    if (this.isEndDate) {
+                        const lastDay = new Date(this.currentYear, month, 0).getDate();
+                        value = `${this.currentYear}-${pad(month)}-${pad(lastDay)} 23:59:59`;
+                    } else {
+                        value = `${firstDay} 00:00:00`;
+                    }
+                } else {
+                    // 年月格式
+                    value = `${this.currentYear}-${pad(month)}`;
+                }
+                
+                if (this.inputElement) {
+                    this.inputElement.value = value;
+                }
+                
+                // 执行回调
+                if (this.onSelect && typeof this.onSelect === 'function') {
+                    this.onSelect(value, this.inputId);
+                }
+                
+                this.close();
+            }
+            
+            // 关闭选择器
+            close() {
+                if (this.pickerContainer) {
+                    this.pickerContainer.style.display = 'none';
+                }
+                if (this.closeHandler) {
+                    document.removeEventListener('click', this.closeHandler);
+                    this.closeHandler = null;
+                }
+                if (MonthPicker.activePicker === this) {
+                    MonthPicker.activePicker = null;
+                }
+            }
+            
+            // 绑定点击外部关闭事件
+            bindCloseOnClickOutside(targetInput) {
+                setTimeout(() => {
+                    this.closeHandler = (e) => {
+                        // 检查是否点击在容器内
+                        if (this.pickerContainer && this.pickerContainer.contains(e.target)) {
+                            return;
+                        }
+                        
+                        // 检查是否点击在输入框上
+                        if (e.target === targetInput) {
+                            return;
+                        }
+                        
+                        // 检查是否点击在相关按钮上
+                        let isButton = false;
+                        for (const btnId of this.buttonIds) {
+                            const btn = ElementCache.get(btnId);
+                            if (btn && (e.target === btn || btn.contains(e.target))) {
+                                isButton = true;
+                                break;
+                            }
+                        }
+                        if (isButton) {
+                            return;
+                        }
+                        
+                        // 点击外部，关闭选择器
+                        this.close();
+                    };
+                    document.addEventListener('click', this.closeHandler);
+                }, 100);
+            }
+            
+            // 静态方法：获取实例
+            static getInstance(inputId) {
+                return MonthPicker.instances.get(inputId);
+            }
+            
+            // 静态方法：关闭所有选择器
+            static closeAll() {
+                MonthPicker.instances.forEach(picker => {
+                    if (picker !== MonthPicker.activePicker) {
+                        picker.close();
+                    }
+                });
+            }
+            
+            // 静态方法：创建并初始化选择器
+            static create(inputId, options = {}) {
+                // 如果已存在，先移除
+                if (MonthPicker.instances.has(inputId)) {
+                    MonthPicker.instances.get(inputId).close();
+                    MonthPicker.instances.delete(inputId);
+                }
+                return new MonthPicker(inputId, options);
+            }
+        }
+        
         // DOM元素缓存管理器
         const ElementCache = {
             cache: new Map(),
@@ -12093,10 +9977,10 @@ function updateUnchargedTable() {
             let tries = 0;
             const API_URL = 'https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery';
             const API_HEADERS = {
-                'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
-                'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                        'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
+                        'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
             };
 
             async function run() {
@@ -12162,7 +10046,7 @@ function updateUnchargedTable() {
                         return run();
                     }
                     throw err;
-                }
+            }
             }
 
             return run();
@@ -12606,7 +10490,7 @@ function updateUnchargedTable() {
         };
 
         function navigateHome() {
-            // 简单处理：关闭覆盖页，回到首页内容
+            // 关闭所有覆盖页，回到首页内容
             const overlay = document.getElementById('page-cd-data');
             if (overlay) overlay.style.display = 'none';
             const overlayBill = document.getElementById('page-bill-data');
@@ -12625,6 +10509,13 @@ function updateUnchargedTable() {
             if (overlayReportUser) overlayReportUser.style.display = 'none';
             const overlayReportEfficiency = document.getElementById('page-report-efficiency');
             if (overlayReportEfficiency) overlayReportEfficiency.style.display = 'none';
+            
+            // 触发首页菜单点击，确保数据懒加载
+            const btnHome = document.getElementById('menu-home');
+            if (btnHome) {
+                btnHome.click();
+            }
+            
             window.scrollTo(0, 0);
         }
 
@@ -14498,88 +12389,7 @@ function updateUnchargedTable() {
         let currentBillPickerYear = new Date().getFullYear();
 
         // 显示电费账单月份选择器
-        function showBillMonthPicker(targetId, inputElement) {
-            document.getElementById('bill-start-month-picker').style.display = 'none';
-            document.getElementById('bill-end-month-picker').style.display = 'none';
-
-            currentBillPickerTarget = targetId;
-            const targetInput = inputElement || document.getElementById(targetId);
-            const currentValue = targetInput.value;
-
-            if (currentValue && currentValue.match(/^\d{4}-\d{2}$/)) {
-                currentBillPickerYear = parseInt(currentValue.split('-')[0]);
-            } else {
-                currentBillPickerYear = new Date().getFullYear();
-            }
-
-            const pickerId = targetId === 'bill-start-month' ? 'bill-start-month-picker' : 'bill-end-month-picker';
-            const pickerContainer = document.getElementById(pickerId);
-
-            const inputWidth = targetInput.offsetWidth;
-            pickerContainer.style.width = inputWidth + 'px';
-
-            let pickerHTML = `
-                <div style="padding:15px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <button onclick="changeBillYear(-1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span id="bill-picker-year-${targetId}" style="font-size:16px; font-weight:bold;">${currentBillPickerYear}年</span>
-                        <button onclick="changeBillYear(1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
-                        <button onclick="selectBillMonth(1, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">1月</button>
-                        <button onclick="selectBillMonth(2, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">2月</button>
-                        <button onclick="selectBillMonth(3, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">3月</button>
-                        <button onclick="selectBillMonth(4, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">4月</button>
-                        <button onclick="selectBillMonth(5, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">5月</button>
-                        <button onclick="selectBillMonth(6, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">6月</button>
-                        <button onclick="selectBillMonth(7, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">7月</button>
-                        <button onclick="selectBillMonth(8, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">8月</button>
-                        <button onclick="selectBillMonth(9, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">9月</button>
-                        <button onclick="selectBillMonth(10, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">10月</button>
-                        <button onclick="selectBillMonth(11, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">11月</button>
-                        <button onclick="selectBillMonth(12, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">12月</button>
-                    </div>
-                    <button onclick="closeBillMonthPicker('${targetId}')" style="width:100%; padding:6px; background:#6c757d; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:13px;">取消</button>
-                </div>
-            `;
-
-            pickerContainer.innerHTML = pickerHTML;
-            pickerContainer.style.display = 'block';
-
-            setTimeout(() => {
-                const closeOnClickOutside = (e) => {
-                    if (!pickerContainer.contains(e.target) && e.target !== targetInput) {
-                        pickerContainer.style.display = 'none';
-                        document.removeEventListener('click', closeOnClickOutside);
-                    }
-                };
-                document.addEventListener('click', closeOnClickOutside);
-            }, 100);
-        }
-
-        function changeBillYear(delta) {
-            currentBillPickerYear += delta;
-            const yearSpan = document.getElementById('bill-picker-year-' + currentBillPickerTarget);
-            if (yearSpan) {
-                yearSpan.textContent = currentBillPickerYear + '年';
-            }
-        }
-
-        function selectBillMonth(month, targetId) {
-            const yearMonth = `${currentBillPickerYear}-${String(month).padStart(2, '0')}`;
-            document.getElementById(targetId).value = yearMonth;
-            closeBillMonthPicker(targetId);
-        }
-
-        function closeBillMonthPicker(targetId) {
-            const pickerId = targetId === 'bill-start-month' ? 'bill-start-month-picker' : 'bill-end-month-picker';
-            document.getElementById(pickerId).style.display = 'none';
-            currentBillPickerTarget = null;
-        }
+        // 电费账单月份选择器包装函数已删除，统一使用 MonthPicker 类
 
         // 电费账单查询相关变量
         let __lastBillQueryResults = null;
@@ -16759,6 +14569,84 @@ function updateUnchargedTable() {
             }
         }
 
+        // 初始化充电数据页面的日期选择器
+        function initCdDatetimePickers() {
+            try {
+                const startEl = document.getElementById('start-datetime');
+                const endEl = document.getElementById('end-datetime');
+                if (!startEl || !endEl) return;
+
+                // 设置默认值：始终设置为当前日期
+                // 开始时间为当天 00:00:00，结束时间为当天 23:59:59
+                const now = new Date();
+                const today = now.toISOString().slice(0, 10);
+                
+                // 强制设置为当前日期
+                startEl.value = today + ' 00:00:00';
+                endEl.value = today + ' 23:59:59';
+
+                // 添加日期选择器
+                function attachDateBehavior(input, isEnd) {
+                    const btn = document.getElementById(isEnd ? 'end-datetime-btn' : 'start-datetime-btn');
+                    if (!btn) return;
+
+                    // 如果已经绑定过事件，先移除旧的事件监听器
+                    const newBtn = btn.cloneNode(true);
+                    btn.parentNode.replaceChild(newBtn, btn);
+
+                    const hiddenPicker = document.createElement('input');
+                    hiddenPicker.type = 'date';
+                    hiddenPicker.style.position = 'fixed';
+                    hiddenPicker.style.opacity = '0';
+                    hiddenPicker.style.pointerEvents = 'none';
+                    hiddenPicker.style.width = '0';
+                    hiddenPicker.style.height = '0';
+                    document.body.appendChild(hiddenPicker);
+
+                    function openPicker() {
+                        const rect = input.getBoundingClientRect();
+                        hiddenPicker.style.left = `${Math.max(0, rect.left)}px`;
+                        hiddenPicker.style.top = `${Math.max(0, rect.bottom)}px`;
+
+                        // 从输入框获取当前日期
+                        const currentValue = input.value;
+                        if (currentValue && /^\d{4}-\d{2}-\d{2}/.test(currentValue)) {
+                            hiddenPicker.value = currentValue.slice(0, 10);
+                        }
+
+                        hiddenPicker.focus();
+                        try {
+                            if (hiddenPicker.showPicker) {
+                                hiddenPicker.showPicker();
+                            }
+                        } catch (e) {
+                            // 如果showPicker不支持，尝试点击
+                        }
+                        hiddenPicker.click();
+                    }
+
+                    newBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openPicker();
+                    });
+
+                    hiddenPicker.addEventListener('change', function() {
+                        const v = hiddenPicker.value;
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                            input.value = isEnd ? `${v} 23:59:59` : `${v} 00:00:00`;
+                        }
+                        input.focus();
+                    });
+                }
+
+                attachDateBehavior(startEl, false);
+                attachDateBehavior(endEl, true);
+            } catch (e) {
+                console.error('初始化充电数据页面日期选择器失败:', e);
+            }
+        }
+
         // 初始化用户数据页面的日期选择器
         function initUserDatetimePickers() {
             try {
@@ -17145,14 +15033,102 @@ function updateUnchargedTable() {
         let chargingReportData = null;
         let compReportData = null;
 
+        // 初始化所有月份选择器
+        function initMonthPickers() {
+            // 首页主查询区域（充电数据页面）使用原生日期选择器，不再使用 MonthPicker
+            
+            // 充电数据报表
+            MonthPicker.create('report-start-date', {
+                pickerContainerId: 'report-start-date-picker',
+                format: 'YYYY-MM',
+                buttonIds: ['report-start-date-btn']
+            });
+            MonthPicker.create('report-end-date', {
+                pickerContainerId: 'report-end-date-picker',
+                format: 'YYYY-MM',
+                buttonIds: ['report-end-date-btn']
+            });
+            
+            // 充电效率分析
+            MonthPicker.create('eff-start-date', {
+                pickerContainerId: 'eff-start-date-picker',
+                format: 'YYYY-MM',
+                buttonIds: ['eff-start-date-btn']
+            });
+            MonthPicker.create('eff-end-date', {
+                pickerContainerId: 'eff-end-date-picker',
+                format: 'YYYY-MM',
+                buttonIds: ['eff-end-date-btn']
+            });
+            
+            // 电费账单
+            MonthPicker.create('bill-start-month', {
+                pickerContainerId: 'bill-start-month-picker',
+                format: 'YYYY-MM',
+                buttonIds: ['bill-start-month-btn']
+            });
+            MonthPicker.create('bill-end-month', {
+                pickerContainerId: 'bill-end-month-picker',
+                format: 'YYYY-MM',
+                buttonIds: ['bill-end-month-btn']
+            });
+            
+            // 综合数据报表
+            MonthPicker.create('comp-start-date', {
+                pickerContainerId: 'comp-start-date-picker',
+                format: 'YYYY-MM',
+                buttonIds: ['comp-start-date-btn']
+            });
+            MonthPicker.create('comp-end-date', {
+                pickerContainerId: 'comp-end-date-picker',
+                format: 'YYYY-MM',
+                buttonIds: ['comp-end-date-btn']
+            });
+            
+            // 综合数据（日期时间格式）
+            MonthPicker.create('zh-start-datetime', {
+                pickerContainerId: 'zh-start-datetime-picker',
+                format: 'YYYY-MM-DD HH:mm:ss',
+                isEndDate: false,
+                buttonIds: ['zh-start-date-btn']
+            });
+            MonthPicker.create('zh-end-datetime', {
+                pickerContainerId: 'zh-end-datetime-picker',
+                format: 'YYYY-MM-DD HH:mm:ss',
+                isEndDate: true,
+                buttonIds: ['zh-end-date-btn']
+            });
+        }
+
         // 初始化日期为当前年月
         document.addEventListener('DOMContentLoaded', function() {
             const now = new Date();
+            let year = now.getFullYear();
+            let month = now.getMonth(); // 0-11
+            
+            // 设置默认值为上个月
+            if (month === 0) {
+                year--;
+                month = 11;
+            } else {
+                month--;
+            }
+            
+            const defaultYearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
             const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            
+            // 初始化首页主查询区域的日期（充电数据页面，使用日期时间格式）
+            // 默认值将在 showCd() 时通过 initCdDatetimePickers() 设置
+            
+            // 初始化报表查询区域的日期（使用当前月作为默认值）
             const reportStartInput = document.getElementById('report-start-date');
             const reportEndInput = document.getElementById('report-end-date');
             if (reportStartInput) reportStartInput.value = currentYearMonth;
             if (reportEndInput) reportEndInput.value = currentYearMonth;
+            
+            // 初始化所有月份选择器实例
+            initMonthPickers();
+            
             const effStartInput = document.getElementById('eff-start-date');
             const effEndInput = document.getElementById('eff-end-date');
             if (effStartInput) effStartInput.value = currentYearMonth;
@@ -17216,137 +15192,7 @@ function updateUnchargedTable() {
             }
         }
 
-        // 月份选择器相关功能
-        function showMonthPicker(targetId, inputElement) {
-            // 关闭其他选择器
-            const reportStartPicker = document.getElementById('report-start-date-picker');
-            const reportEndPicker = document.getElementById('report-end-date-picker');
-            const defaultStartPicker = document.getElementById('start-date-picker');
-            const defaultEndPicker = document.getElementById('end-date-picker');
-            const effStartPicker = document.getElementById('eff-start-date-picker');
-            const effEndPicker = document.getElementById('eff-end-date-picker');
-            if (reportStartPicker) reportStartPicker.style.display = 'none';
-            if (reportEndPicker) reportEndPicker.style.display = 'none';
-            if (defaultStartPicker) defaultStartPicker.style.display = 'none';
-            if (defaultEndPicker) defaultEndPicker.style.display = 'none';
-            if (effStartPicker) effStartPicker.style.display = 'none';
-            if (effEndPicker) effEndPicker.style.display = 'none';
-            document.getElementById('month-picker-modal').style.display = 'none';
-            
-            currentPickerTarget = targetId;
-            const targetInput = inputElement || document.getElementById(targetId);
-            const currentValue = targetInput.value;
-
-            if (currentValue && currentValue.match(/^\d{4}-\d{2}$/)) {
-                currentPickerYear = parseInt(currentValue.split('-')[0]);
-            } else {
-                currentPickerYear = new Date().getFullYear();
-            }
-
-            // 确定使用哪个选择器容器（支持报表和充电效率页面）
-            let pickerId = '';
-            if (targetId === 'report-start-date') pickerId = 'report-start-date-picker';
-            else if (targetId === 'report-end-date') pickerId = 'report-end-date-picker';
-            else if (targetId === 'eff-start-date') pickerId = 'eff-start-date-picker';
-            else if (targetId === 'eff-end-date') pickerId = 'eff-end-date-picker';
-            else pickerId = 'report-start-date-picker';
-
-            const pickerContainer = document.getElementById(pickerId);
-            if (!pickerContainer) return;
-            
-            // 设置选择器宽度与输入框一致
-            const inputWidth = targetInput.offsetWidth;
-            pickerContainer.style.width = inputWidth + 'px';
-            
-            // 生成选择器内容
-            let pickerHTML = `
-                <div style="padding:15px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <button onclick="changeYear(-1, event)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span id="picker-year-${targetId}" style="font-size:16px; font-weight:bold;">${currentPickerYear}年</span>
-                        <button onclick="changeYear(1, event)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
-                        <button onclick="selectMonthForPicker(1, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">1月</button>
-                        <button onclick="selectMonthForPicker(2, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">2月</button>
-                        <button onclick="selectMonthForPicker(3, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">3月</button>
-                        <button onclick="selectMonthForPicker(4, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">4月</button>
-                        <button onclick="selectMonthForPicker(5, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">5月</button>
-                        <button onclick="selectMonthForPicker(6, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">6月</button>
-                        <button onclick="selectMonthForPicker(7, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">7月</button>
-                        <button onclick="selectMonthForPicker(8, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">8月</button>
-                        <button onclick="selectMonthForPicker(9, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">9月</button>
-                        <button onclick="selectMonthForPicker(10, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">10月</button>
-                        <button onclick="selectMonthForPicker(11, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">11月</button>
-                        <button onclick="selectMonthForPicker(12, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">12月</button>
-                    </div>
-                    <button onclick="closeMonthPickerForInput('${targetId}')" style="width:100%; padding:6px; background:#6c757d; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:13px;">取消</button>
-                </div>
-            `;
-            
-            pickerContainer.innerHTML = pickerHTML;
-            pickerContainer.style.display = 'block';
-            
-            // 点击外部区域关闭选择器
-            setTimeout(() => {
-                const startDateBtn = document.getElementById('report-start-date-btn');
-                const endDateBtn = document.getElementById('report-end-date-btn');
-                const effStartBtn = document.getElementById('eff-start-date-btn');
-                const effEndBtn = document.getElementById('eff-end-date-btn');
-                const closeOnClickOutside = (e) => {
-                    const isStartDateBtn = e.target === startDateBtn || (startDateBtn && startDateBtn.contains(e.target));
-                    const isEndDateBtn = e.target === endDateBtn || (endDateBtn && endDateBtn.contains(e.target));
-                    const isEffStartBtn = e.target === effStartBtn || (effStartBtn && effStartBtn.contains(e.target));
-                    const isEffEndBtn = e.target === effEndBtn || (effEndBtn && effEndBtn.contains(e.target));
-                    if (!pickerContainer.contains(e.target) && e.target !== targetInput && !isStartDateBtn && !isEndDateBtn && !isEffStartBtn && !isEffEndBtn) {
-                        pickerContainer.style.display = 'none';
-                        document.removeEventListener('click', closeOnClickOutside);
-                    }
-                };
-                document.addEventListener('click', closeOnClickOutside);
-            }, 100);
-        }
-        
-        function changeYear(delta, event) {
-            if (event) {
-                event.stopPropagation();
-                event.preventDefault();
-            }
-            currentPickerYear += delta;
-            const yearSpan = document.getElementById('picker-year-' + currentPickerTarget);
-            if (yearSpan) {
-                yearSpan.textContent = currentPickerYear + '年';
-            }
-            // 同时更新旧的picker-year（兼容性）
-            const oldYearSpan = document.getElementById('picker-year');
-            if (oldYearSpan) {
-                oldYearSpan.textContent = currentPickerYear + '年';
-            }
-        }
-        
-        function selectMonthForPicker(month, targetId) {
-            const yearMonth = `${currentPickerYear}-${String(month).padStart(2, '0')}`;
-            document.getElementById(targetId).value = yearMonth;
-            closeMonthPickerForInput(targetId);
-        }
-        
-        function closeMonthPickerForInput(targetId) {
-            let pickerId = '';
-            if (targetId === 'report-start-date') pickerId = 'report-start-date-picker';
-            else if (targetId === 'report-end-date') pickerId = 'report-end-date-picker';
-            else if (targetId === 'eff-start-date') pickerId = 'eff-start-date-picker';
-            else if (targetId === 'eff-end-date') pickerId = 'eff-end-date-picker';
-            else pickerId = 'report-start-date-picker';
-            const picker = document.getElementById(pickerId);
-            if (picker) {
-                picker.style.display = 'none';
-            }
-            currentPickerTarget = null;
-        }
+        // 月份选择器包装函数已删除，统一使用 MonthPicker 类
 
         // 旧的selectMonth函数（保留用于兼容）
         function selectMonth(month) {
@@ -17393,7 +15239,7 @@ function updateUnchargedTable() {
             // 显示加载状态（使用ElementCache和CSS类）
             const reportResult = ElementCache.get('report-result');
             if (reportResult) {
-                reportResult.style.display = 'block';
+            reportResult.style.display = 'block';
                 reportResult.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><br><br>正在查询数据，请稍候...</div>';
             }
 
@@ -18464,197 +16310,7 @@ function updateUnchargedTable() {
         }
 
         // 综合报表月份选择器相关功能
-        function showCompMonthPicker(targetId, inputElement) {
-            document.getElementById('comp-start-date-picker').style.display = 'none';
-            document.getElementById('comp-end-date-picker').style.display = 'none';
-
-            currentCompPickerTarget = targetId;
-            const targetInput = inputElement || document.getElementById(targetId);
-            const currentValue = targetInput.value;
-
-            if (currentValue && currentValue.match(/^\d{4}-\d{2}$/)) {
-                currentCompPickerYear = parseInt(currentValue.split('-')[0]);
-            } else {
-                currentCompPickerYear = new Date().getFullYear();
-            }
-
-            const pickerId = targetId === 'comp-start-date' ? 'comp-start-date-picker' : 'comp-end-date-picker';
-            const pickerContainer = document.getElementById(pickerId);
-
-            const inputWidth = targetInput.offsetWidth;
-            pickerContainer.style.width = inputWidth + 'px';
-
-            let pickerHTML = `
-                <div style="padding:15px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <button onclick="changeCompYear(-1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span id="comp-picker-year-${targetId}" style="font-size:16px; font-weight:bold;">${currentCompPickerYear}年</span>
-                        <button onclick="changeCompYear(1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
-                        <button onclick="selectCompMonth(1, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">1月</button>
-                        <button onclick="selectCompMonth(2, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">2月</button>
-                        <button onclick="selectCompMonth(3, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">3月</button>
-                        <button onclick="selectCompMonth(4, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">4月</button>
-                        <button onclick="selectCompMonth(5, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">5月</button>
-                        <button onclick="selectCompMonth(6, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">6月</button>
-                        <button onclick="selectCompMonth(7, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">7月</button>
-                        <button onclick="selectCompMonth(8, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">8月</button>
-                        <button onclick="selectCompMonth(9, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">9月</button>
-                        <button onclick="selectCompMonth(10, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">10月</button>
-                        <button onclick="selectCompMonth(11, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">11月</button>
-                        <button onclick="selectCompMonth(12, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">12月</button>
-                    </div>
-                    <button onclick="closeCompMonthPicker('${targetId}')" style="width:100%; padding:6px; background:#6c757d; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:13px;">取消</button>
-                </div>
-            `;
-
-            pickerContainer.innerHTML = pickerHTML;
-            pickerContainer.style.display = 'block';
-
-            setTimeout(() => {
-                const closeOnClickOutside = (e) => {
-                    if (!pickerContainer.contains(e.target) && e.target !== targetInput) {
-                        pickerContainer.style.display = 'none';
-                        document.removeEventListener('click', closeOnClickOutside);
-                    }
-                };
-                document.addEventListener('click', closeOnClickOutside);
-            }, 100);
-        }
-
-        function changeCompYear(delta) {
-            currentCompPickerYear += delta;
-            const yearSpan = document.getElementById('comp-picker-year-' + currentCompPickerTarget);
-            if (yearSpan) {
-                yearSpan.textContent = currentCompPickerYear + '年';
-            }
-        }
-
-        function selectCompMonth(month, targetId) {
-            const yearMonth = `${currentCompPickerYear}-${String(month).padStart(2, '0')}`;
-            document.getElementById(targetId).value = yearMonth;
-            closeCompMonthPicker(targetId);
-        }
-
-        function closeCompMonthPicker(targetId) {
-            const pickerId = targetId === 'comp-start-date' ? 'comp-start-date-picker' : 'comp-end-date-picker';
-            document.getElementById(pickerId).style.display = 'none';
-            currentCompPickerTarget = null;
-        }
-
-        // 充电数据报表月份选择器相关变量
-        let currentZhPickerTarget = null;
-        let currentZhPickerYear = new Date().getFullYear();
-
-        // 显示充电数据报表月份选择器
-        function showZhMonthPicker(targetId, inputElement) {
-            document.getElementById('zh-start-datetime-picker').style.display = 'none';
-            document.getElementById('zh-end-datetime-picker').style.display = 'none';
-
-            currentZhPickerTarget = targetId;
-            const targetInput = inputElement || document.getElementById(targetId);
-            const currentValue = targetInput.value;
-
-            // 从日期时间格式中提取年月，格式可能是 YYYY-MM-DD HH:mm:ss 或 YYYY-MM
-            let year, month;
-            if (currentValue && currentValue.match(/^\d{4}-\d{2}/)) {
-                const parts = currentValue.split('-');
-                year = parseInt(parts[0]);
-                month = parseInt(parts[1]);
-            } else if (currentValue && currentValue.match(/^\d{4}-\d{2}$/)) {
-                const parts = currentValue.split('-');
-                year = parseInt(parts[0]);
-                month = parseInt(parts[1]);
-            } else {
-                const now = new Date();
-                year = now.getFullYear();
-                month = now.getMonth() + 1;
-            }
-            currentZhPickerYear = year;
-
-            const pickerId = targetId === 'zh-start-datetime' ? 'zh-start-datetime-picker' : 'zh-end-datetime-picker';
-            const pickerContainer = document.getElementById(pickerId);
-
-            const inputWidth = targetInput.offsetWidth;
-            pickerContainer.style.width = inputWidth + 'px';
-
-            let pickerHTML = `
-                <div style="padding:15px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <button onclick="changeZhYear(-1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span id="zh-picker-year-${targetId}" style="font-size:16px; font-weight:bold;">${currentZhPickerYear}年</span>
-                        <button onclick="changeZhYear(1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
-                        <button onclick="selectZhMonth(1, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">1月</button>
-                        <button onclick="selectZhMonth(2, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">2月</button>
-                        <button onclick="selectZhMonth(3, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">3月</button>
-                        <button onclick="selectZhMonth(4, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">4月</button>
-                        <button onclick="selectZhMonth(5, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">5月</button>
-                        <button onclick="selectZhMonth(6, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">6月</button>
-                        <button onclick="selectZhMonth(7, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">7月</button>
-                        <button onclick="selectZhMonth(8, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">8月</button>
-                        <button onclick="selectZhMonth(9, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">9月</button>
-                        <button onclick="selectZhMonth(10, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">10月</button>
-                        <button onclick="selectZhMonth(11, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">11月</button>
-                        <button onclick="selectZhMonth(12, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">12月</button>
-                    </div>
-                    <button onclick="closeZhMonthPicker('${targetId}')" style="width:100%; padding:6px; background:#6c757d; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:13px;">取消</button>
-                </div>
-            `;
-
-            pickerContainer.innerHTML = pickerHTML;
-            pickerContainer.style.display = 'block';
-
-            setTimeout(() => {
-                const closeOnClickOutside = (e) => {
-                    if (!pickerContainer.contains(e.target) && e.target !== targetInput) {
-                        pickerContainer.style.display = 'none';
-                        document.removeEventListener('click', closeOnClickOutside);
-                    }
-                };
-                document.addEventListener('click', closeOnClickOutside);
-            }, 100);
-        }
-
-        function changeZhYear(delta) {
-            currentZhPickerYear += delta;
-            const yearSpan = document.getElementById('zh-picker-year-' + currentZhPickerTarget);
-            if (yearSpan) {
-                yearSpan.textContent = currentZhPickerYear + '年';
-            }
-        }
-
-        function selectZhMonth(month, targetId) {
-            const pad = n => (n < 10 ? '0' + n : '' + n);
-            const isEnd = targetId === 'zh-end-datetime';
-            // 获取该月的第一天和最后一天
-            const year = currentZhPickerYear;
-            const monthNum = month;
-            const firstDay = `${year}-${pad(monthNum)}-01`;
-            const lastDay = new Date(year, monthNum, 0).getDate();
-            const lastDayStr = `${year}-${pad(monthNum)}-${pad(lastDay)}`;
-            
-            // 根据是开始还是结束时间设置不同的时间
-            const dateTime = isEnd ? `${lastDayStr} 23:59:59` : `${firstDay} 00:00:00`;
-            document.getElementById(targetId).value = dateTime;
-            closeZhMonthPicker(targetId);
-        }
-
-        function closeZhMonthPicker(targetId) {
-            const pickerId = targetId === 'zh-start-datetime' ? 'zh-start-datetime-picker' : 'zh-end-datetime-picker';
-            document.getElementById(pickerId).style.display = 'none';
-            currentZhPickerTarget = null;
-        }
+        // 综合报表和综合数据月份选择器包装函数已删除，统一使用 MonthPicker 类
 
         // 查询综合数据报表
         async function queryComprehensiveReport() {
@@ -19400,11 +17056,14 @@ function updateUnchargedTable() {
                 const endEl = document.getElementById('other-end-datetime');
                 if (!startEl || !endEl) return;
 
-                // 设置默认值(最近7天)
+                // 设置默认值：始终设置为当前日期
+                // 开始时间为当天 00:00:00，结束时间为当天 23:59:59
                 const now = new Date();
-                const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                if (!startEl.value) startEl.value = startDate.toISOString().slice(0, 10) + ' 00:00:00';
-                if (!endEl.value) endEl.value = now.toISOString().slice(0, 10) + ' 23:59:59';
+                const today = now.toISOString().slice(0, 10);
+                
+                // 强制设置为当前日期
+                startEl.value = today + ' 00:00:00';
+                endEl.value = today + ' 23:59:59';
 
                 // 添加日期选择器
                 function attachDateBehavior(input, isEnd) {
@@ -19837,6 +17496,10 @@ function updateUnchargedTable() {
         }
 
     </script>
+    
+    <!-- 异步加载外部脚本 -->
+    <script id="chartjs-cdn" src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer onerror="this.onerror=null; this.src='https://cdn.staticfile.org/Chart.js/4.4.1/chart.umd.min.js'; this.onerror=function(){ this.onerror=null; this.src='https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js'; };"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
     
     <!-- 版权信息已移除 -->
 </body>
