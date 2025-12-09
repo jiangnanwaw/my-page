@@ -19400,10 +19400,9 @@ function updateUnchargedTable() {
                 const endEl = document.getElementById('other-end-datetime');
                 if (!startEl || !endEl) return;
 
-                // 设置默认值(最近7天)
+                // 设置默认值(当前时间)
                 const now = new Date();
-                const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                if (!startEl.value) startEl.value = startDate.toISOString().slice(0, 10) + ' 00:00:00';
+                if (!startEl.value) startEl.value = now.toISOString().slice(0, 10) + ' 00:00:00';
                 if (!endEl.value) endEl.value = now.toISOString().slice(0, 10) + ' 23:59:59';
 
                 // 添加日期选择器
