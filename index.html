@@ -5,7 +5,314 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>长沙飞狐智能数据平台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        :root {
+            --primary: #1a73e8;
+            --secondary: #0d47a1;
+            --accent: #00c853;
+            --dark: #0a1929;
+            --light: #f5f9ff;
+            --gray: #e0e0e0;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+        
+        body {
+            background: #ffffff;
+            color: #333;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 星空背景样式 - 只在登录页面显示 */
+        #nebula {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(ellipse at center, #1B2735 0%, #090A0F 100%);
+        }
+        
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        /* 确保主页面有白色背景 */
+        #main-container {
+            background: #ffffff;
+        }
+        
+        /* 添加头部标题样式 */
+        .header-title {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 1001;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .header-logo {
+            height: 35px;
+            vertical-align: middle;
+             margin-top: 40px;
+        }
+        
+       .header-text {
+    color: white;
+    font-size: 35px;
+    font-weight: bold;
+    font-family: "SimSun", serif;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    margin: 0;
+    vertical-align: middle;
+    letter-spacing: 2px;
+    margin-top: 40px;
+}
+        
+        /* 修改底部版权信息样式 */
+        .footer-copyright {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 15px 0;
+            color: white;
+            font-size: 14px;
+            z-index: 1001;
+            background: transparent;
+        }
+        
+        /* 调整登录容器的z-index以确保它在标题上方 */
+        #login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            z-index: 1000;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 330px;
+            background: transparent;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            position: relative;
+            margin-right: 160px;
+            margin-bottom:180px;
+        }
+        
+        .form-container {
+            padding: 8px;
+            transition: transform 0.6s ease-in-out;
+        }
+        
+        #login-container .logo {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        #login-container .logo i {
+            font-size: 42px;
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+        
+        #login-container .logo h2 {
+            color: white;
+            font-size: 28px;
+        }
+        
+        .form-group {
+            margin-bottom: 7px;
+            position: relative;
+        }
+        
+        .form-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #764ba2;
+            z-index: 2;
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            display: block;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            outline: none;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5a6fd5;
+        }
+        
+        .links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+        
+        .links a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }
+        
+        .divider:before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #ddd;
+        }
+        
+        .divider span {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0 15px;
+            color: #777;
+            position: relative;
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 7px;
+            text-align: center;
+            display: none;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: white;
+            border: 1px solid #bee5eb;
+        }
+        
+        #registerForm, #resetForm {
+            display: none;
+        }
+        
+        .back-to-login {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+        }
+        
+        .back-to-login a {
+            color: white !important;
+            text-decoration: none;
+        }
+        
+        .back-to-login a:hover {
+            color: white !important;
+            text-decoration: underline;
+        }
+        
+        .info-text {
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                border-radius: 12px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
     <!-- 引入 LeanCloud SDK（含多CDN回退） -->
     <script id="leancloud-cdn" src="https://unpkg.com/leancloud-storage@4.13.2/dist/av-min.js" defer onerror="this.onerror=null; this.src='https://cdn.staticfile.org/leancloud-storage/4.13.2/av-min.js'; this.onerror=function(){ this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js'; };"></script>
 </head>
