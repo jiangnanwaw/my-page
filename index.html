@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -11516,7 +11516,8 @@ function updateUnchargedTable() {
         // 清空查询结果
         function clearQueryResult() {
             document.getElementById('sql-query-input').value = '';
-            document.getElementById('query-result-content').innerHTML = '<p>执行查询后结果将显示在这里</p>';
+            const resultContent = $('query-result-content');
+            if (resultContent) resultContent.innerHTML = '<p>执行查询后结果将显示在这里</p>';
         }
 
         // 显示列（仅用于页面展示用的13列，不影响导出）
@@ -11945,14 +11946,18 @@ function updateUnchargedTable() {
             tableName: '[特来电]'
         };
         function ensureTopPaginationBar() {
-            const container = document.getElementById('query-result');
+            const container = $('query-result');
             if (!container) return null;
-            let bar = document.getElementById('query-pagination-top');
+            const resultContent = $('query-result-content');
+            if (!resultContent) return null;
+            let bar = $('query-pagination-top');
             if (!bar) {
                 bar = document.createElement('div');
                 bar.id = 'query-pagination-top';
                 bar.style.margin = '8px 0';
-                container.insertBefore(bar, document.getElementById('query-result-content'));
+                container.insertBefore(bar, resultContent);
+                // 缓存新创建的元素
+                ElementCache.cache.set('query-pagination-top', bar);
             }
             return bar;
         }
@@ -11974,13 +11979,13 @@ function updateUnchargedTable() {
                     <button id="pg-next" style="padding:4px 8px;">下一页</button>
                     <button id="pg-last" style="padding:4px 8px;">末页</button>
                 </div>`;
-            document.getElementById('pg-first').onclick = () => goToPage(1);
-            document.getElementById('pg-prev').onclick = () => goToPage(Math.max(1, __pagination.currentPage - 1));
-            document.getElementById('pg-next').onclick = () => {
+            $('pg-first').onclick = () => goToPage(1);
+            $('pg-prev').onclick = () => goToPage(Math.max(1, __pagination.currentPage - 1));
+            $('pg-next').onclick = () => {
                 const tp = Math.max(1, Math.ceil(__pagination.total / __pagination.pageSize));
                 goToPage(Math.min(tp, __pagination.currentPage + 1));
             };
-            document.getElementById('pg-last').onclick = () => {
+            $('pg-last').onclick = () => {
                 const tp = Math.max(1, Math.ceil(__pagination.total / __pagination.pageSize));
                 goToPage(tp);
             };
@@ -11988,17 +11993,29 @@ function updateUnchargedTable() {
 
         // ==================== 统一工具函数 ====================
         
-        // DOM元素缓存管理器
+        // DOM元素缓存管理器（增强版）
         const ElementCache = {
             cache: new Map(),
+            // 获取元素（优先从缓存）
             get(id) {
                 if (!this.cache.has(id)) {
                     const el = document.getElementById(id);
                     if (el) this.cache.set(id, el);
                     return el;
                 }
-                return this.cache.get(id);
+                const cached = this.cache.get(id);
+                // 检查元素是否仍然在DOM中
+                if (cached && document.contains(cached)) {
+                    return cached;
+                } else {
+                    // 元素已不在DOM中，重新查询
+                    this.cache.delete(id);
+                    const el = document.getElementById(id);
+                    if (el) this.cache.set(id, el);
+                    return el;
+                }
             },
+            // 查询选择器（单个元素）
             query(selector) {
                 const key = 'query:' + selector;
                 if (!this.cache.has(key)) {
@@ -12006,16 +12023,161 @@ function updateUnchargedTable() {
                     if (el) this.cache.set(key, el);
                     return el;
                 }
-                return this.cache.get(key);
+                const cached = this.cache.get(key);
+                if (cached && document.contains(cached)) {
+                    return cached;
+                } else {
+                    this.cache.delete(key);
+                    const el = document.querySelector(selector);
+                    if (el) this.cache.set(key, el);
+                    return el;
+                }
             },
+            // 查询选择器（多个元素，不缓存）
+            queryAll(selector) {
+                return document.querySelectorAll(selector);
+            },
+            // 清除所有缓存
             clear() {
                 this.cache.clear();
             },
             // 清除特定元素缓存（当元素可能被删除时）
             invalidate(id) {
                 this.cache.delete(id);
+            },
+            // 批量清除缓存（支持前缀匹配）
+            invalidateByPrefix(prefix) {
+                for (const key of this.cache.keys()) {
+                    if (key.startsWith(prefix)) {
+                        this.cache.delete(key);
+                    }
+                }
             }
         };
+
+        // 便捷函数：替代document.getElementById，自动使用缓存
+        function $(id) {
+            return ElementCache.get(id);
+        }
+
+        // 便捷函数：替代document.querySelector，自动使用缓存
+        function $$(selector) {
+            return ElementCache.query(selector);
+        }
+
+        // ==================== 统一日期选择器函数 ====================
+        /**
+         * 统一的日期选择器初始化函数
+         * @param {HTMLElement} input - 日期输入框元素
+         * @param {boolean} isEnd - 是否为结束时间（true: 23:59:59, false: 00:00:00）
+         * @param {string} triggerBtnId - 触发按钮的ID（可选，如果不提供则自动推断）
+         */
+        function attachDatePickerBehavior(input, isEnd, triggerBtnId = null) {
+            if (!input) return;
+
+            // 自动推断按钮ID（如果未提供）
+            if (!triggerBtnId) {
+                // 根据输入框ID推断按钮ID
+                const inputId = input.id || '';
+                if (inputId.includes('start')) {
+                    triggerBtnId = inputId.replace('start', 'start').replace('datetime', 'datetime-btn').replace('date', 'date-btn');
+                    if (!triggerBtnId.includes('-btn')) {
+                        triggerBtnId = inputId + '-btn';
+                    }
+                } else if (inputId.includes('end')) {
+                    triggerBtnId = inputId.replace('end', 'end').replace('datetime', 'datetime-btn').replace('date', 'date-btn');
+                    if (!triggerBtnId.includes('-btn')) {
+                        triggerBtnId = inputId + '-btn';
+                    }
+                } else {
+                    triggerBtnId = isEnd ? 'end-datetime-btn' : 'start-datetime-btn';
+                }
+            }
+
+            const btn = $(triggerBtnId);
+            if (!btn) return;
+
+            // 创建隐藏的原生日期选择器
+            const hiddenPicker = document.createElement('input');
+            hiddenPicker.type = 'date';
+            hiddenPicker.style.position = 'fixed';
+            hiddenPicker.style.opacity = '0';
+            hiddenPicker.style.pointerEvents = 'none';
+            hiddenPicker.style.width = '0';
+            hiddenPicker.style.height = '0';
+            document.body.appendChild(hiddenPicker);
+
+            // 打开日期选择器
+            function openPicker() {
+                const rect = input.getBoundingClientRect();
+                hiddenPicker.style.left = `${Math.max(0, rect.left)}px`;
+                hiddenPicker.style.top = `${Math.max(0, rect.bottom)}px`;
+
+                // 从输入框获取当前日期
+                const currentValue = input.value;
+                if (currentValue && /^\d{4}-\d{2}-\d{2}/.test(currentValue)) {
+                    hiddenPicker.value = currentValue.slice(0, 10);
+                }
+
+                hiddenPicker.focus();
+                try {
+                    if (hiddenPicker.showPicker) {
+                        hiddenPicker.showPicker();
+                    }
+                } catch (e) {
+                    // 如果showPicker不支持，尝试点击
+                }
+                hiddenPicker.click();
+            }
+
+            // 绑定按钮点击事件
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openPicker();
+            });
+
+            // 日期选择变化事件
+            hiddenPicker.addEventListener('change', function() {
+                const v = hiddenPicker.value;
+                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                    input.value = isEnd ? `${v} 23:59:59` : `${v} 00:00:00`;
+                }
+                input.focus();
+            });
+        }
+
+        /**
+         * 初始化日期选择器（支持开始和结束时间）
+         * @param {string} startInputId - 开始时间输入框ID
+         * @param {string} endInputId - 结束时间输入框ID
+         * @param {string} startBtnId - 开始时间按钮ID（可选）
+         * @param {string} endBtnId - 结束时间按钮ID（可选）
+         * @param {Object} defaultValues - 默认值 {start: 'yyyy-mm-dd 00:00:00', end: 'yyyy-mm-dd 23:59:59'}
+         */
+        function initDatetimePickers(startInputId, endInputId, startBtnId = null, endBtnId = null, defaultValues = null) {
+            try {
+                const startEl = $(startInputId);
+                const endEl = $(endInputId);
+                if (!startEl || !endEl) return;
+
+                // 设置默认值
+                if (defaultValues) {
+                    if (defaultValues.start && !startEl.value) {
+                        startEl.value = defaultValues.start;
+                    }
+                    if (defaultValues.end && !endEl.value) {
+                        endEl.value = defaultValues.end;
+                    }
+                }
+
+                // 初始化日期选择器行为
+                attachDatePickerBehavior(startEl, false, startBtnId);
+                attachDatePickerBehavior(endEl, true, endBtnId);
+            } catch (e) {
+                console.error('初始化日期选择器失败:', e);
+            }
+        }
 
         // 查询结果缓存管理器
         const QueryCache = {
@@ -12076,16 +12238,28 @@ function updateUnchargedTable() {
                 retry = true,           // 是否重试
                 attempts = 3,          // 重试次数
                 delayMs = 600,         // 重试延迟（毫秒）
-                useCache = false,       // 是否使用缓存
-                cacheTTL = 5 * 60 * 1000, // 缓存过期时间
+                useCache = true,        // 是否使用缓存（默认启用）
+                cacheTTL = 5 * 60 * 1000, // 缓存过期时间（默认5分钟）
                 parseResults = true,    // 是否解析结果
                 params = {}              // 查询参数（用于缓存键）
             } = options;
 
-            // 检查缓存
-            if (useCache) {
+            // 对于写操作（INSERT/UPDATE/DELETE），禁用缓存
+            const queryUpper = query.trim().toUpperCase();
+            if (queryUpper.startsWith('INSERT') || 
+                queryUpper.startsWith('UPDATE') || 
+                queryUpper.startsWith('DELETE') || 
+                queryUpper.startsWith('DROP') || 
+                queryUpper.startsWith('CREATE') || 
+                queryUpper.startsWith('ALTER')) {
+                options.useCache = false;
+            }
+
+            // 检查缓存（如果启用）
+            if (options.useCache !== false && useCache) {
                 const cached = QueryCache.get(query, params);
                 if (cached !== null) {
+                    console.log('[缓存命中]', query.substring(0, 50) + '...');
                     return cached;
                 }
             }
@@ -12147,9 +12321,10 @@ function updateUnchargedTable() {
                         data = (result && result.result) ? result.result : result;
                     }
 
-                    // 保存到缓存
-                    if (useCache) {
+                    // 保存到缓存（如果启用且不是写操作）
+                    if (options.useCache !== false && useCache) {
                         QueryCache.set(query, data, params, cacheTTL);
+                        console.log('[缓存已保存]', query.substring(0, 50) + '...');
                     }
 
                     return data;
@@ -12170,23 +12345,36 @@ function updateUnchargedTable() {
 
         // 向后兼容的包装函数
         function callSqlGeneric(sql) {
-            return executeSQL(sql, { retry: false, parseResults: false });
+            return executeSQL(sql, { retry: false, parseResults: false, useCache: true });
         }
 
         function callSqlWithRetry(sql, attempts = 3, delayMs = 600) {
-            return executeSQL(sql, { retry: true, attempts, delayMs, parseResults: false });
+            return executeSQL(sql, { retry: true, attempts, delayMs, parseResults: false, useCache: true });
         }
 
         async function executeLeanCloudSQL(query) {
-            return executeSQL(query, { retry: true, attempts: 3, delayMs: 600, parseResults: true });
+            return executeSQL(query, { retry: true, attempts: 3, delayMs: 600, parseResults: true, useCache: true });
+        }
+
+        // 清除查询缓存的便捷函数
+        function clearQueryCache() {
+            QueryCache.clear();
+            console.log('[查询缓存已清除]');
+        }
+
+        // 清除特定查询的缓存
+        function invalidateQueryCache(query, params = {}) {
+            const key = QueryCache.getKey(query, params);
+            QueryCache.cache.delete(key);
+            console.log('[查询缓存已失效]', query.substring(0, 50) + '...');
         }
 
         // 特来电全选时，使用时间段分段查询（避免大数据量查询超时）
         async function goToPageWithTimeSegments(targetPage) {
             if (!__pagination.enabled) return;
             
-            const resultContent = document.getElementById('query-result-content');
-            const statsContainer = document.getElementById('stats-container');
+            const resultContent = $('query-result-content');
+            const statsContainer = $('stats-container');
             const tableContainer = statsContainer ? statsContainer.nextElementSibling : null;
             
             const totalPages = Math.max(1, Math.ceil(__pagination.total / __pagination.pageSize));
@@ -12203,8 +12391,8 @@ function updateUnchargedTable() {
             }
             
             try {
-                const startEl = document.getElementById('start-datetime');
-                const endEl = document.getElementById('end-datetime');
+                const startEl = $('start-datetime');
+                const endEl = $('end-datetime');
                 if (!startEl || !endEl || !startEl.value || !endEl.value) {
                     throw new Error('时间范围未设置');
                 }
@@ -12346,14 +12534,14 @@ function updateUnchargedTable() {
             }
             
             // 原有的单设备分页逻辑
-            const resultContent = document.getElementById('query-result-content');
+            const resultContent = $('query-result-content');
             const totalPages = Math.max(1, Math.ceil(__pagination.total / __pagination.pageSize));
             const page = Math.min(totalPages, Math.max(1, targetPage));
             __pagination.currentPage = page;
             const offset = (page - 1) * __pagination.pageSize;
             
             // 翻页时只显示加载提示，不影响统计区域
-            const statsContainer = document.getElementById('stats-container');
+            const statsContainer = $('stats-container');
             const tableContainer = statsContainer ? statsContainer.nextElementSibling : null;
             if (tableContainer) {
                 tableContainer.innerHTML = '<div style="padding:20px; text-align:center;"><i class="fas fa-spinner fa-spin"></i> 正在加载数据... 第 ' + page + ' 页</div>';
@@ -12501,69 +12689,27 @@ function updateUnchargedTable() {
         // 设置时间框体默认值：当天日期带时分秒（显示在文本框内），选择时用原生日历不带时分秒
         (function setDefaultDateTimes() {
             try {
+                // 设置默认值（当天）
                 const pad = n => (n < 10 ? '0' + n : '' + n);
                 const now = new Date();
                 const y = now.getFullYear();
                 const m = pad(now.getMonth() + 1);
                 const d = pad(now.getDate());
-                const startTime = `${y}-${m}-${d} 00:00:00`;
-                const endTime = `${y}-${m}-${d} 23:59:59`;
-                const startEl = document.getElementById('start-datetime');
-                const endEl = document.getElementById('end-datetime');
-                if (startEl) startEl.value = startTime;
-                if (endEl) endEl.value = endTime;
+                const defaultValues = {
+                    start: `${y}-${m}-${d} 00:00:00`,
+                    end: `${y}-${m}-${d} 23:59:59`
+                };
 
-                function attachDateBehavior(input, isEnd) {
-                    if (!input) return;
-                    // 保持文本输入框始终显示 yyyy-mm-dd hh:mm:ss
-                    // 使用隐藏的原生日期选择器进行选择
-                    const hiddenPicker = document.createElement('input');
-                    hiddenPicker.type = 'date';
-                    hiddenPicker.style.position = 'fixed';
-                    hiddenPicker.style.opacity = '0';
-                    hiddenPicker.style.pointerEvents = 'none';
-                    hiddenPicker.style.width = '0';
-                    hiddenPicker.style.height = '0';
-                    document.body.appendChild(hiddenPicker);
-
-                    function openPicker() {
-                        const rect = input.getBoundingClientRect();
-                        hiddenPicker.style.left = `${Math.max(0, rect.left)}px`;
-                        hiddenPicker.style.top = `${Math.max(0, rect.bottom)}px`;
-                        const current = input.value && input.value.slice(0, 10);
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(current)) {
-                            hiddenPicker.value = current;
-                        }
-                        // 先聚焦再打开，确保首次定位正确
-                        hiddenPicker.focus();
-                        try { hiddenPicker.showPicker && hiddenPicker.showPicker(); } catch (e) { /* ignore */ }
-                        hiddenPicker.click();
-                    }
-
-                    // 允许手动输入；点击旁边📅按钮时弹出日期选择器
-                    const triggerBtn = document.getElementById(isEnd ? 'end-datetime-btn' : 'start-datetime-btn');
-                    if (triggerBtn) {
-                        triggerBtn.addEventListener('click', function(ev){ ev.preventDefault(); openPicker(); });
-                    }
-
-                    hiddenPicker.addEventListener('change', function() {
-                        const v = hiddenPicker.value;
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                            input.value = isEnd ? `${v} 23:59:59` : `${v} 00:00:00`;
-                        }
-                        // 选择后把焦点回到可见输入
-                        input.focus();
-                    });
-                }
-
-                attachDateBehavior(startEl, false);
-                attachDateBehavior(endEl, true);
-            } catch (e) { }
+                // 使用统一的日期选择器初始化函数
+                initDatetimePickers('start-datetime', 'end-datetime', 'start-datetime-btn', 'end-datetime-btn', defaultValues);
+            } catch (e) {
+                console.error('初始化日期选择器失败:', e);
+            }
         })();
 
         // ========= 充电数据 正式查询：交互与查询逻辑 =========
         function setExportEnabled(enabled) {
-            const btn = document.getElementById('export-btn');
+            const btn = $('export-btn');
             if (!btn) return;
             btn.disabled = !enabled;
             if (enabled) {
@@ -16762,71 +16908,17 @@ function updateUnchargedTable() {
         // 初始化用户数据页面的日期选择器
         function initUserDatetimePickers() {
             try {
-                const startEl = document.getElementById('user-start-datetime');
-                const endEl = document.getElementById('user-end-datetime');
-                if (!startEl || !endEl) return;
-
                 // 设置默认值：开始为当天 00:00:00，结束为当天 23:59:59
                 const now = new Date();
-                const startDate = now;
-                startEl.value = startDate.toISOString().slice(0, 10) + ' 00:00:00';
-                endEl.value = now.toISOString().slice(0, 10) + ' 23:59:59';
+                const defaultValues = {
+                    start: now.toISOString().slice(0, 10) + ' 00:00:00',
+                    end: now.toISOString().slice(0, 10) + ' 23:59:59'
+                };
 
-                // 添加日期选择器
-                function attachDateBehavior(input, isEnd) {
-                    const btn = document.getElementById(isEnd ? 'user-end-date-btn' : 'user-start-date-btn');
-                    if (!btn) return;
-
-                    const hiddenPicker = document.createElement('input');
-                    hiddenPicker.type = 'date';
-                    hiddenPicker.style.position = 'fixed';
-                    hiddenPicker.style.opacity = '0';
-                    hiddenPicker.style.pointerEvents = 'none';
-                    hiddenPicker.style.width = '0';
-                    hiddenPicker.style.height = '0';
-                    document.body.appendChild(hiddenPicker);
-
-                    function openPicker() {
-                        const rect = input.getBoundingClientRect();
-                        hiddenPicker.style.left = `${Math.max(0, rect.left)}px`;
-                        hiddenPicker.style.top = `${Math.max(0, rect.bottom)}px`;
-
-                        // 从输入框获取当前日期
-                        const currentValue = input.value;
-                        if (currentValue && /^\d{4}-\d{2}-\d{2}/.test(currentValue)) {
-                            hiddenPicker.value = currentValue.slice(0, 10);
-                        }
-
-                        hiddenPicker.focus();
-                        try {
-                            if (hiddenPicker.showPicker) {
-                                hiddenPicker.showPicker();
-                            }
+                // 使用统一的日期选择器初始化函数
+                initDatetimePickers('user-start-datetime', 'user-end-datetime', 'user-start-date-btn', 'user-end-date-btn', defaultValues);
                         } catch (e) {
-                            // 如果showPicker不支持，尝试点击
-                        }
-                        hiddenPicker.click();
-                    }
-
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openPicker();
-                    });
-
-                    hiddenPicker.addEventListener('change', function() {
-                        const v = hiddenPicker.value;
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                            input.value = isEnd ? `${v} 23:59:59` : `${v} 00:00:00`;
-                        }
-                        input.focus();
-                    });
-                }
-
-                attachDateBehavior(startEl, false);
-                attachDateBehavior(endEl, true);
-            } catch (e) {
-                console.error('初始化日期选择器失败:', e);
+                console.error('初始化用户数据页面日期选择器失败:', e);
             }
         }
 
@@ -19396,67 +19488,15 @@ function updateUnchargedTable() {
         // 初始化其它数据页面日期选择器
         function initOtherDatetimePickers() {
             try {
-                const startEl = document.getElementById('other-start-datetime');
-                const endEl = document.getElementById('other-end-datetime');
-                if (!startEl || !endEl) return;
-
                 // 设置默认值(当前时间)
                 const now = new Date();
-                if (!startEl.value) startEl.value = now.toISOString().slice(0, 10) + ' 00:00:00';
-                if (!endEl.value) endEl.value = now.toISOString().slice(0, 10) + ' 23:59:59';
+                const defaultValues = {
+                    start: now.toISOString().slice(0, 10) + ' 00:00:00',
+                    end: now.toISOString().slice(0, 10) + ' 23:59:59'
+                };
 
-                // 添加日期选择器
-                function attachDateBehavior(input, isEnd) {
-                    const btn = document.getElementById(isEnd ? 'other-end-datetime-btn' : 'other-start-datetime-btn');
-                    if (!btn) return;
-
-                    const hiddenPicker = document.createElement('input');
-                    hiddenPicker.type = 'date';
-                    hiddenPicker.style.position = 'fixed';
-                    hiddenPicker.style.opacity = '0';
-                    hiddenPicker.style.pointerEvents = 'none';
-                    hiddenPicker.style.width = '0';
-                    hiddenPicker.style.height = '0';
-                    document.body.appendChild(hiddenPicker);
-
-                    function openPicker() {
-                        const rect = input.getBoundingClientRect();
-                        hiddenPicker.style.left = `${Math.max(0, rect.left)}px`;
-                        hiddenPicker.style.top = `${Math.max(0, rect.bottom)}px`;
-
-                        const currentValue = input.value;
-                        if (currentValue && /^\d{4}-\d{2}-\d{2}/.test(currentValue)) {
-                            hiddenPicker.value = currentValue.slice(0, 10);
-                        }
-
-                        hiddenPicker.focus();
-                        try {
-                            if (hiddenPicker.showPicker) {
-                                hiddenPicker.showPicker();
-                            }
-                        } catch (e) {
-                            // 如果showPicker不支持，尝试点击
-                        }
-                        hiddenPicker.click();
-                    }
-
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openPicker();
-                    });
-
-                    hiddenPicker.addEventListener('change', function() {
-                        const v = hiddenPicker.value;
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                            input.value = isEnd ? `${v} 23:59:59` : `${v} 00:00:00`;
-                        }
-                        input.focus();
-                    });
-                }
-
-                attachDateBehavior(startEl, false);
-                attachDateBehavior(endEl, true);
+                // 使用统一的日期选择器初始化函数
+                initDatetimePickers('other-start-datetime', 'other-end-datetime', 'other-start-datetime-btn', 'other-end-datetime-btn', defaultValues);
             } catch (e) {
                 console.error('初始化其它数据页面日期选择器失败:', e);
             }
