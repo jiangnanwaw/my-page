@@ -4961,9 +4961,14 @@
             
 			// 添加页面关闭相关事件监听器，尽量在卸载前完成登出记录
 			window.addEventListener('beforeunload', handlePageUnload);
-			// 当页面变为隐藏状态时（切到后台或关闭前），优先尝试记录登出
+			// 当页面变为隐藏状态时（切到后台或关闭前），优先尝试记录登出，并销毁Canvas
 			document.addEventListener('visibilitychange', async () => {
 				try {
+					// 当页面不可见时，彻底销毁Canvas实例和requestAnimationFrame循环
+					if (document.hidden) {
+						stopStarfield();
+					}
+					
 					const currentUser = AV.User.current();
 					if (document.hidden && currentUser && !window.__logoutRecordingInProgress) {
 						window.__logoutRecordingInProgress = true;
@@ -5904,10 +5909,10 @@
             document.getElementById('main-container').style.display = 'block';
             document.getElementById('login-header-title').style.display = 'none';
             document.getElementById('login-footer-copyright').style.display = 'none';
-            // 隐藏星空背景并停止动画
+            // 隐藏星空背景并彻底销毁Canvas实例和requestAnimationFrame循环
             document.getElementById('nebula').style.display = 'none';
             document.getElementById('starfield').style.display = 'none';
-            stopStarfield(); // 停止星空动画，释放资源
+            stopStarfield(); // 彻底销毁星空动画，释放资源
             document.getElementById('user-display').textContent = username;
             initMainSystem();
             
@@ -10792,7 +10797,7 @@ function updateUnchargedTable() {
             animate();
         }
 
-        // 停止星空背景动画
+        // 停止星空背景动画（彻底销毁Canvas实例和requestAnimationFrame循环）
         function stopStarfield() {
             // 取消动画循环
             if (starfieldAnimationId !== null) {
@@ -10816,11 +10821,25 @@ function updateUnchargedTable() {
                 starfieldResizeHandler = null;
             }
             
-            // 清空画布
+            // 彻底清空画布并销毁Canvas实例
             const canvas = document.getElementById('starfield');
             if (canvas) {
+                try {
                 const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        // 清空画布内容
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        // 尝试释放Canvas上下文（如果浏览器支持）
+                        if (ctx.canvas) {
+                            ctx.canvas.width = 0;
+                            ctx.canvas.height = 0;
+                        }
+                    }
+                    // 清空Canvas的HTML内容（如果有）
+                    canvas.innerHTML = '';
+                } catch (e) {
+                    // 忽略错误，确保继续执行
+                }
             }
         }
 
@@ -15121,44 +15140,136 @@ function updateUnchargedTable() {
         let __zhStatsTotals = null;
         let __lastZhQueryResults = null;
 
+        // 项目字段映射配置表（替代大量的 if (project === '...') 判断）
+        const PROJECT_CONFIG_MAP = new Map([
+            ['红门缴费', {
+                timeField: '缴费时间',
+                tableName: '[红门缴费]',
+                selectColumns: '*',
+                whereClauseType: 'datetime', // datetime | date | ltrim
+                orderByType: 'normal' // normal | ltrim
+            }],
+            ['月租车充值', {
+                timeField: '交款时间',
+                tableName: '[月租车充值]',
+                selectColumns: '*',
+                whereClauseType: 'datetime',
+                orderByType: 'normal'
+            }],
+            ['兴元售货机', {
+                timeField: '支付时间',
+                tableName: '[兴元售货机]',
+                selectColumns: '[商户名称], [销售额], [货道编号], [商品名称], [支付账号], [支付方式], [支付金额], [出货状态], [退款金额], [支付时间]',
+                whereClauseType: 'datetime',
+                orderByType: 'normal'
+            }],
+            ['赛菲姆道闸', {
+                timeField: '支付时间',
+                tableName: '[赛菲姆道闸]',
+                selectColumns: '[车牌号码], [订单类型], [支付金额], [支付时间], [支付方式], [开始时间], [结束时间]',
+                whereClauseType: 'datetime',
+                orderByType: 'normal'
+            }],
+            ['快易洁洗车', {
+                timeField: '日期',
+                tableName: '[快易洁洗车]',
+                selectColumns: '*',
+                whereClauseType: 'date',
+                orderByType: 'normal'
+            }],
+            ['收钱吧', {
+                timeField: '交易日期',
+                tableName: '[收钱吧]',
+                selectColumns: '[交易日期], [收款通道/支付方式], [交易状态], [收款金额]',
+                whereClauseType: 'date',
+                orderByType: 'normal'
+            }],
+            ['智小盟', {
+                timeField: '支付时间',
+                tableName: '[智小盟]',
+                selectColumns: '[设备名称], [实收金额 ], [支付方式], [支付时间]',
+                whereClauseType: 'ltrim',
+                orderByType: 'ltrim'
+            }],
+            ['车颜知己洗车', {
+                timeField: '启动时间',
+                tableName: '[车颜知己洗车]',
+                selectColumns: '[场所], [启动时间], [停止时间], [订单金额], [使用会员卡], [订单状态]',
+                whereClauseType: 'datetime',
+                orderByType: 'normal'
+            }],
+            ['车海洋洗车', {
+                timeField: '时间',
+                tableName: '[车海洋洗车消费]',
+                selectColumns: '*',
+                whereClauseType: 'datetime',
+                orderByType: 'normal'
+            }],
+            ['微信', {
+                timeField: '交易时间',
+                tableName: '[微信收款商业版]',
+                selectColumns: '[交易时间], [商户号], [微信订单号], [订单金额], [退款金额]',
+                whereClauseType: 'datetime',
+                orderByType: 'normal'
+            }]
+        ]);
+
+        // 通用SQL查询构建函数
+        function buildSqlQuery(timeField, start, end, whereClauseType = 'datetime', additionalConditions = []) {
+            let whereClause = '';
+            const whereParts = [];
+
+            // 构建时间条件
+            if (whereClauseType === 'date') {
+                // 日期字段：只使用日期部分
+                const startDate = start.split(' ')[0];
+                const endDate = end.split(' ')[0];
+                whereParts.push(`[${timeField}] >= '${startDate}'`);
+                whereParts.push(`[${timeField}] <= '${endDate}'`);
+            } else if (whereClauseType === 'ltrim') {
+                // 需要清理空格的时间字段（如智小盟）
+                whereParts.push(`LTRIM(RTRIM([${timeField}])) >= '${start}'`);
+                whereParts.push(`LTRIM(RTRIM([${timeField}])) <= '${end}'`);
+            } else {
+                // 日期时间字段：使用完整日期时间
+                whereParts.push(`[${timeField}] >= '${start}'`);
+                whereParts.push(`[${timeField}] <= '${end}'`);
+            }
+
+            // 添加额外的WHERE条件
+            whereParts.push(...additionalConditions);
+
+            if (whereParts.length > 0) {
+                whereClause = 'WHERE ' + whereParts.join(' AND ');
+            }
+
+            return whereClause;
+        }
+
+        // 构建ORDER BY子句
+        function buildOrderByClause(timeField, orderByType = 'normal', direction = 'DESC') {
+            if (orderByType === 'ltrim') {
+                return `ORDER BY LTRIM(RTRIM([${timeField}])) ${direction}`;
+            } else {
+                return `ORDER BY [${timeField}] ${direction}`;
+            }
+        }
+
         // 项目类别变化处理
         function onZhProjectChange() {
             const project = (document.getElementById('zh-project-select') || {}).value || '';
             if (!project) return;
             
-            // 根据项目类别设置时间字段
-            let timeField = '';
-            if (project === '红门缴费') {
-                timeField = '缴费时间';
-            } else if (project === '月租车充值') {
-                timeField = '交款时间';
-            } else if (project === '兴元售货机') {
-                timeField = '支付时间';
-            } else if (project === '赛菲姆道闸') {
-                timeField = '支付时间';
-            } else if (project === '快易洁洗车') {
-                timeField = '日期';
-            } else if (project === '收钱吧') {
-                timeField = '交易日期';
-            } else if (project === '智小盟') {
-                timeField = '支付时间';
-            } else if (project === '车颜知己洗车') {
-                timeField = '启动时间';
-            } else if (project === '车海洋洗车') {
-                timeField = '时间';
-            } else if (project === '微信') {
-                timeField = '交易时间';
-            }
-            
-            // 根据项目类别设置表名
-            if (project === '车海洋洗车') {
-                __zhPagination.tableName = '[车海洋洗车消费]';
-            } else if (project === '微信') {
-                __zhPagination.tableName = '[微信收款商业版]';
+            // 从配置映射表获取项目配置
+            const config = PROJECT_CONFIG_MAP.get(project);
+            if (config) {
+                __zhPagination.tableName = config.tableName;
+                __zhPagination.timeField = config.timeField;
             } else {
+                // 默认值（向后兼容）
                 __zhPagination.tableName = `[${project}]`;
+                __zhPagination.timeField = '缴费时间';
             }
-            __zhPagination.timeField = timeField;
             
             // 初始化日期选择器
             initZhDatetimePickers();
@@ -15239,65 +15350,34 @@ function updateUnchargedTable() {
 
             const start = toSqlDateTime((document.getElementById('zh-start-datetime') || {}).value, false);
             const end = toSqlDateTime((document.getElementById('zh-end-datetime') || {}).value, true);
-            const timeField = __zhPagination.timeField || '缴费时间';
 
             if (!start || !end) {
                 throw new Error('请选择开始时间和结束时间');
             }
 
-            // 根据项目类别设置表名
-            let tableName = `[${project}]`;
-            if (project === '车海洋洗车') {
-                tableName = '[车海洋洗车消费]';
-            } else if (project === '微信') {
-                tableName = '[微信收款商业版]';
+            // 从配置映射表获取项目配置
+            const config = PROJECT_CONFIG_MAP.get(project);
+            if (!config) {
+                // 向后兼容：如果配置不存在，使用默认值
+                return {
+                    tableName: `[${project}]`,
+                    whereClause: buildSqlQuery('缴费时间', start, end, 'datetime'),
+                    timeField: '缴费时间',
+                    project: project,
+                    selectColumns: '*'
+                };
             }
-            
-            // 对于日期字段（如"交易日期"、"日期"），只使用日期部分进行比较
-            // 对于日期时间字段（如"支付时间"、"交易时间"、"时间"），使用完整日期时间进行比较
-            let whereClause = '';
-            if (timeField === '交易日期' || timeField === '日期') {
-                // 日期字段：只提取日期部分（YYYY-MM-DD）
-                const startDate = start.split(' ')[0];
-                const endDate = end.split(' ')[0];
-                // 尝试使用更简单的日期比较方式
-                // 如果字段是DATE类型，直接比较字符串；如果是DATETIME类型，使用CONVERT提取日期部分
-                // 先尝试简单的字符串比较（适用于DATE类型字段）
-                whereClause = `WHERE [${timeField}] >= '${startDate}' AND [${timeField}] <= '${endDate}'`;
-            } else if (project === '智小盟') {
-                // 智小盟的时间字段前面可能有制表符或空格，清理后使用字符串比较（因为字段可能是nvarchar类型）
-                // 清理后的格式应该是 "YYYY-MM-DD HH:MM:SS"，可以直接进行字符串比较
-                whereClause = `WHERE LTRIM(RTRIM([${timeField}])) >= '${start}' AND LTRIM(RTRIM([${timeField}])) <= '${end}'`;
-            } else {
-                // 日期时间字段：使用完整日期时间
-                whereClause = `WHERE [${timeField}] >= '${start}' AND [${timeField}] <= '${end}'`;
-            }
-            
-            // 根据项目类别设置查询列
-            let selectColumns = '*';
-            if (project === '兴元售货机') {
-                selectColumns = '[商户名称], [销售额], [货道编号], [商品名称], [支付账号], [支付方式], [支付金额], [出货状态], [退款金额], [支付时间]';
-            } else if (project === '赛菲姆道闸') {
-                selectColumns = '[车牌号码], [订单类型], [支付金额], [支付时间], [支付方式], [开始时间], [结束时间]';
-            } else if (project === '收钱吧') {
-                selectColumns = '[交易日期], [收款通道/支付方式], [交易状态], [收款金额]';
-            } else if (project === '智小盟') {
-                selectColumns = '[设备名称], [实收金额 ], [支付方式], [支付时间]';
-            } else if (project === '车海洋洗车') {
-                selectColumns = '*'; // 车海洋洗车消费表的所有列
-            } else if (project === '微信') {
-                selectColumns = '[交易时间], [商户号], [微信订单号], [订单金额], [退款金额]';
-            } else if (project === '车颜知己洗车') {
-                selectColumns = '[场所], [启动时间], [停止时间], [订单金额], [使用会员卡], [订单状态]';
-            }
-            // 快易洁洗车：查询所有列
+
+            // 使用配置构建SQL查询
+            const timeField = config.timeField;
+            const whereClause = buildSqlQuery(timeField, start, end, config.whereClauseType);
             
             return {
-                tableName: tableName,
+                tableName: config.tableName,
                 whereClause: whereClause,
                 timeField: timeField,
                 project: project,
-                selectColumns: selectColumns
+                selectColumns: config.selectColumns
             };
         }
 
@@ -15396,13 +15476,10 @@ function updateUnchargedTable() {
                         __zhPagination.currentPage = 1;
 
                         // 获取第一页数据
-                        // 对于"智小盟"，ORDER BY需要使用清理后的字段
-                        let orderByFinal;
-                        if (query.project === '智小盟') {
-                            orderByFinal = `ORDER BY LTRIM(RTRIM([${query.timeField}])) DESC`;
-                        } else {
-                            orderByFinal = `ORDER BY [${query.timeField}] DESC`;
-                        }
+                        // 使用配置映射表获取ORDER BY类型
+                        const config = PROJECT_CONFIG_MAP.get(query.project);
+                        const orderByType = config ? config.orderByType : 'normal';
+                        const orderByFinal = buildOrderByClause(query.timeField, orderByType, 'DESC');
                         __zhPagination.orderByFinal = orderByFinal;
                         // 兴元售货机使用指定的列，其他使用*
                         const selectCols = query.selectColumns || '*';
@@ -16508,35 +16585,18 @@ function updateUnchargedTable() {
             // 使用 ROW_NUMBER 分页（兼容后端）
             // 根据项目类别设置查询列
             const project = (document.getElementById('zh-project-select') || {}).value || '';
-            let selectCols = '*';
-            if (project === '兴元售货机') {
-                selectCols = '[商户名称], [销售额], [货道编号], [商品名称], [支付账号], [支付方式], [支付金额], [出货状态], [退款金额], [支付时间]';
-            } else if (project === '赛菲姆道闸') {
-                selectCols = '[车牌号码], [订单类型], [支付金额], [支付时间], [支付方式], [开始时间], [结束时间]';
-            } else if (project === '收钱吧') {
-                selectCols = '[交易日期], [收款通道/支付方式], [交易状态], [收款金额]';
-            } else if (project === '智小盟') {
-                selectCols = '[设备名称], [实收金额 ], [支付方式], [支付时间]';
-            } else if (project === '车海洋洗车') {
-                selectCols = '*'; // 车海洋洗车消费表的所有列
-            } else if (project === '微信') {
-                selectCols = '[交易时间], [商户号], [微信订单号], [订单金额], [退款金额]';
-            } else if (project === '车颜知己洗车') {
-                selectCols = '[场所], [启动时间], [停止时间], [订单金额], [使用会员卡], [订单状态]';
-            }
-            // 快易洁洗车：查询所有列
+            const config = PROJECT_CONFIG_MAP.get(project);
+            
+            const selectCols = config ? config.selectColumns : '*';
+            const orderByType = config ? config.orderByType : 'normal';
             
             const innerFrom = `FROM ${tableName} ${whereClause}`;
-            // 对于"智小盟"，ORDER BY也需要使用清理后的字段
-            let overOrder;
-            if (project === '智小盟') {
-                overOrder = `ORDER BY LTRIM(RTRIM([${timeField}])) DESC`;
-            } else {
-                overOrder = `ORDER BY [${timeField}] DESC`;
-            }
-            // 构建分页SQL：外层选择指定列（排除rn），内层选择所有列包括rn
+            // 使用通用函数构建ORDER BY子句
+            const overOrder = buildOrderByClause(timeField, orderByType, 'DESC');
+            
+            // 构建分页SQL：如果配置了selectColumns且不是'*'，则使用指定列
             let pageSql;
-            if (project === '兴元售货机' || project === '赛菲姆道闸' || project === '收钱吧' || project === '智小盟' || project === '车海洋洗车' || project === '微信' || project === '车颜知己洗车') {
+            if (config && config.selectColumns !== '*') {
                 // 指定列的项目：外层选择指定列
                 pageSql = `SELECT ${selectCols} FROM (SELECT ROW_NUMBER() OVER (${overOrder}) AS rn, * ${innerFrom}) t WHERE t.rn BETWEEN ${startRn} AND ${endRn}`;
             } else {
@@ -19716,6 +19776,28 @@ function updateUnchargedTable() {
                 const formattedStartTime = toSqlDateTime(startTime, false);
                 const formattedEndTime = toSqlDateTime(endTime, true);
                 
+                // 先查询充电结束时间的最大和最小日期，用于计算天数
+                const dateRangeSql = `SELECT 
+                    MIN(CAST([充电结束时间] AS DATE)) AS [最小日期],
+                    MAX(CAST([充电结束时间] AS DATE)) AS [最大日期]
+                FROM [特来电]
+                WHERE [${timeField}] >= '${formattedStartTime}'
+                AND [${timeField}] <= '${formattedEndTime}'
+                ${stationCondition}`;
+                
+                const dateRangeResults = await executeLeanCloudSQL(dateRangeSql);
+                let days = 1; // 默认天数为1
+                if (dateRangeResults && dateRangeResults.length > 0) {
+                    const minDate = dateRangeResults[0]['最小日期'];
+                    const maxDate = dateRangeResults[0]['最大日期'];
+                    if (minDate && maxDate) {
+                        const min = new Date(minDate);
+                        const max = new Date(maxDate);
+                        // 计算天数差（包含首尾两天）
+                        days = Math.max(1, Math.ceil((max - min) / (1000 * 60 * 60 * 24)) + 1);
+                    }
+                }
+                
                 // 构建SQL查询
                 const sql = `SELECT 
                     ${selectField} AS [数据类别],
@@ -19744,14 +19826,23 @@ function updateUnchargedTable() {
                     return;
                 }
                 
-                // 处理数据（确保数值字段正确）
-                const processedData = results.map(row => ({
-                    '数据类别': row['数据类别'] || '',
-                    '充电电量(度)': parseFloat(row['充电电量(度)'] || 0).toFixed(2),
-                    '充电电费(元)': parseFloat(row['充电电费(元)'] || 0).toFixed(2),
-                    '充电服务费(元)': parseFloat(row['充电服务费(元)'] || 0).toFixed(2),
-                    '充电费用(元)': parseFloat(row['充电费用(元)'] || 0).toFixed(2)
-                }));
+                // 处理数据（确保数值字段正确，并计算日均值）
+                const processedData = results.map(row => {
+                    const kwh = parseFloat(row['充电电量(度)'] || 0);
+                    const serviceFee = parseFloat(row['充电服务费(元)'] || 0);
+                    const dailyKwh = days > 0 ? (kwh / days).toFixed(2) : '0.00';
+                    const dailyServiceFee = days > 0 ? (serviceFee / days).toFixed(2) : '0.00';
+                    
+                    return {
+                        '数据类别': row['数据类别'] || '',
+                        '充电电量(度)': kwh.toFixed(2),
+                        '日均充电电量(度)': dailyKwh,
+                        '充电电费(元)': parseFloat(row['充电电费(元)'] || 0).toFixed(2),
+                        '充电服务费(元)': serviceFee.toFixed(2),
+                        '日均充电服务费(元)': dailyServiceFee,
+                        '充电费用(元)': parseFloat(row['充电费用(元)'] || 0).toFixed(2)
+                    };
+                });
                 
                 // 设置分页数据
                 __otherPagination.enabled = true;
@@ -19803,8 +19894,10 @@ function updateUnchargedTable() {
             html += `<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">${categoryLabel}</th>`;
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电电量(度)</th>';
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">占比</th>';
+            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">日均充电电量(度)</th>';
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电电费(元)</th>';
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电服务费(元)</th>';
+            html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">日均充电服务费(元)</th>';
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电费用(元)</th>';
             html += '</tr></thead><tbody>';
             
@@ -19818,8 +19911,10 @@ function updateUnchargedTable() {
                 html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['数据类别'] || ''}</td>`;
                 html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电电量(度)'] || '0.00'}</td>`;
                 html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${percentage}%</td>`;
+                html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['日均充电电量(度)'] || '0.00'}</td>`;
                 html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电电费(元)'] || '0.00'}</td>`;
                 html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电服务费(元)'] || '0.00'}</td>`;
+                html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['日均充电服务费(元)'] || '0.00'}</td>`;
                 html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电费用(元)'] || '0.00'}</td>`;
                 html += '</tr>';
             });
@@ -19929,7 +20024,7 @@ function updateUnchargedTable() {
             }, 0);
             
             // 准备Excel数据
-            const headers = [categoryLabel, '充电电量(度)', '占比', '充电电费(元)', '充电服务费(元)', '充电费用(元)'];
+            const headers = [categoryLabel, '充电电量(度)', '占比', '日均充电电量(度)', '充电电费(元)', '充电服务费(元)', '日均充电服务费(元)', '充电费用(元)'];
             const rows = data.map(row => {
                 const kwh = parseFloat(row['充电电量(度)'] || 0);
                 const percentage = totalKwh > 0 ? ((kwh / totalKwh) * 100).toFixed(2) : '0.00';
@@ -19937,8 +20032,10 @@ function updateUnchargedTable() {
                     row['数据类别'] || '',
                     row['充电电量(度)'] || '0.00',
                     percentage + '%',
+                    row['日均充电电量(度)'] || '0.00',
                     row['充电电费(元)'] || '0.00',
                     row['充电服务费(元)'] || '0.00',
+                    row['日均充电服务费(元)'] || '0.00',
                     row['充电费用(元)'] || '0.00'
                 ];
             });
@@ -19960,6 +20057,8 @@ function updateUnchargedTable() {
                 if (index === 0) return { wch: 30 };
                 // 占比列可以稍窄
                 if (index === 2) return { wch: 12 };
+                // 日均列可以稍窄
+                if (index === 3 || index === 6) return { wch: 18 };
                 return { wch: 18 };
             });
             ws['!cols'] = colWidths;
