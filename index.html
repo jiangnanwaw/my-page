@@ -4565,111 +4565,127 @@
         }
 
         
-        // 获取DOM元素
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const resetForm = document.getElementById('resetForm');
-        const loginMessage = document.getElementById('loginMessage');
+        // 初始化登录系统（确保DOM加载完成后再执行）
+        function initLoginSystem() {
+            // 获取DOM元素
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const resetForm = document.getElementById('resetForm');
+            const loginMessage = document.getElementById('loginMessage');
+            
+            if (!loginForm || !registerForm || !resetForm || !loginMessage) {
+                console.error('登录表单元素未找到，请检查DOM结构');
+                return;
+            }
+            
+            const showReset = document.getElementById('showReset');
+            const showRegister = document.getElementById('showRegister');
+            const showSmsLogin = document.getElementById('showSmsLogin');
+            const backToLoginFromRegister = document.getElementById('backToLoginFromRegister');
+            const backToLoginFromReset = document.getElementById('backToLoginFromReset');
+            const backToLoginFromSms = document.getElementById('backToLoginFromSms');
+            
+            // 显示消息
+            function showMessage(message, type) {
+                loginMessage.textContent = message;
+                loginMessage.className = 'message ' + type;
+                loginMessage.style.display = 'block';
+            }
+            
+            // 隐藏消息
+            function hideMessage() {
+                loginMessage.style.display = 'none';
+            }
+            
+            // 表单切换
+            if (showReset) {
+                showReset.addEventListener('click', (e) => {
         
-        const showReset = document.getElementById('showReset');
-        const showRegister = document.getElementById('showRegister');
-        const showSmsLogin = document.getElementById('showSmsLogin');
-        const backToLoginFromRegister = document.getElementById('backToLoginFromRegister');
-        const backToLoginFromReset = document.getElementById('backToLoginFromReset');
-        const backToLoginFromSms = document.getElementById('backToLoginFromSms');
-        
-        // 表单切换
-        showReset.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.style.display = 'none';
-            resetForm.style.display = 'block';
-            registerForm.style.display = 'none';
-            hideMessage();
-            // 修改标题为"密码重置"
-            document.getElementById('form-title').textContent = '密码重置';
-            // 修改图标为钥匙图标
-            document.querySelector('#login-container .logo i').className = 'fas fa-key';
-        });
-        
-        showRegister.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.style.display = 'none';
-            resetForm.style.display = 'none';
-            registerForm.style.display = 'block';
-            document.getElementById('smsLoginForm').style.display = 'none';
-            hideMessage();
-            // 修改标题为"新用户注册"
-            document.getElementById('form-title').textContent = '新用户注册';
-            // 修改图标为用户添加图标
-            document.querySelector('#login-container .logo i').className = 'fas fa-user-plus';
-        });
-        
-        showSmsLogin.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.style.display = 'none';
-            resetForm.style.display = 'none';
-            registerForm.style.display = 'none';
-            document.getElementById('smsLoginForm').style.display = 'block';
-            hideMessage();
-            // 修改标题为"短信验证码登录"
-            document.getElementById('form-title').textContent = '短信验证码登录';
-            // 修改图标为手机图标
-            document.querySelector('#login-container .logo i').className = 'fas fa-mobile-alt';
-        });
-        
-        backToLoginFromRegister.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.style.display = 'block';
-            resetForm.style.display = 'none';
-            registerForm.style.display = 'none';
-            document.getElementById('smsLoginForm').style.display = 'none';
-            hideMessage();
-            // 修改标题为"用户登录"
-            document.getElementById('form-title').textContent = '用户登录';
-            // 重置图标为登录图标
-            document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
-        });
-        
-        backToLoginFromReset.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.style.display = 'block';
-            resetForm.style.display = 'none';
-            registerForm.style.display = 'none';
-            document.getElementById('smsLoginForm').style.display = 'none';
-            hideMessage();
-            // 修改标题为"用户登录"
-            document.getElementById('form-title').textContent = '用户登录';
-            // 重置图标为登录图标
-            document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
-        });
-        
-        backToLoginFromSms.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.style.display = 'block';
-            resetForm.style.display = 'none';
-            registerForm.style.display = 'none';
-            document.getElementById('smsLoginForm').style.display = 'none';
-            hideMessage();
-            // 修改标题为"用户登录"
-            document.getElementById('form-title').textContent = '用户登录';
-            // 重置图标为登录图标
-            document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
-        });
-        
-        // 显示消息
-        function showMessage(message, type) {
-            loginMessage.textContent = message;
-            loginMessage.className = 'message ' + type;
-            loginMessage.style.display = 'block';
-        }
-        
-        // 隐藏消息
-        function hideMessage() {
-            loginMessage.style.display = 'none';
-        }
-        
-        // 登录处理
-        loginForm.addEventListener('submit', async (e) => {
+                    hideMessage();
+                    // 修改标题为"密码重置"
+                    document.getElementById('form-title').textContent = '密码重置';
+                    // 修改图标为钥匙图标
+                    document.querySelector('#login-container .logo i').className = 'fas fa-key';
+                });
+            }
+            
+            if (showRegister) {
+                showRegister.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loginForm.style.display = 'none';
+                    resetForm.style.display = 'none';
+                    registerForm.style.display = 'block';
+                    document.getElementById('smsLoginForm').style.display = 'none';
+                    hideMessage();
+                    // 修改标题为"新用户注册"
+                    document.getElementById('form-title').textContent = '新用户注册';
+                    // 修改图标为用户添加图标
+                    document.querySelector('#login-container .logo i').className = 'fas fa-user-plus';
+                });
+            }
+            
+            if (showSmsLogin) {
+                showSmsLogin.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loginForm.style.display = 'none';
+                    resetForm.style.display = 'none';
+                    registerForm.style.display = 'none';
+                    document.getElementById('smsLoginForm').style.display = 'block';
+                    hideMessage();
+                    // 修改标题为"短信验证码登录"
+                    document.getElementById('form-title').textContent = '短信验证码登录';
+                    // 修改图标为手机图标
+                    document.querySelector('#login-container .logo i').className = 'fas fa-mobile-alt';
+                });
+            }
+            
+            if (backToLoginFromRegister) {
+                backToLoginFromRegister.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loginForm.style.display = 'block';
+                    resetForm.style.display = 'none';
+                    registerForm.style.display = 'none';
+                    document.getElementById('smsLoginForm').style.display = 'none';
+                    hideMessage();
+                    // 修改标题为"用户登录"
+                    document.getElementById('form-title').textContent = '用户登录';
+                    // 重置图标为登录图标
+                    document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
+                });
+            }
+            
+            if (backToLoginFromReset) {
+                backToLoginFromReset.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loginForm.style.display = 'block';
+                    resetForm.style.display = 'none';
+                    registerForm.style.display = 'none';
+                    document.getElementById('smsLoginForm').style.display = 'none';
+                    hideMessage();
+                    // 修改标题为"用户登录"
+                    document.getElementById('form-title').textContent = '用户登录';
+                    // 重置图标为登录图标
+                    document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
+                });
+            }
+            
+            if (backToLoginFromSms) {
+                backToLoginFromSms.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loginForm.style.display = 'block';
+                    resetForm.style.display = 'none';
+                    registerForm.style.display = 'none';
+                    document.getElementById('smsLoginForm').style.display = 'none';
+                    hideMessage();
+                    // 修改标题为"用户登录"
+                    document.getElementById('form-title').textContent = '用户登录';
+                    // 重置图标为登录图标
+                    document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
+                });
+            }
+            
+            // 登录处理
+            loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const username = document.getElementById('loginUsername').value;
@@ -4787,14 +4803,17 @@
             }
         });
         
-        // 短信验证码登录处理
-        const smsLoginForm = document.getElementById('smsLoginForm');
-        const sendSmsCodeBtn = document.getElementById('sendSmsCode');
-        const smsPhoneInput = document.getElementById('smsPhone');
-        const smsCodeInput = document.getElementById('smsCode');
-        
-        // 发送验证码
-        sendSmsCodeBtn.addEventListener('click', async (e) => {
+            // 短信验证码登录处理
+            const smsLoginForm = document.getElementById('smsLoginForm');
+            const sendSmsCodeBtn = document.getElementById('sendSmsCode');
+            const smsPhoneInput = document.getElementById('smsPhone');
+            const smsCodeInput = document.getElementById('smsCode');
+            
+            if (!smsLoginForm || !sendSmsCodeBtn || !smsPhoneInput || !smsCodeInput) {
+                console.warn('短信登录表单元素未找到，短信登录功能可能不可用');
+            } else {
+                // 发送验证码
+                sendSmsCodeBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             
             const phone = smsPhoneInput.value.trim();
@@ -4825,15 +4844,15 @@
                     sendSmsCodeBtn.textContent = '发送验证码';
                 }
                 
-            } catch (error) {
-                showMessage('发送失败，请重试', 'error');
-                sendSmsCodeBtn.disabled = false;
-                sendSmsCodeBtn.textContent = '发送验证码';
-            }
-        });
-        
-        // 短信验证码登录提交
-        smsLoginForm.addEventListener('submit', async (e) => {
+                    } catch (error) {
+                        showMessage('发送失败，请重试', 'error');
+                        sendSmsCodeBtn.disabled = false;
+                        sendSmsCodeBtn.textContent = '发送验证码';
+                    }
+                });
+                
+                // 短信验证码登录提交
+                smsLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const phone = smsPhoneInput.value.trim();
@@ -4882,27 +4901,30 @@
                     showMessage(result.message || '验证失败，请检查验证码', 'error');
                 }
                 
-            } catch (error) {
-                showMessage('登录失败，请重试', 'error');
-            }
-        });
-        // 倒计时功能
-        function startCountdown() {
-            let countdown = 60;
-            sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
-            sendSmsCodeBtn.classList.add('countdown');
-            
-            const timer = setInterval(() => {
-                countdown--;
-                sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
-                
-                if (countdown <= 0) {
-                    clearInterval(timer);
-                    sendSmsCodeBtn.disabled = false;
-                    sendSmsCodeBtn.textContent = '发送验证码';
-                    sendSmsCodeBtn.classList.remove('countdown');
+                } catch (error) {
+                    showMessage('登录失败，请重试', 'error');
                 }
-            }, 1000);
+                });
+                
+                // 倒计时功能
+                function startCountdown() {
+                    let countdown = 60;
+                    sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
+                    sendSmsCodeBtn.classList.add('countdown');
+                    
+                    const timer = setInterval(() => {
+                        countdown--;
+                        sendSmsCodeBtn.textContent = `${countdown}秒后重发`;
+                        
+                        if (countdown <= 0) {
+                            clearInterval(timer);
+                            sendSmsCodeBtn.disabled = false;
+                            sendSmsCodeBtn.textContent = '发送验证码';
+                            sendSmsCodeBtn.classList.remove('countdown');
+                        }
+                    }, 1000);
+                }
+            }
         }
         
         // 初始化主页面系统函数（优化版：延迟加载）
@@ -6024,6 +6046,9 @@
 
         // 初始化系统
         window.addEventListener('DOMContentLoaded', function() {
+            // 优先初始化登录系统，确保登录功能立即可用
+            initLoginSystem();
+            
             // 首先检查登录状态
             if (!checkLoginStatus()) {
                 // 如果没有有效登录状态，显示登录界面
@@ -6033,6 +6058,12 @@
                 document.getElementById('nebula').style.display = 'block';
                 document.getElementById('starfield').style.display = 'block';
             }
+            
+            // 延迟初始化星空动画，避免阻塞登录功能
+            // 使用setTimeout确保登录系统先初始化完成
+            setTimeout(function() {
+                initStarfield();
+            }, 100);
         });
         
         // 时间显示更新
@@ -8472,11 +8503,8 @@ function updateUnchargedTable() {
             }
         }
 
-        // 页面加载完成后仅初始化星空背景（用于登录页视觉效果）
-        // 其余耗时的数据加载与图表初始化放在登录成功后执行（见 showMainPage）
-        document.addEventListener('DOMContentLoaded', function() {
-            initStarfield();
-        });
+        // 注意：星空背景动画的初始化已移至主DOMContentLoaded事件中，延迟执行
+        // 这样可以确保登录功能优先初始化，不受动画加载影响
 
         // 数据可视化分析相关变量
         let visualizationData = {
