@@ -2728,6 +2728,10 @@
                         <i class="fas fa-mobile-alt"></i>
                         <span>用户号码查询</span>
                     </a>
+                    <a href="#" class="submenu-item" id="menu-report-bi">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>BI数据看板</span>
+                    </a>
                 </div>
 
                 <!-- 其他菜单项 -->
@@ -3409,6 +3413,198 @@
                                 <p>请输入车牌号进行查询</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- 覆盖式空白页面：BI数据看板 -->
+                <div id="page-report-bi" style="display:none; position:fixed; top:70px; left:250px; right:0; bottom:0; background:#ffffff; overflow:auto; padding:20px; z-index:1000;">
+                    <!-- 面包屑导航 -->
+                    <div style="font-size:14px; color:#666; margin-bottom:12px;">
+                        <a href="#" onclick="navigateHome()" style="color:#007bff; text-decoration:none;">首页</a>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <span>报表查询</span>
+                        <span style="margin: 0 6px; color:#aaa;">&gt;</span>
+                        <strong style="color:#333;">BI数据看板</strong>
+                    </div>
+                    
+                    <!-- 查询条件栏 -->
+                    <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin-bottom:20px;">
+                        <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
+                            <!-- 站点选择 -->
+                            <div style="position:relative;">
+                                <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">站点</label>
+                                <div id="bi-station-selector" class="multi-select-box" style="min-width:200px; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer; position:relative; display:flex; align-items:center; box-sizing:border-box; min-height:38px;">
+                                    <span id="bi-station-display" style="font-size:12px;">请选择站点</span>
+                                    <i class="fas fa-chevron-down" style="position:absolute; right:10px; top:50%; transform:translateY(-50%);"></i>
+                                </div>
+                                <div id="bi-station-dropdown" style="display:none; position:absolute; top:100%; left:0; z-index:1001; background:#fff; border:1px solid #ddd; border-radius:4px; margin-top:2px; min-width:200px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                                    <div style="padding:8px;">
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" id="bi-station-all" value="全部" onchange="toggleBIStationAll()" style="margin-right:8px;">
+                                            全选
+                                        </label>
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" class="bi-station-option" value="四方坪站" onchange="updateBIStationSelection()" style="margin-right:8px;">
+                                            四方坪站
+                                        </label>
+                                        <label style="display:block; padding:5px 8px; cursor:pointer; border-radius:3px; transition:background 0.2s; font-size:12px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" class="bi-station-option" value="高岭站" onchange="updateBIStationSelection()" style="margin-right:8px;">
+                                            高岭站
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 开始日期 -->
+                            <div style="position:relative; width:220px;">
+                                <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">开始日期</label>
+                                <input type="text" id="bi-start-datetime" placeholder="开始日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showBIMonthPicker('bi-start-datetime', this)">
+                                <button id="bi-start-datetime-btn" title="选择日期" onclick="showBIMonthPicker('bi-start-datetime', document.getElementById('bi-start-datetime'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <div id="bi-start-datetime-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
+                            </div>
+
+                            <!-- 结束日期 -->
+                            <div style="position:relative; width:220px;">
+                                <label style="display:block; margin-bottom:5px; font-size:14px; color:#333; font-weight:500;">结束日期</label>
+                                <input type="text" id="bi-end-datetime" placeholder="结束日期" style="width:100%; padding:8px 30px 8px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; cursor:pointer;" onclick="showBIMonthPicker('bi-end-datetime', this)">
+                                <button id="bi-end-datetime-btn" title="选择日期" onclick="showBIMonthPicker('bi-end-datetime', document.getElementById('bi-end-datetime'))" style="position:absolute; right:6px; top:calc(50% + 10px); transform:translateY(-50%); border:none; background:transparent; cursor:pointer; line-height:1;">📅</button>
+                                <div id="bi-end-datetime-picker" style="display:none; position:absolute; top:100%; left:0; z-index:2001; margin-top:2px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:150px;"></div>
+                            </div>
+
+                            <!-- 查询按钮 -->
+                            <div style="margin-top:23px; display:flex; gap:10px;">
+                                <button onclick="runBIQuery()" style="padding:8px 20px; background:#007bff; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:8px; transition:background 0.3s;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
+                                    <i class="fas fa-search"></i>
+                                    <span>查询</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 查询条件显示 -->
+                    <div id="bi-query-conditions" style="display:none; margin-bottom:20px; padding:12px; background:#e7f3ff; border-left:4px solid #007bff; border-radius:4px;">
+                        <div style="font-size:14px; color:#333;">
+                            <strong>当前查询条件：</strong>
+                            <span id="bi-conditions-text"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 图表展示区域 -->
+                    <div id="bi-charts-container" style="display:none;">
+                        <!-- 充电电量图表 -->
+                        <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                            <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                                <i class="fas fa-bolt"></i> 充电电量分析
+                            </h3>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                                    <canvas id="bi-charge-max-chart"></canvas>
+                                </div>
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                                    <canvas id="bi-charge-min-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 充电服务费图表 -->
+                        <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                            <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                                <i class="fas fa-coins"></i> 充电服务费分析
+                            </h3>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                                    <canvas id="bi-service-max-chart"></canvas>
+                                </div>
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                                    <canvas id="bi-service-min-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 充电费用图表 -->
+                        <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                            <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                                <i class="fas fa-money-bill-wave"></i> 充电费用分析
+                            </h3>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                                    <canvas id="bi-cost-max-chart"></canvas>
+                                </div>
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                                    <canvas id="bi-cost-min-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 充电时长图表 -->
+                        <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                            <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                                <i class="fas fa-clock"></i> 充电时长分析
+                            </h3>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                                    <canvas id="bi-duration-max-chart"></canvas>
+                                </div>
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                                    <canvas id="bi-duration-min-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 充电订单数图表 -->
+                        <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                            <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                                <i class="fas fa-list-alt"></i> 充电订单数分析
+                            </h3>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                                    <canvas id="bi-orders-max-chart"></canvas>
+                                </div>
+                                <div>
+                                    <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                                    <canvas id="bi-orders-min-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 月数据和年数据展示区域（当跨月或跨年时显示） -->
+                        <div id="bi-month-year-data" style="display:none;">
+                            <!-- 月数据图表 -->
+                            <div id="bi-month-charts" style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                                <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                                    <i class="fas fa-calendar-alt"></i> 月度数据分析
+                                </h3>
+                                <div>
+                                    <h4 style="margin-bottom:15px; color:#666; font-size:14px;">月度数据对比</h4>
+                                    <canvas id="bi-monthly-comparison-chart" style="max-height:500px;"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- 年数据图表 -->
+                            <div id="bi-year-charts" style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                                <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                                    <i class="fas fa-calendar-check"></i> 年度数据分析
+                                </h3>
+                                <div>
+                                    <canvas id="bi-yearly-combined-chart" style="max-height:500px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 初始提示 -->
+                    <div id="bi-initial-tip" style="text-align:center; color:#999; padding:60px 20px;">
+                        <i class="fas fa-chart-bar" style="font-size:48px; margin-bottom:15px; opacity:0.3;"></i>
+                        <p style="font-size:16px;">请选择站点和时间范围进行查询</p>
                     </div>
                 </div>
             
@@ -10864,10 +11060,12 @@ function updateUnchargedTable() {
                 var btnReportComprehensive = document.getElementById('menu-report-comprehensive');
                 var btnReportUser = document.getElementById('menu-report-user');
                 var btnReportEfficiency = document.getElementById('menu-report-efficiency');
+                var btnReportBI = document.getElementById('menu-report-bi');
                 var pageReportCharging = document.getElementById('page-report-charging');
                 var pageReportComprehensive = document.getElementById('page-report-comprehensive');
                 var pageReportUser = document.getElementById('page-report-user');
                 var pageReportEfficiency = document.getElementById('page-report-efficiency');
+                var pageReportBI = document.getElementById('page-report-bi');
 
                 if (!btnCd || !btnZh || !btnHome || !pageCd || !pageZh) return;
 
@@ -10881,6 +11079,7 @@ function updateUnchargedTable() {
                     if (pageReportComprehensive) pageReportComprehensive.style.display = 'none';
                     if (pageReportUser) pageReportUser.style.display = 'none';
                     if (pageReportEfficiency) pageReportEfficiency.style.display = 'none';
+                    if (pageReportBI) pageReportBI.style.display = 'none';
                 }
 
                 function showCd() {
@@ -10965,6 +11164,18 @@ function updateUnchargedTable() {
                     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
                 }
 
+                function showReportBI() {
+                    hideAllPages();
+                    if (pageReportBI) {
+                        pageReportBI.style.display = 'block';
+                        // 初始化BI页面的日期选择器
+                        if (typeof initBIDatetimePickers === 'function') {
+                            initBIDatetimePickers();
+                        }
+                    }
+                    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+                }
+
                 function showHome() {
                     hideAllPages();
                 }
@@ -10996,6 +11207,9 @@ function updateUnchargedTable() {
                 }
                 if (btnReportEfficiency) {
                     btnReportEfficiency.addEventListener('click', function(e) { e.preventDefault(); showReportEfficiency(); });
+                }
+                if (btnReportBI) {
+                    btnReportBI.addEventListener('click', function(e) { e.preventDefault(); showReportBI(); });
                 }
                 btnHome.addEventListener('click', function() { showHome(); });
             }
@@ -18792,6 +19006,151 @@ function updateUnchargedTable() {
             currentCompPickerTarget = null;
         }
 
+        // ==================== BI数据看板功能 ====================
+        
+        // BI数据看板站点选择器功能
+        document.addEventListener('click', function(e) {
+            const biStationSelector = document.getElementById('bi-station-selector');
+            const biStationDropdown = document.getElementById('bi-station-dropdown');
+
+            if (biStationSelector && biStationSelector.contains(e.target)) {
+                biStationDropdown.style.display = biStationDropdown.style.display === 'none' ? 'block' : 'none';
+            } else if (biStationDropdown && !biStationDropdown.contains(e.target)) {
+                biStationDropdown.style.display = 'none';
+            }
+        });
+
+        function toggleBIStationAll() {
+            const pageReportBI = document.getElementById('page-report-bi');
+            if (!pageReportBI || pageReportBI.style.display === 'none') {
+                return;
+            }
+
+            const allCheckbox = pageReportBI.querySelector('#bi-station-all');
+            const options = pageReportBI.querySelectorAll('.bi-station-option');
+
+            if (allCheckbox) {
+                options.forEach(option => {
+                    option.checked = allCheckbox.checked;
+                });
+                updateBIStationSelection();
+            }
+        }
+
+        function updateBIStationSelection() {
+            const pageReportBI = document.getElementById('page-report-bi');
+            if (!pageReportBI || pageReportBI.style.display === 'none') {
+                return;
+            }
+
+            const options = pageReportBI.querySelectorAll('.bi-station-option');
+            const allCheckbox = pageReportBI.querySelector('#bi-station-all');
+            const display = pageReportBI.querySelector('#bi-station-display');
+
+            if (!display) return;
+
+            const selected = Array.from(options).filter(opt => opt.checked);
+
+            if (selected.length === 0) {
+                display.textContent = '请选择站点';
+                if (allCheckbox) allCheckbox.checked = false;
+            } else if (selected.length === options.length) {
+                display.textContent = '全选';
+                if (allCheckbox) allCheckbox.checked = true;
+            } else {
+                display.textContent = selected.map(opt => opt.value).join(', ');
+                if (allCheckbox) allCheckbox.checked = false;
+            }
+        }
+
+        // BI数据看板月份选择器相关变量
+        let currentBIPickerTarget = null;
+        let currentBIPickerYear = new Date().getFullYear();
+
+        // 显示BI数据看板月份选择器
+        function showBIMonthPicker(targetId, inputElement) {
+            document.getElementById('bi-start-datetime-picker').style.display = 'none';
+            document.getElementById('bi-end-datetime-picker').style.display = 'none';
+
+            currentBIPickerTarget = targetId;
+            const targetInput = inputElement || document.getElementById(targetId);
+            const currentValue = targetInput.value;
+
+            if (currentValue && currentValue.match(/^\d{4}-\d{2}$/)) {
+                currentBIPickerYear = parseInt(currentValue.split('-')[0]);
+            } else {
+                currentBIPickerYear = new Date().getFullYear();
+            }
+
+            const pickerId = targetId === 'bi-start-datetime' ? 'bi-start-datetime-picker' : 'bi-end-datetime-picker';
+            const pickerContainer = document.getElementById(pickerId);
+
+            const inputWidth = targetInput.offsetWidth;
+            pickerContainer.style.width = inputWidth + 'px';
+
+            let pickerHTML = `
+                <div style="padding:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <button onclick="changeBIYear(-1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="bi-picker-year-${targetId}" style="font-size:16px; font-weight:bold;">${currentBIPickerYear}年</span>
+                        <button onclick="changeBIYear(1)" style="padding:5px 10px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:14px;">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px;">
+                        <button onclick="selectBIMonth(1, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">1月</button>
+                        <button onclick="selectBIMonth(2, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">2月</button>
+                        <button onclick="selectBIMonth(3, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">3月</button>
+                        <button onclick="selectBIMonth(4, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">4月</button>
+                        <button onclick="selectBIMonth(5, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">5月</button>
+                        <button onclick="selectBIMonth(6, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">6月</button>
+                        <button onclick="selectBIMonth(7, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">7月</button>
+                        <button onclick="selectBIMonth(8, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">8月</button>
+                        <button onclick="selectBIMonth(9, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">9月</button>
+                        <button onclick="selectBIMonth(10, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">10月</button>
+                        <button onclick="selectBIMonth(11, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">11月</button>
+                        <button onclick="selectBIMonth(12, '${targetId}')" style="padding:8px; border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; font-size:13px; transition:all 0.2s;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#fff'">12月</button>
+                    </div>
+                    <button onclick="closeBIMonthPicker('${targetId}')" style="width:100%; padding:6px; background:#6c757d; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:13px;">取消</button>
+                </div>
+            `;
+
+            pickerContainer.innerHTML = pickerHTML;
+            pickerContainer.style.display = 'block';
+
+            setTimeout(() => {
+                const closeOnClickOutside = (e) => {
+                    if (!pickerContainer.contains(e.target) && e.target !== targetInput) {
+                        pickerContainer.style.display = 'none';
+                        document.removeEventListener('click', closeOnClickOutside);
+                    }
+                };
+                document.addEventListener('click', closeOnClickOutside);
+            }, 100);
+        }
+
+        function changeBIYear(delta) {
+            currentBIPickerYear += delta;
+            const yearSpan = document.getElementById('bi-picker-year-' + currentBIPickerTarget);
+            if (yearSpan) {
+                yearSpan.textContent = currentBIPickerYear + '年';
+            }
+        }
+
+        function selectBIMonth(month, targetId) {
+            const yearMonth = `${currentBIPickerYear}-${String(month).padStart(2, '0')}`;
+            document.getElementById(targetId).value = yearMonth;
+            closeBIMonthPicker(targetId);
+        }
+
+        function closeBIMonthPicker(targetId) {
+            const pickerId = targetId === 'bi-start-datetime' ? 'bi-start-datetime-picker' : 'bi-end-datetime-picker';
+            document.getElementById(pickerId).style.display = 'none';
+            currentBIPickerTarget = null;
+        }
+
         // 充电数据报表月份选择器相关变量
         let currentZhPickerTarget = null;
         let currentZhPickerYear = new Date().getFullYear();
@@ -19653,6 +20012,1290 @@ function updateUnchargedTable() {
             } catch (e) {
                 console.error('初始化其它数据页面日期选择器失败:', e);
             }
+        }
+
+        // BI数据看板初始化（设置默认值为当前年月）
+        function initBIDatetimePickers() {
+            try {
+                // 获取当前年月，格式为 yyyy-mm
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+                const currentYearMonth = `${currentYear}-${currentMonth}`;
+                
+                // 设置开始日期和结束日期默认值为当前年月
+                const startTimeEl = document.getElementById('bi-start-datetime');
+                const endTimeEl = document.getElementById('bi-end-datetime');
+                
+                if (startTimeEl) {
+                    startTimeEl.value = currentYearMonth;
+                }
+                if (endTimeEl) {
+                    endTimeEl.value = currentYearMonth;
+                }
+                
+                // 站点选择器已经通过HTML和事件监听器初始化
+            } catch (e) {
+                console.error('初始化BI数据看板失败:', e);
+            }
+        }
+
+        // 将能科的充电时长从hh:mm:ss格式转换为分钟
+        function convertDurationToMinutes(durationStr) {
+            if (!durationStr) return 0;
+            const str = String(durationStr).trim();
+            const parts = str.split(':');
+            if (parts.length === 3) {
+                const hours = parseInt(parts[0]) || 0;
+                const minutes = parseInt(parts[1]) || 0;
+                const seconds = parseInt(parts[2]) || 0;
+                return hours * 60 + minutes + Math.round(seconds / 60);
+            }
+            return parseFloat(str) || 0;
+        }
+
+        // BI数据查询主函数
+        async function runBIQuery() {
+            const pageReportBI = document.getElementById('page-report-bi');
+            if (!pageReportBI) {
+                alert('页面元素未找到');
+                return;
+            }
+            
+            // 获取站点选择（从checkbox获取）
+            const allCheckbox = pageReportBI.querySelector('#bi-station-all');
+            const stationOptions = pageReportBI.querySelectorAll('.bi-station-option');
+            const selectedOptions = Array.from(stationOptions).filter(opt => opt.checked);
+            const isAllSelected = allCheckbox && allCheckbox.checked;
+            
+            const startTimeEl = document.getElementById('bi-start-datetime');
+            const endTimeEl = document.getElementById('bi-end-datetime');
+            const conditionsDiv = document.getElementById('bi-query-conditions');
+            const conditionsText = document.getElementById('bi-conditions-text');
+            const chartsContainer = document.getElementById('bi-charts-container');
+            const initialTip = document.getElementById('bi-initial-tip');
+
+            if (!startTimeEl || !endTimeEl) {
+                alert('页面元素未找到');
+                return;
+            }
+
+            const startTime = startTimeEl.value.trim();
+            const endTime = endTimeEl.value.trim();
+
+            if (!isAllSelected && selectedOptions.length === 0) {
+                alert('请选择站点');
+                return;
+            }
+
+            if (!startTime || !endTime) {
+                alert('请选择时间范围');
+                return;
+            }
+
+            // 获取选中的站点值（用于查询）
+            let selectedStations = [];
+            if (isAllSelected) {
+                selectedStations = ['all'];
+            } else {
+                selectedStations = selectedOptions.map(opt => {
+                    if (opt.value === '四方坪站') return 'sifangping';
+                    if (opt.value === '高岭站') return 'gaoling';
+                    return opt.value;
+                });
+            }
+
+            // 显示查询条件
+            let stationText = '';
+            if (isAllSelected) {
+                stationText = '全选';
+            } else {
+                stationText = selectedOptions.map(opt => opt.value).join('、');
+            }
+            conditionsText.textContent = `站点：${stationText}，开始时间：${startTime}，结束时间：${endTime}`;
+            conditionsDiv.style.display = 'block';
+            if (initialTip) initialTip.style.display = 'none';
+            chartsContainer.style.display = 'block';
+
+            // 显示加载提示
+            chartsContainer.innerHTML = '<div style="text-align:center; padding:40px;"><p>正在查询数据...</p></div>';
+
+            try {
+                // 处理月份格式（YYYY-MM）转换为日期时间
+                let startDateTime = startTime;
+                let endDateTime = endTime;
+                
+                // 如果输入是月份格式（YYYY-MM），转换为该月的开始和结束日期时间
+                if (/^\d{4}-\d{2}$/.test(startTime)) {
+                    startDateTime = startTime + '-01 00:00:00';
+                }
+                if (/^\d{4}-\d{2}$/.test(endTime)) {
+                    const [year, month] = endTime.split('-');
+                    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+                    endDateTime = `${endTime}-${String(lastDay).padStart(2, '0')} 23:59:59`;
+                }
+                
+                const start = toSqlDateTime(startDateTime, false);
+                const end = toSqlDateTime(endDateTime, true);
+
+                // 构建查询SQL
+                let sqlQueries = [];
+                
+                // 判断需要查询哪些数据
+                const queryAll = selectedStations.includes('all');
+                const querySifangping = queryAll || selectedStations.includes('sifangping');
+                const queryGaoling = queryAll || selectedStations.includes('gaoling');
+
+                // 查询特来电表数据
+                if (queryAll || querySifangping || queryGaoling) {
+                    let teldaiConditions = [];
+                    if (queryAll) {
+                        // 全选：查询所有数据
+                        teldaiConditions.push('1=1');
+                    } else {
+                        if (querySifangping && queryGaoling) {
+                            // 两个站点都选
+                            teldaiConditions.push('1=1');
+                        } else if (querySifangping) {
+                            // 只选四方坪站：不包含高岭站的数据
+                            teldaiConditions.push(`([电站名称] NOT LIKE '%华为飞狐特来电高岭超充站%' AND [电站名称] NOT LIKE '%长沙市开福区高岭香江国际城充电站建设项目%')`);
+                        } else if (queryGaoling) {
+                            // 只选高岭站：包含高岭站的数据
+                            teldaiConditions.push(`([电站名称] LIKE '%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE '%长沙市开福区高岭香江国际城充电站建设项目%')`);
+                        }
+                    }
+                    
+                    const teldaiSql = `SELECT 
+                        CAST([充电结束时间] AS DATE) AS [日期],
+                        SUM(CAST([充电电量(度)] AS FLOAT)) AS [充电电量],
+                        SUM(CAST([充电服务费(元)] AS FLOAT)) AS [充电服务费],
+                        SUM(CAST([充电费用(元)] AS FLOAT)) AS [充电费用],
+                        SUM(CAST([充电时长(分钟)] AS FLOAT)) AS [充电时长],
+                        COUNT(*) AS [订单数]
+                    FROM [特来电]
+                    WHERE ${teldaiConditions.join(' OR ')} 
+                        AND [充电结束时间] BETWEEN '${start}' AND '${end}'
+                    GROUP BY CAST([充电结束时间] AS DATE)
+                    ORDER BY CAST([充电结束时间] AS DATE)`;
+                    
+                    sqlQueries.push({ sql: teldaiSql, type: 'teldai' });
+                }
+
+                // 查询能科表数据（四方坪站或全选时查询）
+                if (queryAll || querySifangping) {
+                    const nengkeSql = `SELECT 
+                        CAST([结束日期时间] AS DATE) AS [日期],
+                        SUM(CAST([充电量] AS FLOAT)) AS [充电电量],
+                        SUM(CAST(REPLACE([服务费], '￥', '') AS FLOAT)) AS [充电服务费],
+                        SUM(CAST(REPLACE([消费金额], '￥', '') AS FLOAT)) AS [充电费用],
+                        SUM(CASE 
+                            WHEN [充电时长] IS NOT NULL THEN 
+                                CASE 
+                                    WHEN LEN(CAST([充电时长] AS VARCHAR(50))) >= 8 
+                                         AND SUBSTRING(CAST([充电时长] AS VARCHAR(50)), 3, 1) = ':' 
+                                         AND SUBSTRING(CAST([充电时长] AS VARCHAR(50)), 6, 1) = ':'
+                                         AND ISNUMERIC(SUBSTRING(CAST([充电时长] AS VARCHAR(50)), 1, 2)) = 1
+                                         AND ISNUMERIC(SUBSTRING(CAST([充电时长] AS VARCHAR(50)), 4, 2)) = 1
+                                         AND ISNUMERIC(SUBSTRING(CAST([充电时长] AS VARCHAR(50)), 7, 2)) = 1 THEN
+                                        (CAST(SUBSTRING(CAST([充电时长] AS VARCHAR(50)), 1, 2) AS INT) * 60 + 
+                                         CAST(SUBSTRING(CAST([充电时长] AS VARCHAR(50)), 4, 2) AS INT) + 
+                                         CAST(SUBSTRING(CAST([充电时长] AS VARCHAR(50)), 7, 2) AS FLOAT) / 60.0)
+                                    WHEN ISNUMERIC(CAST([充电时长] AS VARCHAR(50))) = 1 THEN 
+                                CAST([充电时长] AS FLOAT)
+                                    ELSE 0 
+                                END
+                            ELSE 0 
+                        END) AS [充电时长],
+                        COUNT(*) AS [订单数]
+                    FROM [能科]
+                    WHERE [结束日期时间] BETWEEN '${start}' AND '${end}'
+                    GROUP BY CAST([结束日期时间] AS DATE)
+                    ORDER BY CAST([结束日期时间] AS DATE)`;
+                    
+                    sqlQueries.push({ sql: nengkeSql, type: 'nengke' });
+                }
+
+                // 执行查询
+                const teldaiData = [];
+                const nengkeData = [];
+                for (const queryInfo of sqlQueries) {
+                    try {
+                        const result = await callSqlWithRetry(queryInfo.sql);
+                        let data = result;
+                        if (result && result.result) {
+                            data = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
+                        }
+                        if (data && data.results) {
+                            data = data.results;
+                        }
+                        if (Array.isArray(data)) {
+                            if (queryInfo.type === 'teldai') {
+                                teldaiData.push(...data);
+                            } else if (queryInfo.type === 'nengke') {
+                                nengkeData.push(...data);
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`查询${queryInfo.type}数据失败:`, error);
+                    }
+                }
+
+                // 合并数据（按日期分组，分别保存特来电和能科数据）
+                const dailyData = {};
+                const hasNengkeData = nengkeData.length > 0;
+                
+                // 处理特来电数据
+                teldaiData.forEach(row => {
+                    let date = row['日期'];
+                    if (!date) return;
+                    
+                    let dateStr = '';
+                    if (typeof date === 'string') {
+                        dateStr = date.split('T')[0].split(' ')[0];
+                    } else if (date instanceof Date) {
+                        dateStr = date.toISOString().split('T')[0];
+                    } else {
+                        dateStr = String(date).split('T')[0].split(' ')[0];
+                    }
+                    
+                    if (!dateStr || dateStr.length < 10) return;
+                    
+                    if (!dailyData[dateStr]) {
+                        dailyData[dateStr] = {
+                            date: dateStr,
+                            charge: 0,
+                            service: 0,
+                            cost: 0,
+                            duration: 0,
+                            orders: 0,
+                            teldaiCharge: 0,
+                            teldaiService: 0,
+                            teldaiCost: 0,
+                            teldaiDuration: 0,
+                            teldaiOrders: 0,
+                            nengkeCharge: 0,
+                            nengkeService: 0,
+                            nengkeCost: 0,
+                            nengkeDuration: 0,
+                            nengkeOrders: 0
+                        };
+                    }
+                    
+                    const charge = parseFloat(row['充电电量'] || 0) || 0;
+                    const service = parseFloat(row['充电服务费'] || 0) || 0;
+                    const cost = parseFloat(row['充电费用'] || 0) || 0;
+                    const duration = parseFloat(row['充电时长'] || 0) || 0;
+                    const orders = parseInt(row['订单数'] || 0) || 0;
+                    
+                    dailyData[dateStr].charge += charge;
+                    dailyData[dateStr].service += service;
+                    dailyData[dateStr].cost += cost;
+                    dailyData[dateStr].duration += duration;
+                    dailyData[dateStr].orders += orders;
+                    dailyData[dateStr].teldaiCharge += charge;
+                    dailyData[dateStr].teldaiService += service;
+                    dailyData[dateStr].teldaiCost += cost;
+                    dailyData[dateStr].teldaiDuration += duration;
+                    dailyData[dateStr].teldaiOrders += orders;
+                });
+                
+                // 处理能科数据
+                nengkeData.forEach(row => {
+                    let date = row['日期'];
+                    if (!date) return;
+                    
+                    let dateStr = '';
+                    if (typeof date === 'string') {
+                        dateStr = date.split('T')[0].split(' ')[0];
+                    } else if (date instanceof Date) {
+                        dateStr = date.toISOString().split('T')[0];
+                    } else {
+                        dateStr = String(date).split('T')[0].split(' ')[0];
+                    }
+                    
+                    if (!dateStr || dateStr.length < 10) return;
+                    
+                    if (!dailyData[dateStr]) {
+                        dailyData[dateStr] = {
+                            date: dateStr,
+                            charge: 0,
+                            service: 0,
+                            cost: 0,
+                            duration: 0,
+                            orders: 0,
+                            teldaiCharge: 0,
+                            teldaiService: 0,
+                            teldaiCost: 0,
+                            teldaiDuration: 0,
+                            teldaiOrders: 0,
+                            nengkeCharge: 0,
+                            nengkeService: 0,
+                            nengkeCost: 0,
+                            nengkeDuration: 0,
+                            nengkeOrders: 0
+                        };
+                    }
+                    
+                    const charge = parseFloat(row['充电电量'] || 0) || 0;
+                    const service = parseFloat(row['充电服务费'] || 0) || 0;
+                    const cost = parseFloat(row['充电费用'] || 0) || 0;
+                    const duration = parseFloat(row['充电时长'] || 0) || 0;
+                    const orders = parseInt(row['订单数'] || 0) || 0;
+                    
+                    dailyData[dateStr].charge += charge;
+                    dailyData[dateStr].service += service;
+                    dailyData[dateStr].cost += cost;
+                    dailyData[dateStr].duration += duration;
+                    dailyData[dateStr].orders += orders;
+                    dailyData[dateStr].nengkeCharge += charge;
+                    dailyData[dateStr].nengkeService += service;
+                    dailyData[dateStr].nengkeCost += cost;
+                    dailyData[dateStr].nengkeDuration += duration;
+                    dailyData[dateStr].nengkeOrders += orders;
+                });
+
+                // 转换为数组并排序
+                const dataArray = Object.values(dailyData).sort((a, b) => 
+                    new Date(a.date) - new Date(b.date)
+                );
+
+                if (dataArray.length === 0) {
+                    chartsContainer.innerHTML = '<div style="text-align:center; padding:40px; color:#999;"><p>未查询到数据</p></div>';
+                    return;
+                }
+
+                // 检查是否跨月或跨年（基于实际数据日期范围）
+                const actualStartDate = new Date(dataArray[0].date);
+                const actualEndDate = new Date(dataArray[dataArray.length - 1].date);
+                const hasCrossMonth = actualStartDate.getMonth() !== actualEndDate.getMonth() || 
+                                     actualStartDate.getFullYear() !== actualEndDate.getFullYear();
+                const hasCrossYear = actualStartDate.getFullYear() !== actualEndDate.getFullYear();
+
+                // 生成统计描述文字
+                const statsText = generateBIStatsText(dataArray, hasNengkeData, hasCrossMonth, hasCrossYear);
+
+                // 生成图表
+                renderBICharts(dataArray, hasCrossMonth, hasCrossYear, statsText);
+
+            } catch (error) {
+                console.error('BI数据查询失败:', error);
+                chartsContainer.innerHTML = '<div style="text-align:center; padding:40px; color:#dc3545;"><p>查询失败：' + error.message + '</p></div>';
+            }
+        }
+
+        // 生成BI统计描述文字
+        function generateBIStatsText(dataArray, hasNengkeData, hasCrossMonth, hasCrossYear) {
+            if (!dataArray || dataArray.length === 0) return '';
+            
+            // 计算实际数据日期范围
+            const dates = dataArray.map(d => new Date(d.date));
+            const minDate = new Date(Math.min(...dates));
+            const maxDate = new Date(Math.max(...dates));
+            
+            // 计算实际有数据的日期、月份、年份数量
+            const daysDiff = dataArray.length; // 实际有数据的日期数
+            const uniqueMonths = new Set(dataArray.map(d => d.date.substring(0, 7))); // 实际有数据的月份
+            const monthsDiff = uniqueMonths.size;
+            const uniqueYears = new Set(dataArray.map(d => d.date.substring(0, 4))); // 实际有数据的年份
+            const yearsDiff = uniqueYears.size;
+            
+            // 按日期统计
+            const maxChargeDay = dataArray.reduce((max, d) => d.charge > max.charge ? d : max, dataArray[0]);
+            const minChargeDay = dataArray.reduce((min, d) => d.charge < min.charge ? d : min, dataArray[0]);
+            const maxServiceDay = dataArray.reduce((max, d) => d.service > max.service ? d : max, dataArray[0]);
+            const minServiceDay = dataArray.reduce((min, d) => d.service < min.service ? d : min, dataArray[0]);
+            const maxCostDay = dataArray.reduce((max, d) => d.cost > max.cost ? d : max, dataArray[0]);
+            const minCostDay = dataArray.reduce((min, d) => d.cost < min.cost ? d : min, dataArray[0]);
+            const maxDurationDay = dataArray.reduce((max, d) => d.duration > max.duration ? d : max, dataArray[0]);
+            const minDurationDay = dataArray.reduce((min, d) => d.duration < min.duration ? d : min, dataArray[0]);
+            const maxOrdersDay = dataArray.reduce((max, d) => d.orders > max.orders ? d : max, dataArray[0]);
+            const minOrdersDay = dataArray.reduce((min, d) => d.orders < min.orders ? d : min, dataArray[0]);
+            
+            // 计算日平均值（使用实际有数据的日期数）
+            const avgCharge = dataArray.reduce((sum, d) => sum + d.charge, 0) / daysDiff;
+            const avgService = dataArray.reduce((sum, d) => sum + d.service, 0) / daysDiff;
+            const avgCost = dataArray.reduce((sum, d) => sum + d.cost, 0) / daysDiff;
+            const avgDuration = dataArray.reduce((sum, d) => sum + d.duration, 0) / daysDiff;
+            const avgOrders = dataArray.reduce((sum, d) => sum + d.orders, 0) / daysDiff;
+            
+            // 声明月度平均值变量（在函数作用域内，以便后续使用）
+            let avgChargeMonth = 0;
+            let avgServiceMonth = 0;
+            let avgCostMonth = 0;
+            let avgDurationMonth = 0;
+            let avgOrdersMonth = 0;
+            
+            // 声明年度平均值变量（在函数作用域内，以便后续使用）
+            let avgChargeYear = 0;
+            let avgServiceYear = 0;
+            let avgCostYear = 0;
+            let avgDurationYear = 0;
+            let avgOrdersYear = 0;
+            
+            let text = '';
+            
+            // 按日期统计
+            text += `1、本期充电电量最大的时间在${maxChargeDay.date}，充电电量为${maxChargeDay.charge.toFixed(2)}度；最小的时间在${minChargeDay.date}，充电电量为${minChargeDay.charge.toFixed(2)}度；<br>`;
+            text += `2、本期充电服务费最多的时间在${maxServiceDay.date}，充电服务费为${maxServiceDay.service.toFixed(2)}元；最少的时间在${minServiceDay.date}，充电服务费为${minServiceDay.service.toFixed(2)}元；<br>`;
+            text += `3、本期充电费用最多的时间在${maxCostDay.date}，充电费用为${maxCostDay.cost.toFixed(2)}元；最少的时间在${minCostDay.date}，充电费用为${minCostDay.cost.toFixed(2)}元；<br>`;
+            text += `4、本期充电时长最多的时间在${maxDurationDay.date}，充电时长为${maxDurationDay.duration.toFixed(2)}分钟；最少的时间在${minDurationDay.date}，充电时长为${minDurationDay.duration.toFixed(2)}分钟；<br>`;
+            text += `5、本期充电订单数量最多的时间在${maxOrdersDay.date}，充电订单数量为${maxOrdersDay.orders}笔；最少的时间在${minOrdersDay.date}，充电订单数量为${minOrdersDay.orders}笔；<br>`;
+            
+            // 如果跨月，添加月度统计
+            if (hasCrossMonth) {
+                // 按月份分组统计
+                const monthlyData = {};
+                dataArray.forEach(d => {
+                    const monthKey = d.date.substring(0, 7); // yyyy-mm
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = {
+                            month: monthKey,
+                            charge: 0,
+                            service: 0,
+                            cost: 0,
+                            duration: 0,
+                            orders: 0,
+                            teldaiCharge: 0,
+                            teldaiService: 0,
+                            teldaiCost: 0,
+                            teldaiDuration: 0,
+                            teldaiOrders: 0,
+                            nengkeCharge: 0,
+                            nengkeService: 0,
+                            nengkeCost: 0,
+                            nengkeDuration: 0,
+                            nengkeOrders: 0
+                        };
+                    }
+                    monthlyData[monthKey].charge += d.charge;
+                    monthlyData[monthKey].service += d.service;
+                    monthlyData[monthKey].cost += d.cost;
+                    monthlyData[monthKey].duration += d.duration;
+                    monthlyData[monthKey].orders += d.orders;
+                    monthlyData[monthKey].teldaiCharge += d.teldaiCharge;
+                    monthlyData[monthKey].teldaiService += d.teldaiService;
+                    monthlyData[monthKey].teldaiCost += d.teldaiCost;
+                    monthlyData[monthKey].teldaiDuration += d.teldaiDuration;
+                    monthlyData[monthKey].teldaiOrders += d.teldaiOrders;
+                    monthlyData[monthKey].nengkeCharge += d.nengkeCharge;
+                    monthlyData[monthKey].nengkeService += d.nengkeService;
+                    monthlyData[monthKey].nengkeCost += d.nengkeCost;
+                    monthlyData[monthKey].nengkeDuration += d.nengkeDuration;
+                    monthlyData[monthKey].nengkeOrders += d.nengkeOrders;
+                });
+                
+                const monthlyArray = Object.values(monthlyData);
+                const maxChargeMonth = monthlyArray.reduce((max, m) => m.charge > max.charge ? m : max, monthlyArray[0]);
+                const minChargeMonth = monthlyArray.reduce((min, m) => m.charge < min.charge ? m : min, monthlyArray[0]);
+                const maxServiceMonth = monthlyArray.reduce((max, m) => m.service > max.service ? m : max, monthlyArray[0]);
+                const minServiceMonth = monthlyArray.reduce((min, m) => m.service < min.service ? m : min, monthlyArray[0]);
+                const maxCostMonth = monthlyArray.reduce((max, m) => m.cost > max.cost ? m : max, monthlyArray[0]);
+                const minCostMonth = monthlyArray.reduce((min, m) => m.cost < min.cost ? m : min, monthlyArray[0]);
+                const maxDurationMonth = monthlyArray.reduce((max, m) => m.duration > max.duration ? m : max, monthlyArray[0]);
+                const minDurationMonth = monthlyArray.reduce((min, m) => m.duration < min.duration ? m : min, monthlyArray[0]);
+                const maxOrdersMonth = monthlyArray.reduce((max, m) => m.orders > max.orders ? m : max, monthlyArray[0]);
+                const minOrdersMonth = monthlyArray.reduce((min, m) => m.orders < min.orders ? m : min, monthlyArray[0]);
+                
+                avgChargeMonth = monthlyArray.reduce((sum, m) => sum + m.charge, 0) / monthsDiff;
+                avgServiceMonth = monthlyArray.reduce((sum, m) => sum + m.service, 0) / monthsDiff;
+                avgCostMonth = monthlyArray.reduce((sum, m) => sum + m.cost, 0) / monthsDiff;
+                avgDurationMonth = monthlyArray.reduce((sum, m) => sum + m.duration, 0) / monthsDiff;
+                avgOrdersMonth = monthlyArray.reduce((sum, m) => sum + m.orders, 0) / monthsDiff;
+                
+                text += `6、本期充电电量最大的月份在${maxChargeMonth.month}，充电电量为${maxChargeMonth.charge.toFixed(2)}度；最小的月份在${minChargeMonth.month}，充电电量为${minChargeMonth.charge.toFixed(2)}度；<br>`;
+                text += `7、本期充电服务费最多的月份在${maxServiceMonth.month}，充电服务费为${maxServiceMonth.service.toFixed(2)}元；最少的月份在${minServiceMonth.month}，充电服务费为${minServiceMonth.service.toFixed(2)}元；<br>`;
+                text += `8、本期充电费用最多的月份在${maxCostMonth.month}，充电费用为${maxCostMonth.cost.toFixed(2)}元；最少的月份在${minCostMonth.month}，充电费用为${minCostMonth.cost.toFixed(2)}元；<br>`;
+                text += `9、本期充电时长最多的月份在${maxDurationMonth.month}，充电时长为${maxDurationMonth.duration.toFixed(2)}分钟；最少的月份在${minDurationMonth.month}，充电时长为${minDurationMonth.duration.toFixed(2)}分钟；<br>`;
+                text += `10、本期充电订单数量最多的月份在${maxOrdersMonth.month}，充电订单数量为${maxOrdersMonth.orders}笔；最少的月份在${minOrdersMonth.month}，充电订单数量为${minOrdersMonth.orders}笔；<br>`;
+            }
+            
+            // 如果跨年，添加年度统计
+            if (hasCrossYear) {
+                // 按年份分组统计
+                const yearlyData = {};
+                dataArray.forEach(d => {
+                    const yearKey = d.date.substring(0, 4); // yyyy
+                    if (!yearlyData[yearKey]) {
+                        yearlyData[yearKey] = {
+                            year: yearKey,
+                            charge: 0,
+                            service: 0,
+                            cost: 0,
+                            duration: 0,
+                            orders: 0,
+                            teldaiCharge: 0,
+                            teldaiService: 0,
+                            teldaiCost: 0,
+                            teldaiDuration: 0,
+                            teldaiOrders: 0,
+                            nengkeCharge: 0,
+                            nengkeService: 0,
+                            nengkeCost: 0,
+                            nengkeDuration: 0,
+                            nengkeOrders: 0
+                        };
+                    }
+                    yearlyData[yearKey].charge += d.charge;
+                    yearlyData[yearKey].service += d.service;
+                    yearlyData[yearKey].cost += d.cost;
+                    yearlyData[yearKey].duration += d.duration;
+                    yearlyData[yearKey].orders += d.orders;
+                    yearlyData[yearKey].teldaiCharge += d.teldaiCharge;
+                    yearlyData[yearKey].teldaiService += d.teldaiService;
+                    yearlyData[yearKey].teldaiCost += d.teldaiCost;
+                    yearlyData[yearKey].teldaiDuration += d.teldaiDuration;
+                    yearlyData[yearKey].teldaiOrders += d.teldaiOrders;
+                    yearlyData[yearKey].nengkeCharge += d.nengkeCharge;
+                    yearlyData[yearKey].nengkeService += d.nengkeService;
+                    yearlyData[yearKey].nengkeCost += d.nengkeCost;
+                    yearlyData[yearKey].nengkeDuration += d.nengkeDuration;
+                    yearlyData[yearKey].nengkeOrders += d.nengkeOrders;
+                });
+                
+                const yearlyArray = Object.values(yearlyData);
+                const maxChargeYear = yearlyArray.reduce((max, y) => y.charge > max.charge ? y : max, yearlyArray[0]);
+                const minChargeYear = yearlyArray.reduce((min, y) => y.charge < min.charge ? y : min, yearlyArray[0]);
+                const maxServiceYear = yearlyArray.reduce((max, y) => y.service > max.service ? y : max, yearlyArray[0]);
+                const minServiceYear = yearlyArray.reduce((min, y) => y.service < min.service ? y : min, yearlyArray[0]);
+                const maxCostYear = yearlyArray.reduce((max, y) => y.cost > max.cost ? y : max, yearlyArray[0]);
+                const minCostYear = yearlyArray.reduce((min, y) => y.cost < min.cost ? y : min, yearlyArray[0]);
+                const maxDurationYear = yearlyArray.reduce((max, y) => y.duration > max.duration ? y : max, yearlyArray[0]);
+                const minDurationYear = yearlyArray.reduce((min, y) => y.duration < min.duration ? y : min, yearlyArray[0]);
+                const maxOrdersYear = yearlyArray.reduce((max, y) => y.orders > max.orders ? y : max, yearlyArray[0]);
+                const minOrdersYear = yearlyArray.reduce((min, y) => y.orders < min.orders ? y : min, yearlyArray[0]);
+                
+                avgChargeYear = yearlyArray.reduce((sum, y) => sum + y.charge, 0) / yearsDiff;
+                avgServiceYear = yearlyArray.reduce((sum, y) => sum + y.service, 0) / yearsDiff;
+                avgCostYear = yearlyArray.reduce((sum, y) => sum + y.cost, 0) / yearsDiff;
+                avgDurationYear = yearlyArray.reduce((sum, y) => sum + y.duration, 0) / yearsDiff;
+                avgOrdersYear = yearlyArray.reduce((sum, y) => sum + y.orders, 0) / yearsDiff;
+                
+                text += `11、本期充电电量最大的年份在${maxChargeYear.year}，充电电量为${maxChargeYear.charge.toFixed(2)}度；最小的年份在${minChargeYear.year}，充电电量为${minChargeYear.charge.toFixed(2)}度；<br>`;
+                text += `12、本期充电服务费最多的年份在${maxServiceYear.year}，充电服务费为${maxServiceYear.service.toFixed(2)}元；最少的年份在${minServiceYear.year}，充电服务费为${minServiceYear.service.toFixed(2)}元；<br>`;
+                text += `13、本期充电费用最多的年份在${maxCostYear.year}，充电费用为${maxCostYear.cost.toFixed(2)}元；最少的年份在${minCostYear.year}，充电费用为${minCostYear.cost.toFixed(2)}元；<br>`;
+                text += `14、本期充电时长最多的年份在${maxDurationYear.year}，充电时长为${maxDurationYear.duration.toFixed(2)}分钟；最少的年份在${minDurationYear.year}，充电时长为${minDurationYear.duration.toFixed(2)}分钟；<br>`;
+                text += `15、本期充电订单数量最多的年份在${maxOrdersYear.year}，充电订单数量为${maxOrdersYear.orders}笔；最少的年份在${minOrdersYear.year}，充电订单数量为${minOrdersYear.orders}笔；<br>`;
+            }
+            
+            // 计算总计数据
+            const totalCharge = dataArray.reduce((sum, d) => sum + d.charge, 0);
+            const totalService = dataArray.reduce((sum, d) => sum + d.service, 0);
+            const totalCost = dataArray.reduce((sum, d) => sum + d.cost, 0);
+            const totalDuration = dataArray.reduce((sum, d) => sum + d.duration, 0);
+            const totalOrders = dataArray.reduce((sum, d) => sum + d.orders, 0);
+            
+            // 添加总计数据
+            text += `本期充电电量共${totalCharge.toFixed(2)}度，充电服务费共${totalService.toFixed(2)}元，充电费用共${totalCost.toFixed(2)}元，充电时长共${totalDuration.toFixed(2)}分钟，充电订单数量共${totalOrders}笔。<br>`;
+            
+            // 添加平均值
+            text += `本期日均充电电量为${avgCharge.toFixed(2)}度，日均充电服务费${avgService.toFixed(2)}元，日均充电费用${avgCost.toFixed(2)}元，日均充电时长${avgDuration.toFixed(2)}分钟，日均充电订单数量${avgOrders.toFixed(2)}笔。<br>`;
+            
+            if (hasCrossMonth) {
+                text += `本期月均充电电量为${avgChargeMonth.toFixed(2)}度，月均充电服务费${avgServiceMonth.toFixed(2)}元，月均充电费用${avgCostMonth.toFixed(2)}元，月均充电时长${avgDurationMonth.toFixed(2)}分钟，月均充电订单数量${avgOrdersMonth.toFixed(2)}笔。<br>`;
+            }
+            
+            if (hasCrossYear) {
+                text += `本期年均充电电量为${avgChargeYear.toFixed(2)}度，年均充电服务费${avgServiceYear.toFixed(2)}元，年均充电费用${avgCostYear.toFixed(2)}元，年均充电时长${avgDurationYear.toFixed(2)}分钟，年均充电订单数量${avgOrdersYear.toFixed(2)}笔。`;
+            }
+            
+            return text;
+        }
+
+        // 渲染BI图表
+        function renderBICharts(dataArray, hasCrossMonth, hasCrossYear, statsText) {
+            // 计算最大最小10天数据
+            const top10Charge = [...dataArray].sort((a, b) => b.charge - a.charge).slice(0, 10);
+            const bottom10Charge = [...dataArray].sort((a, b) => a.charge - b.charge).slice(0, 10);
+            const top10Service = [...dataArray].sort((a, b) => b.service - a.service).slice(0, 10);
+            const bottom10Service = [...dataArray].sort((a, b) => a.service - b.service).slice(0, 10);
+            const top10Cost = [...dataArray].sort((a, b) => b.cost - a.cost).slice(0, 10);
+            const bottom10Cost = [...dataArray].sort((a, b) => a.cost - b.cost).slice(0, 10);
+            const top10Duration = [...dataArray].sort((a, b) => b.duration - a.duration).slice(0, 10);
+            const bottom10Duration = [...dataArray].sort((a, b) => a.duration - b.duration).slice(0, 10);
+            const top10Orders = [...dataArray].sort((a, b) => b.orders - a.orders).slice(0, 10);
+            const bottom10Orders = [...dataArray].sort((a, b) => a.orders - b.orders).slice(0, 10);
+
+            // 恢复图表容器HTML
+            const chartsContainer = document.getElementById('bi-charts-container');
+            chartsContainer.innerHTML = `
+                <!-- 统计描述文字 -->
+                <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                    <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                        <i class="fas fa-chart-line"></i> 数据统计描述
+                    </h3>
+                    <div style="line-height:2; color:#555; font-size:14px;">
+                        ${statsText || '暂无统计数据'}
+                    </div>
+                </div>
+                
+                <!-- 充电电量图表 -->
+                <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                    <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                        <i class="fas fa-bolt"></i> 充电电量分析
+                    </h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                            <canvas id="bi-charge-max-chart"></canvas>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                            <canvas id="bi-charge-min-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 充电服务费图表 -->
+                <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                    <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                        <i class="fas fa-coins"></i> 充电服务费分析
+                    </h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                            <canvas id="bi-service-max-chart"></canvas>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                            <canvas id="bi-service-min-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 充电费用图表 -->
+                <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                    <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                        <i class="fas fa-money-bill-wave"></i> 充电费用分析
+                    </h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                            <canvas id="bi-cost-max-chart"></canvas>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                            <canvas id="bi-cost-min-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 充电时长图表 -->
+                <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                    <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                        <i class="fas fa-clock"></i> 充电时长分析
+                    </h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                            <canvas id="bi-duration-max-chart"></canvas>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                            <canvas id="bi-duration-min-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 充电订单数图表 -->
+                <div style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                    <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                        <i class="fas fa-list-alt"></i> 充电订单数分析
+                    </h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最大10天数据</h4>
+                            <canvas id="bi-orders-max-chart"></canvas>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom:10px; color:#666; font-size:14px;">最小10天数据</h4>
+                            <canvas id="bi-orders-min-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                ${hasCrossMonth || hasCrossYear ? `
+                <!-- 月数据和年数据展示区域 -->
+                <div id="bi-month-year-data">
+                    ${hasCrossMonth ? `
+                    <!-- 月数据图表 -->
+                    <div id="bi-month-charts" style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                        <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                            <i class="fas fa-calendar-alt"></i> 月度数据分析
+                        </h3>
+                        <div>
+                            <h4 style="margin-bottom:15px; color:#666; font-size:14px;">月度数据对比</h4>
+                            <canvas id="bi-monthly-comparison-chart" style="max-height:500px;"></canvas>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${hasCrossYear ? `
+                    <!-- 年数据图表 -->
+                    <div id="bi-year-charts" style="margin-bottom:30px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+                        <h3 style="margin-bottom:15px; color:#333; font-size:18px;">
+                            <i class="fas fa-calendar-check"></i> 年度数据分析
+                        </h3>
+                        <div>
+                            <canvas id="bi-yearly-combined-chart" style="max-height:500px;"></canvas>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                ` : ''}
+            `;
+
+            // 渲染10天数据图表
+            renderChart('bi-charge-max-chart', top10Charge, 'charge', '充电电量(度)', 'bar', '#4CAF50');
+            renderChart('bi-charge-min-chart', bottom10Charge, 'charge', '充电电量(度)', 'bar', '#FF9800');
+            renderChart('bi-service-max-chart', top10Service, 'service', '充电服务费(元)', 'bar', '#2196F3');
+            renderChart('bi-service-min-chart', bottom10Service, 'service', '充电服务费(元)', 'bar', '#FF5722');
+            renderChart('bi-cost-max-chart', top10Cost, 'cost', '充电费用(元)', 'bar', '#9C27B0');
+            renderChart('bi-cost-min-chart', bottom10Cost, 'cost', '充电费用(元)', 'bar', '#F44336');
+            renderChart('bi-duration-max-chart', top10Duration, 'duration', '充电时长(分钟)', 'bar', '#00BCD4');
+            renderChart('bi-duration-min-chart', bottom10Duration, 'duration', '充电时长(分钟)', 'bar', '#FFC107');
+            renderChart('bi-orders-max-chart', top10Orders, 'orders', '充电订单数', 'bar', '#795548');
+            renderChart('bi-orders-min-chart', bottom10Orders, 'orders', '充电订单数', 'bar', '#607D8B');
+
+            // 如果跨月或跨年，计算并渲染月数据和年数据
+            if (hasCrossMonth || hasCrossYear) {
+                // 计算月数据
+                const monthlyData = {};
+                dataArray.forEach(item => {
+                    const date = new Date(item.date);
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = {
+                            month: monthKey,
+                            charge: 0,
+                            service: 0,
+                            cost: 0,
+                            duration: 0,
+                            orders: 0
+                        };
+                    }
+                    monthlyData[monthKey].charge += item.charge;
+                    monthlyData[monthKey].service += item.service;
+                    monthlyData[monthKey].cost += item.cost;
+                    monthlyData[monthKey].duration += item.duration;
+                    monthlyData[monthKey].orders += item.orders;
+                });
+                const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
+
+                // 计算年数据
+                const yearlyData = {};
+                dataArray.forEach(item => {
+                    const date = new Date(item.date);
+                    const yearKey = String(date.getFullYear());
+                    if (!yearlyData[yearKey]) {
+                        yearlyData[yearKey] = {
+                            year: yearKey,
+                            charge: 0,
+                            service: 0,
+                            cost: 0,
+                            duration: 0,
+                            orders: 0
+                        };
+                    }
+                    yearlyData[yearKey].charge += item.charge;
+                    yearlyData[yearKey].service += item.service;
+                    yearlyData[yearKey].cost += item.cost;
+                    yearlyData[yearKey].duration += item.duration;
+                    yearlyData[yearKey].orders += item.orders;
+                });
+                const yearlyArray = Object.values(yearlyData).sort((a, b) => a.year.localeCompare(b.year));
+
+                if (hasCrossMonth) {
+                    renderMonthlyComparisonChart(monthlyArray);
+                }
+
+                if (hasCrossYear) {
+                    renderYearlyCombinedChart(yearlyArray);
+                }
+            }
+        }
+
+        // 渲染单个图表
+        function renderChart(canvasId, data, field, label, type, color) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            
+            // 销毁已存在的图表实例
+            if (canvas.chartInstance) {
+                canvas.chartInstance.destroy();
+            }
+
+            const labels = data.map(item => {
+                if (item.date) return item.date;
+                if (item.month) return item.month;
+                if (item.year) return item.year;
+                return '';
+            });
+            const values = data.map(item => item[field] || 0);
+
+            const chartConfig = {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: values,
+                        backgroundColor: type === 'bar' ? color : 'transparent',
+                        borderColor: color,
+                        borderWidth: 2,
+                        fill: type === 'line'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: type === 'bar' ? {
+                        y: {
+                            beginAtZero: true
+                        }
+                    } : {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            };
+
+            canvas.chartInstance = new Chart(ctx, chartConfig);
+        }
+
+        // 渲染月度数据对比折线图
+        function renderMonthlyComparisonChart(monthlyArray) {
+            const canvas = document.getElementById('bi-monthly-comparison-chart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            
+            // 销毁已存在的图表实例
+            if (canvas.chartInstance) {
+                canvas.chartInstance.destroy();
+            }
+
+            const labels = monthlyArray.map(item => item.month || '');
+            
+            // 获取四个数据系列
+            const chargeData = monthlyArray.map(item => item.charge || 0);
+            const serviceData = monthlyArray.map(item => item.service || 0);
+            const costData = monthlyArray.map(item => item.cost || 0);
+            const ordersData = monthlyArray.map(item => item.orders || 0);
+
+            // 自定义插件：在数据点上方显示数值
+            const dataLabelPlugin = {
+                id: 'dataLabelPlugin',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    chart.data.datasets.forEach((dataset, datasetIndex) => {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        meta.data.forEach((point, index) => {
+                            const value = dataset.data[index];
+                            const x = point.x;
+                            const y = point.y;
+                            ctx.fillStyle = dataset.borderColor;
+                            ctx.font = 'bold 10px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillText(value.toFixed(0), x, y - 8);
+                        });
+                    });
+                    ctx.restore();
+                }
+            };
+
+            const chartConfig = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '充电电量(度)',
+                            data: chargeData,
+                            borderColor: '#00BCD4', // 青色
+                            backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5], // 虚线
+                            pointRadius: 5,
+                            pointBackgroundColor: '#00BCD4',
+                            pointBorderColor: '#00BCD4',
+                            pointBorderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '充电服务费(元)',
+                            data: serviceData,
+                            borderColor: '#1976D2', // 深蓝色
+                            backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5], // 虚线
+                            pointRadius: 5,
+                            pointBackgroundColor: '#1976D2',
+                            pointBorderColor: '#1976D2',
+                            pointBorderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '充电费用(元)',
+                            data: costData,
+                            borderColor: '#7B1FA2', // 深紫色
+                            backgroundColor: 'rgba(123, 31, 162, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5], // 虚线
+                            pointRadius: 5,
+                            pointBackgroundColor: '#7B1FA2',
+                            pointBorderColor: '#7B1FA2',
+                            pointBorderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '充电订单数',
+                            data: ordersData,
+                            borderColor: '#5D4037', // 深棕色
+                            backgroundColor: 'rgba(93, 64, 55, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5], // 虚线
+                            pointRadius: 5,
+                            pointBackgroundColor: '#5D4037',
+                            pointBorderColor: '#5D4037',
+                            pointBorderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                plugins: [dataLabelPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 5,
+                            hoverRadius: 7
+                        }
+                    }
+                }
+            };
+
+            canvas.chartInstance = new Chart(ctx, chartConfig);
+        }
+
+        // 渲染年度数据多Y轴混合图
+        function renderYearlyCombinedChart(yearlyArray) {
+            const canvas = document.getElementById('bi-yearly-combined-chart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            
+            // 销毁已存在的图表实例
+            if (canvas.chartInstance) {
+                canvas.chartInstance.destroy();
+            }
+
+            const labels = yearlyArray.map(item => item.year || '');
+            
+            // 获取四个数据系列
+            const chargeData = yearlyArray.map(item => item.charge || 0);
+            const serviceData = yearlyArray.map(item => item.service || 0);
+            const costData = yearlyArray.map(item => item.cost || 0);
+            const ordersData = yearlyArray.map(item => item.orders || 0);
+
+            // 自定义插件：在数据点上方显示数值
+            const dataLabelPlugin = {
+                id: 'dataLabelPlugin',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    chart.data.datasets.forEach((dataset, datasetIndex) => {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        meta.data.forEach((point, index) => {
+                            const value = dataset.data[index];
+                            const x = point.x;
+                            const y = point.y;
+                            ctx.fillStyle = dataset.borderColor || dataset.backgroundColor;
+                            ctx.font = 'bold 10px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            // 格式化数值显示
+                            let displayValue = value;
+                            if (value >= 10000) {
+                                displayValue = (value / 10000).toFixed(1) + '万';
+                            } else {
+                                displayValue = value.toFixed(0);
+                            }
+                            ctx.fillText(displayValue, x, y - 8);
+                        });
+                    });
+                    ctx.restore();
+                }
+            };
+
+            // 自定义插件：调整Y轴位置避免重叠
+            const yAxisPositionPlugin = {
+                id: 'yAxisPositionPlugin',
+                afterLayout: (chart) => {
+                    const scales = chart.scales;
+                    if (scales.y1 && scales.y2) {
+                        // 调整y2轴的位置，使其在y1轴右侧
+                        // 在 Chart.js 4.x 中，直接使用 scale 的宽度属性
+                        const y1Width = scales.y1.width || 60;
+                        const spacing = 20; // y1 和 y2 之间的间距
+                        scales.y2.left = scales.y1.right + spacing;
+                        scales.y2.right = scales.y2.left + y1Width;
+                    }
+                }
+            };
+
+            const chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '充电电量(度)',
+                            data: chargeData,
+                            type: 'bar',
+                            backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                            borderColor: '#4CAF50',
+                            borderWidth: 2,
+                            yAxisID: 'y',
+                            order: 1
+                        },
+                        {
+                            label: '充电服务费(元)',
+                            data: serviceData,
+                            type: 'line',
+                            borderColor: '#2196F3',
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#2196F3',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                            yAxisID: 'y1',
+                            order: 0
+                        },
+                        {
+                            label: '充电费用(元)',
+                            data: costData,
+                            type: 'line',
+                            borderColor: '#9C27B0',
+                            backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#9C27B0',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                            yAxisID: 'y1',
+                            order: 0,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: '充电订单数',
+                            data: ordersData,
+                            type: 'line',
+                            borderColor: '#795548',
+                            backgroundColor: 'rgba(121, 85, 72, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#795548',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                            yAxisID: 'y2',
+                            order: 0
+                        }
+                    ]
+                },
+                plugins: [dataLabelPlugin, yAxisPositionPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const value = context.parsed.y;
+                                    if (value >= 10000) {
+                                        label += (value / 10000).toFixed(2) + '万';
+                                    } else {
+                                        label += value.toFixed(2);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            title: {
+                                display: true,
+                                text: '年份'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '充电电量(度)',
+                                color: '#4CAF50',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                color: '#4CAF50',
+                                callback: function(value) {
+                                    if (value >= 10000) {
+                                        return (value / 10000).toFixed(1) + '万';
+                                    }
+                                    return value;
+                                }
+                            },
+                            grid: {
+                                display: true,
+                                color: 'rgba(76, 175, 80, 0.1)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '金额(元)',
+                                color: '#2196F3',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                color: '#2196F3',
+                                callback: function(value) {
+                                    if (value >= 10000) {
+                                        return (value / 10000).toFixed(1) + '万';
+                                    }
+                                    return value;
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                                color: 'rgba(33, 150, 243, 0.1)'
+                            }
+                        },
+                        y2: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '充电订单数',
+                                color: '#795548',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                color: '#795548',
+                                callback: function(value) {
+                                    if (value >= 10000) {
+                                        return (value / 10000).toFixed(1) + '万';
+                                    }
+                                    return value;
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                                color: 'rgba(121, 85, 72, 0.1)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 6,
+                            hoverRadius: 8
+                        }
+                    }
+                }
+            };
+
+            canvas.chartInstance = new Chart(ctx, chartConfig);
         }
 
         // 其它数据页面分页相关变量
