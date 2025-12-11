@@ -5082,16 +5082,17 @@
                     // 保存登录状态
                     saveLoginStatus(phone, 'sms', phone);
                     
-                    // 记录登录
-                    await recordUserLogin(phone, {
+                    // 记录登录（异步后台执行，不阻塞页面跳转）
+                    recordUserLogin(phone, {
                         loginMethod: 'sms',
                         phone: phone
+                    }).catch(error => {
+                        console.error('登录记录保存失败:', error);
+                        // 不影响登录流程，静默失败
                     });
                     
-                    // 隐藏登录容器，显示主页面
-                    setTimeout(() => {
-                        showMainPage(phone);
-                    }, 1000);
+                    // 立即显示主页面，不等待登录记录保存
+                    showMainPage(phone);
                     
                 } else {
                     showMessage(result.message || '验证失败，请检查验证码', 'error');
