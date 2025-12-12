@@ -2888,7 +2888,7 @@
                     <!-- 智能小模型主界面 -->
                     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 150px); padding:40px 20px;">
                         <!-- 提示文字 -->
-                        <div style="font-size:18px; color:#333; margin-bottom:30px; font-weight:500;">
+                        <div style="font-size:22px; color:#333; margin-bottom:30px; font-weight:bold; font-family:'Microsoft YaHei', '微软雅黑', Arial, sans-serif;">
                             请输入想要咨询的充电数据
                         </div>
                         
@@ -2896,7 +2896,7 @@
                         <div style="position:relative; width:100%; max-width:800px; margin-bottom:20px;">
                             <textarea 
                                 id="ai-query-input" 
-                                placeholder="如:我想要查询充电电量" 
+                                placeholder="" 
                                 style="width:100%; min-height:120px; padding:15px 100px 15px 15px; border:1px solid #ddd; border-radius:8px; font-size:16px; resize:none; outline:none; color:#333; background-color:#fafafa;"
                                 onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendAIQuery();}"
                             ></textarea>
@@ -5569,8 +5569,14 @@
                 aiModelPage.style.display = 'block';
                 // 清空之前的结果
                 document.getElementById('ai-result-container').style.display = 'none';
-                document.getElementById('ai-query-input').value = '';
-                document.getElementById('ai-query-input').focus();
+                const aiQueryInput = document.getElementById('ai-query-input');
+                if (aiQueryInput) {
+                    aiQueryInput.value = '';
+                    // 设置placeholder为当前年份
+                    var currentYear = new Date().getFullYear();
+                    aiQueryInput.placeholder = '如：' + currentYear + '年充电电量有多少';
+                    aiQueryInput.focus();
+                }
             }
         }
         
@@ -5668,6 +5674,17 @@
             setTimeout(() => {
                 executeAIQuery(queryResult, query);
             }, 1000);
+        }
+        
+        // 格式化日期为SQL Server格式 yyyy-mm-dd hh:mm:ss
+        function formatDateForSQL(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         }
         
         // 解析AI查询问题
@@ -5779,17 +5796,6 @@
                 result.aggregate = 'SUM';
             }
             
-            // 格式化日期为SQL Server格式 yyyy-mm-dd hh:mm:ss
-            function formatDateForSQL(date) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                const seconds = String(date.getSeconds()).padStart(2, '0');
-                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-            }
-            
             // 检测时间段（从X年X月至Y年Y月）
             const timeRangeMatch = q.match(/(\d{4})年(\d{1,2})月[至到](\d{4})年(\d{1,2})月/);
             if (timeRangeMatch) {
@@ -5820,12 +5826,86 @@
                 // 只要用户提问的问题中含有['时间']信息，就默认为在'充电结束时间'字段下去匹配该时间
                 const hasTimeInfo = q.includes('时间') || q.match(/\d{4}年/) || q.match(/\d{1,2}月/) || q.match(/\d{1,2}日/) || q.match(/\d{1,2}号/);
                 
+                // 检测年份关键词（今年、去年、前年）
+                const currentYear = new Date().getFullYear();
+                let year1 = null; // 第一个年份（用于对比）
+                let year2 = null; // 第二个年份（用于对比）
+                let isCompare = false; // 是否包含对比/比较关键词
+                
+                // 检测是否包含"对比"或"比较"
+                if (q.includes('对比') || q.includes('比较')) {
+                    isCompare = true;
+                    result.isCompare = true; // 标记为对比查询
+                    
+                    // 使用正则表达式更准确地匹配年份关键词
+                    // 匹配"今年"、"去年"、"前年"等关键词
+                    const yearKeywords = [
+                        { keyword: '今年', year: currentYear },
+                        { keyword: '去年', year: currentYear - 1 },
+                        { keyword: '前年', year: currentYear - 2 }
+                    ];
+                    
+                    // 查找所有年份关键词的位置
+                    const foundYears = [];
+                    yearKeywords.forEach(({ keyword, year }) => {
+                        const index = q.indexOf(keyword);
+                        if (index !== -1) {
+                            foundYears.push({ keyword, year, index });
+                        }
+                    });
+                    
+                    // 按位置排序，找到第一个和第二个年份
+                    foundYears.sort((a, b) => a.index - b.index);
+                    
+                    if (foundYears.length >= 2) {
+                        // 如果找到两个或更多年份，使用前两个
+                        year1 = foundYears[0].year;
+                        year2 = foundYears[1].year;
+                    } else if (foundYears.length === 1) {
+                        // 如果只找到一个年份，检查"与"或"和"后面的年份
+                        year1 = foundYears[0].year;
+                        
+                        // 查找"与"或"和"后面的年份
+                        const afterConnector = q.split(/与|和/);
+                        if (afterConnector.length > 1) {
+                            const afterText = afterConnector[afterConnector.length - 1];
+                            yearKeywords.forEach(({ keyword, year }) => {
+                                if (afterText.includes(keyword) && !year2) {
+                                    year2 = year;
+                                }
+                            });
+                        }
+                    }
+                    
+                    // 如果检测到两个年份，保存对比信息
+                    if (year1 && year2) {
+                        result.compareYears = {
+                            year1: year1,
+                            year2: year2,
+                            year1Label: year1 === currentYear ? '今年' : (year1 === currentYear - 1 ? '去年' : '前年'),
+                            year2Label: year2 === currentYear ? '今年' : (year2 === currentYear - 1 ? '去年' : '前年')
+                        };
+                    }
+                } else {
+                    // 非对比查询，检测单个年份
+                    if (q.includes('今年')) {
+                        year1 = currentYear;
+                    } else if (q.includes('去年')) {
+                        year1 = currentYear - 1;
+                    } else if (q.includes('前年')) {
+                        year1 = currentYear - 2;
+                    }
+                }
+                
                 const yearMatch = q.match(/(\d{4})年/);
                 const monthMatch = q.match(/(\d{1,2})月/);
                 const dayMatch = q.match(/(\d{1,2})日|(\d{1,2})号/);
                 
-                if (hasTimeInfo && (yearMatch || monthMatch || dayMatch)) {
-                    let year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+                // 如果检测到年份关键词，使用关键词对应的年份；否则使用数字年份
+                let detectedYear = year1 || (yearMatch ? parseInt(yearMatch[1]) : null);
+                
+                if (hasTimeInfo && (detectedYear || yearMatch || monthMatch || dayMatch)) {
+                    let year = detectedYear || (yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear());
                     let month = monthMatch ? parseInt(monthMatch[1]) : null;
                     let day = dayMatch ? parseInt(dayMatch[1] || dayMatch[2]) : null;
                     
@@ -5893,6 +5973,265 @@
             return result;
         }
         
+        // 执行对比查询
+        function executeCompareQuery(queryResult, originalQuestion) {
+            const compareYears = queryResult.compareYears;
+            const year1 = compareYears.year1;
+            const year2 = compareYears.year2;
+            
+            // 创建两个查询结果对象，分别查询两个年份
+            const queryResult1 = JSON.parse(JSON.stringify(queryResult));
+            const queryResult2 = JSON.parse(JSON.stringify(queryResult));
+            
+            // 设置第一个年份的时间过滤
+            const startDate1 = new Date(year1, 0, 1, 0, 0, 0);
+            const endDate1 = new Date(year1, 11, 31, 23, 59, 59);
+            queryResult1.timeFilter = {
+                start: formatDateForSQL(startDate1),
+                end: formatDateForSQL(endDate1)
+            };
+            queryResult1.isCompare = false; // 清除对比标记，避免递归
+            
+            // 设置第二个年份的时间过滤
+            const startDate2 = new Date(year2, 0, 1, 0, 0, 0);
+            const endDate2 = new Date(year2, 11, 31, 23, 59, 59);
+            queryResult2.timeFilter = {
+                start: formatDateForSQL(startDate2),
+                end: formatDateForSQL(endDate2)
+            };
+            queryResult2.isCompare = false; // 清除对比标记，避免递归
+            
+            // 执行第一个查询
+            executeSingleQuery(queryResult1, originalQuestion, function(data1) {
+                // 执行第二个查询
+                executeSingleQuery(queryResult2, originalQuestion, function(data2) {
+                    // 计算两个年份的总值
+                    let total1 = 0;
+                    let total2 = 0;
+                    
+                    if (data1 && data1.length > 0) {
+                        data1.forEach(row => {
+                            const rowValue = row.value !== undefined ? row.value : (row.Value !== undefined ? row.Value : 0);
+                            total1 += parseFloat(rowValue) || 0;
+                        });
+                    }
+                    
+                    if (data2 && data2.length > 0) {
+                        data2.forEach(row => {
+                            const rowValue = row.value !== undefined ? row.value : (row.Value !== undefined ? row.Value : 0);
+                            total2 += parseFloat(rowValue) || 0;
+                        });
+                    }
+                    
+                    // 计算差值x（year1 - year2）
+                    const x = total1 - total2;
+                    
+                    // 计算百分比y（x / year2 * 100）
+                    const y = total2 !== 0 ? (x / total2 * 100) : 0;
+                    
+                    // 格式化数值
+                    const formattedX = Math.abs(x) % 1 === 0 ? Math.abs(x).toString() : Math.abs(x).toFixed(2);
+                    const formattedY = Math.abs(y) % 1 === 0 ? Math.abs(y).toString() : Math.abs(y).toFixed(2);
+                    
+                    // 获取字段名称和单位
+                    const fieldName = queryResult.fields[0] || '充电电量(度)';
+                    let unit = '';
+                    let fieldDisplayName = '';
+                    if (fieldName.includes('电量')) {
+                        unit = '度';
+                        fieldDisplayName = '充电电量';
+                    } else if (fieldName.includes('服务费') || fieldName.includes('利润')) {
+                        unit = '元';
+                        fieldDisplayName = fieldName.includes('服务费') ? '充电服务费' : '充电利润';
+                    } else if (fieldName.includes('收入') || fieldName.includes('营收')) {
+                        unit = '元';
+                        fieldDisplayName = '充电收入';
+                    } else if (fieldName.includes('订单编号') || queryResult.isCount) {
+                        unit = '';
+                        fieldDisplayName = '订单数量';
+                    }
+                    
+                    // 生成对比回答
+                    const trend = x >= 0 ? '增加' : '下滑';
+                    const year1Label = compareYears.year1Label;
+                    const year2Label = compareYears.year2Label;
+                    
+                    clearInterval(thinkingInterval);
+                    const elapsed = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
+                    
+                    let answer = `${year1Label}与${year2Label}对比${fieldDisplayName}${trend}${formattedX}${unit}，同比${trend}${formattedY}%。`;
+                    
+                    document.getElementById('ai-thinking').style.display = 'none';
+                    document.getElementById('ai-answer').innerHTML = 
+                        answer + `\n\n<small style="color:#999;">思考用时：${elapsed}秒</small>`;
+                });
+            });
+        }
+        
+        // 执行单个查询（用于对比查询）
+        function executeSingleQuery(queryResult, originalQuestion, callback) {
+            // 构建SQL查询
+            let sql = '';
+            
+            // 确定要查询的字段
+            let targetField = '[充电电量(度)]';
+            if (queryResult.fields.length > 0) {
+                if (queryResult.isCount && queryResult.fields[0] === '订单编号') {
+                    targetField = '[订单编号]';
+                } else {
+                    targetField = '[' + queryResult.fields[0] + ']';
+                }
+            }
+            
+            // 对于平均查询，不分组，直接汇总所有数据
+            const isAvgQuery = queryResult.avgType !== null;
+            
+            // 当有stationFilter但没有groupBy时，也不分组，直接汇总
+            const isStationFilterOnly = queryResult.stationFilter && !queryResult.groupBy;
+            
+            // 确定分组字段
+            let groupByField = 'CAST([充电结束时间] AS DATE)';
+            if (!isAvgQuery && !isStationFilterOnly && queryResult.groupBy) {
+                if (queryResult.groupBy.includes('CAST') || queryResult.groupBy.includes('YEAR')) {
+                    groupByField = queryResult.groupBy;
+                } else {
+                    groupByField = '[' + queryResult.groupBy + ']';
+                }
+            }
+            
+            // 构建聚合表达式
+            let aggregateExpr = '';
+            if (queryResult.isCount && queryResult.fields[0] === '订单编号') {
+                aggregateExpr = 'COUNT(DISTINCT [订单编号])';
+            } else {
+                aggregateExpr = queryResult.aggregate + '(' + targetField + ')';
+            }
+            
+            // 构建WHERE条件（过滤空值和0值）
+            let whereConditions = [];
+            
+            // 过滤目标字段的空值和0值
+            if (queryResult.isCount && queryResult.fields[0] === '订单编号') {
+                whereConditions.push('[订单编号] IS NOT NULL');
+                whereConditions.push('[订单编号] <> \'\'');
+            } else if (targetField) {
+                whereConditions.push(targetField + ' IS NOT NULL');
+                whereConditions.push(targetField + ' <> 0');
+            }
+            
+            // 过滤分组字段的空值
+            if (!isAvgQuery && queryResult.groupBy && !queryResult.groupBy.includes('CAST') && !queryResult.groupBy.includes('YEAR')) {
+                whereConditions.push('[' + queryResult.groupBy + '] IS NOT NULL');
+                whereConditions.push('[' + queryResult.groupBy + '] <> \'\'');
+            }
+            
+            // 过滤充电结束时间的空值
+            whereConditions.push('[充电结束时间] IS NOT NULL');
+            
+            // 添加时间过滤
+            if (queryResult.timeFilter) {
+                whereConditions.push("[充电结束时间] >= '" + queryResult.timeFilter.start + "'");
+                whereConditions.push("[充电结束时间] <= '" + queryResult.timeFilter.end + "'");
+            }
+            
+            // 添加电站名称过滤条件
+            if (queryResult.stationFilter === 'exclude_gaoling') {
+                whereConditions.push("[电站名称] NOT LIKE N'%华为飞狐特来电高岭超充站%'");
+                whereConditions.push("[电站名称] NOT LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%'");
+            } else if (queryResult.stationFilter === 'include_gaoling') {
+                whereConditions.push("([电站名称] LIKE N'%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')");
+            }
+            
+            // 构建SQL（对比查询统一使用总计查询，不分组）
+            sql = `SELECT 
+                '总计' AS groupField,
+                ${aggregateExpr} AS value
+            FROM [特来电]`;
+            
+            // 添加WHERE条件
+            if (whereConditions.length > 0) {
+                sql += ' WHERE ' + whereConditions.join(' AND ');
+            }
+            
+            // 执行SQL查询
+            const queryOptions = {
+                method: 'POST',
+                headers: {
+                    'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
+                    'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query: sql })
+            };
+            
+            fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery', queryOptions)
+                .then(async response => {
+                    if (!response.ok) {
+                        let errorText = '';
+                        let errorData = null;
+                        try {
+                            errorText = await response.text();
+                            if (errorText) {
+                                try {
+                                    errorData = JSON.parse(errorText);
+                                } catch (e) {}
+                            }
+                        } catch (e) {
+                            console.error('读取错误响应失败:', e);
+                        }
+                        let errorMessage = '';
+                        if (errorData) {
+                            errorMessage = errorData.error || errorData.message || errorData.msg || errorData.code || errorData.detail || JSON.stringify(errorData);
+                        } else if (errorText) {
+                            errorMessage = errorText;
+                        } else {
+                            errorMessage = response.statusText || '请求失败';
+                        }
+                        throw new Error(`服务器错误 (${response.status}): ${errorMessage}`);
+                    }
+                    return response.json();
+                })
+                .then(function(result) {
+                    // 处理查询结果
+                    let queryData = null;
+                    
+                    if (result.result && typeof result.result === 'object') {
+                        if (result.result.success && result.result.results) {
+                            queryData = result.result.results;
+                        } else if (result.result.success && result.result.data) {
+                            queryData = result.result.data;
+                        } else if (result.result.error) {
+                            throw new Error(result.result.error);
+                        }
+                    } else if (result.result && typeof result.result === 'string') {
+                        try {
+                            const parsed = JSON.parse(result.result);
+                            if (parsed.success) {
+                                queryData = parsed.results || parsed.data;
+                            } else if (parsed.error) {
+                                throw new Error(parsed.error);
+                            }
+                        } catch (e) {
+                            if (e instanceof Error && e.message.includes('error')) {
+                                throw e;
+                            }
+                            console.error('解析result.result失败:', e);
+                        }
+                    } else if (result.success) {
+                        queryData = result.results || result.data;
+                    } else if (result.error) {
+                        throw new Error(result.error);
+                    }
+                    
+                    // 调用回调函数返回数据
+                    callback(queryData || []);
+                })
+                .catch(function(error) {
+                    console.error('查询错误:', error);
+                    callback([]);
+                });
+        }
+        
         // 执行AI查询
         function executeAIQuery(queryResult, originalQuestion) {
             // 如果没有匹配到任何字段，返回提示
@@ -5902,6 +6241,12 @@
                 const elapsed = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
                 document.getElementById('ai-answer').innerHTML = 
                     `这个问题我还不会哦！我还需要进一步学习。请先换个我会的问题吧！\n\n<small style="color:#999;">思考用时：${elapsed}秒</small>`;
+                return;
+            }
+            
+            // 如果是对比查询，执行两次查询并计算对比结果
+            if (queryResult.isCompare && queryResult.compareYears) {
+                executeCompareQuery(queryResult, originalQuestion);
                 return;
             }
             
@@ -5948,14 +6293,14 @@
             // 构建WHERE条件（过滤空值）
             let whereConditions = [];
             
-            // 过滤目标字段的空值
+            // 过滤目标字段的空值和0值
             if (queryResult.isCount && queryResult.fields[0] === '订单编号') {
                 whereConditions.push('[订单编号] IS NOT NULL');
                 whereConditions.push('[订单编号] <> \'\'');
             } else if (targetField) {
                 whereConditions.push(targetField + ' IS NOT NULL');
-                // 对于数值字段，还需要检查是否为0（可选，根据需求）
-                // whereConditions.push(targetField + ' <> 0');
+                // 对于数值字段，过滤0值
+                whereConditions.push(targetField + ' <> 0');
             }
             
             // 过滤分组字段的空值（平均查询不需要）
@@ -7320,6 +7665,13 @@
                 // 显示星空背景
                 document.getElementById('nebula').style.display = 'block';
                 document.getElementById('starfield').style.display = 'block';
+            }
+            
+            // 设置AI查询输入框的placeholder为当前年份
+            var aiQueryInput = document.getElementById('ai-query-input');
+            if (aiQueryInput) {
+                var currentYear = new Date().getFullYear();
+                aiQueryInput.placeholder = '如：' + currentYear + '年充电电量有多少';
             }
             
             // 延迟初始化星空动画，避免阻塞登录功能
