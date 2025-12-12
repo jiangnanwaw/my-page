@@ -12480,6 +12480,7 @@ function updateUnchargedTable() {
                 var pageReportUser = document.getElementById('page-report-user');
                 var pageReportEfficiency = document.getElementById('page-report-efficiency');
                 var pageReportBI = document.getElementById('page-report-bi');
+                var pageAIModel = document.getElementById('page-ai-model');
 
                 if (!btnCd || !btnZh || !btnHome || !pageCd || !pageZh) return;
 
@@ -12494,6 +12495,7 @@ function updateUnchargedTable() {
                     if (pageReportUser) pageReportUser.style.display = 'none';
                     if (pageReportEfficiency) pageReportEfficiency.style.display = 'none';
                     if (pageReportBI) pageReportBI.style.display = 'none';
+                    if (pageAIModel) pageAIModel.style.display = 'none';
                 }
 
                 function showCd() {
