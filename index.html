@@ -2770,10 +2770,10 @@
                     <span>简易会话</span>
                 </div>
 
-                <div class="menu-item" id="system-settings">
-                    <i class="fas fa-cogs"></i>
-                    <span>系统设置</span>
-                </div>
+                <a href="https://www.csfhcdz.cn/bi/AI.html" target="_blank" class="menu-item">
+                    <i class="fas fa-brain"></i>
+                    <span>AI模型</span>
+                </a>
                 <div class="menu-item" id="history-menu">
                     <i class="fas fa-history"></i>
                     <span>历史记录</span>
@@ -7443,10 +7443,6 @@
             showAIModelPage();
         });
         
-        document.getElementById('system-settings').addEventListener('click', function(e) {
-            e.stopPropagation();
-            showFeaturePopup('系统设置功能暂未开放');
-        });
         
         document.getElementById('history-menu').addEventListener('click', function(e) {
             e.stopPropagation();
