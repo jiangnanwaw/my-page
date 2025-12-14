@@ -34,8 +34,12 @@
         .messages-container {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 20px;
             margin-bottom: 20px;
+            direction: ltr;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
         }
 
         .message {
@@ -65,19 +69,57 @@
         }
 
         .message.assistant::before {
-            content: '🤖';
+            content: '';
             position: absolute;
             left: 0;
             top: 0;
-            font-size: 20px;
             width: 32px;
             height: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            margin-right: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f0f0f0;
-            border-radius: 8px;
-            margin-right: 8px;
+        }
+
+        /* AI图标 - 使用CSS绘制神经网络节点样式 */
+        .message.assistant::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            width: 20px;
+            height: 20px;
+            background: 
+                /* 中心大节点 */
+                radial-gradient(circle at 50% 50%, #ffffff 3px, transparent 3px),
+                /* 四个角的连接节点 */
+                radial-gradient(circle at 0% 0%, #ffffff 1.5px, transparent 1.5px),
+                radial-gradient(circle at 100% 0%, #ffffff 1.5px, transparent 1.5px),
+                radial-gradient(circle at 0% 100%, #ffffff 1.5px, transparent 1.5px),
+                radial-gradient(circle at 100% 100%, #ffffff 1.5px, transparent 1.5px),
+                /* 连接线 */
+                linear-gradient(to right, rgba(255,255,255,0.4) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.4) 1px, transparent 1px);
+            background-size: 
+                20px 20px,
+                20px 20px,
+                20px 20px,
+                20px 20px,
+                20px 20px,
+                5px 5px,
+                5px 5px;
+            background-position:
+                center,
+                0 0,
+                100% 0,
+                0 100%,
+                100% 100%,
+                0 0,
+                0 0;
+            opacity: 0.95;
         }
 
         .message.assistant .message-content {
@@ -140,6 +182,7 @@
 
         .input-box::placeholder {
             color: #999;
+            font-size: 14px;
         }
 
         .send-button {
@@ -228,6 +271,31 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+
+        /* 思考和回答部分的样式 */
+        .thinking-section {
+            color: #666;
+            font-style: italic;
+            margin: 10px 0 5px 0;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-left: 3px solid #6c757d;
+            border-radius: 4px;
+        }
+
+        .answer-section {
+            color: #333;
+            margin: 10px 0 5px 0;
+            padding: 8px 12px;
+            background: #e7f3ff;
+            border-left: 3px solid #007AFF;
+            border-radius: 4px;
+        }
+
+        .message-content strong {
+            color: #007AFF;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -241,7 +309,7 @@
                     type="text"
                     class="input-box"
                     id="messageInput"
-                    placeholder="给我发送消息"
+                    placeholder="给我发送消息(我可以查充电电量、充电服务费、充电收入、兴元售货机收入、微信收入等)"
                     autocomplete="off"
                 >
                 <button class="send-button" id="sendButton">
@@ -267,6 +335,23 @@
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
 
+        // 简单的Markdown渲染函数
+        function renderMarkdown(text) {
+            if (!text) return '';
+
+            // 处理加粗文本 **text**
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // 处理【思考】和【回答】标签
+            text = text.replace(/【思考】/g, '<div class="thinking-section"><strong>【思考】</strong></div>');
+            text = text.replace(/【回答】/g, '<div class="answer-section"><strong>【回答】</strong></div>');
+
+            // 保留换行
+            text = text.replace(/\n/g, '<br>');
+
+            return text;
+        }
+
         // 添加消息到界面
         function addMessage(content, isUser = false, metadata = null) {
             const messageDiv = document.createElement('div');
@@ -274,7 +359,13 @@
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            contentDiv.textContent = content;
+
+            // 如果是AI回复，使用Markdown渲染
+            if (!isUser) {
+                contentDiv.innerHTML = renderMarkdown(content);
+            } else {
+                contentDiv.textContent = content;
+            }
 
             messageDiv.appendChild(contentDiv);
 
@@ -286,11 +377,6 @@
                 metaDiv.style.color = '#999';
                 metaDiv.style.marginTop = '5px';
                 metaDiv.textContent = `处理时间: ${metadata.processingTime}ms`;
-
-                if (metadata.sqlQuery) {
-                    metaDiv.textContent += ` | SQL已生成`;
-                    metaDiv.title = metadata.sqlQuery;
-                }
 
                 contentDiv.appendChild(metaDiv);
             }
