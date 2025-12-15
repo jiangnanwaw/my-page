@@ -408,6 +408,16 @@
             }
         }
 
+        // 获取或创建sessionId
+        function getSessionId() {
+            let sessionId = sessionStorage.getItem('chatSessionId');
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('chatSessionId', sessionId);
+            }
+            return sessionId;
+        }
+
         // 发送消息
         async function sendMessage() {
             const message = messageInput.value.trim();
@@ -427,8 +437,14 @@
             try {
                 console.log('发送消息:', message);
 
+                // 获取sessionId
+                const sessionId = getSessionId();
+
                 // 调用云函数
-                const result = await AV.Cloud.run('chatWithAI', { message: message });
+                const result = await AV.Cloud.run('chatWithAI', { 
+                    message: message,
+                    sessionId: sessionId
+                });
 
                 console.log('收到响应:', result);
 
