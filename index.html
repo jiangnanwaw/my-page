@@ -4878,7 +4878,11 @@
             // 表单切换
             if (showReset) {
                 showReset.addEventListener('click', (e) => {
-        
+                    e.preventDefault();
+                    loginForm.style.display = 'none';
+                    resetForm.style.display = 'block';
+                    registerForm.style.display = 'none';
+                    document.getElementById('smsLoginForm').style.display = 'none';
                     hideMessage();
                     // 修改标题为"密码重置"
                     document.getElementById('form-title').textContent = '密码重置';
@@ -7465,9 +7469,19 @@
                 if (savedUserInfo) {
                     const userInfo = JSON.parse(savedUserInfo);
                     const currentTime = new Date().getTime();
+                    const SESSION_TIMEOUT = 15 * 60 * 1000; // 15分钟会话超时
+                    const LOGIN_EXPIRY = 24 * 60 * 60 * 1000; // 24小时登录有效期
+                    const timeSinceLogin = currentTime - userInfo.loginTime;
+                    
+                    // 首先检查会话是否超时（15分钟）
+                    if (timeSinceLogin >= SESSION_TIMEOUT) {
+                        // 会话已超时，清除登录状态
+                        sessionStorage.removeItem('userLoginInfo');
+                        return false;
+                    }
                     
                     // 检查登录是否过期（24小时）
-                    if (currentTime - userInfo.loginTime < 24 * 60 * 60 * 1000) {
+                    if (timeSinceLogin < LOGIN_EXPIRY) {
                         
                         // 恢复用户状态
                         const user = new AV.User();
@@ -7608,15 +7622,6 @@
                 initStarfield();
             }, 100);
             
-            // 显示会话超时消息（确保显示正确的消息）
-            showMessage('登录超时，请重新登录', 'error');
-            
-            // 清空登录表单
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            document.getElementById('smsPhone').value = '';
-            document.getElementById('smsCode').value = '';
-            
             // 确保显示登录表单而不是其他表单
             document.getElementById('loginForm').style.display = 'block';
             document.getElementById('registerForm').style.display = 'none';
@@ -7624,6 +7629,20 @@
             document.getElementById('smsLoginForm').style.display = 'none';
             document.getElementById('form-title').textContent = '用户登录';
             document.querySelector('#login-container .logo i').className = 'fas fa-user-lock';
+            
+            // 清空登录表单
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('smsPhone').value = '';
+            document.getElementById('smsCode').value = '';
+            
+            // 显示会话超时消息（直接操作loginMessage元素）
+            const loginMessage = document.getElementById('loginMessage');
+            if (loginMessage) {
+                loginMessage.textContent = '登录超时，请重新登录';
+                loginMessage.className = 'message error';
+                loginMessage.style.display = 'block';
+            }
         }
         // 初始化用户活动监听
         let activityTrackingInitialized = false;
