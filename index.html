@@ -4258,11 +4258,9 @@
             <i class="fas fa-table"></i>
             充电数据表格
             <div style="display: flex; align-items: center; margin-left: auto; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 5px; border: 1px solid #ddd; border-radius: 6px; padding: 2px;">
-                    <button id="year-prev-btn" style="border: none; background: transparent; cursor: pointer; padding: 5px 8px; font-size: 16px; color: #666;" title="上一年">‹</button>
-                    <input type="text" id="year-select" readonly style="padding: 5px 10px; border: none; text-align: center; width: 80px; font-size: 14px; background: transparent; cursor: default;">
-                    <button id="year-next-btn" style="border: none; background: transparent; cursor: pointer; padding: 5px 8px; font-size: 16px; color: #666;" title="下一年">›</button>
-                </div>
+                <select id="year-select" style="padding: 5px;">
+                    <!-- 年份选项将由JavaScript动态生成 -->
+                </select>
                 <button class="export-btn" id="export-board-btn">
                     <i class="fas fa-file-excel"></i>
                     <span>导出数据</span>
@@ -4348,11 +4346,9 @@
         <i class="fas fa-chart-bar"></i>
         综合收入看板
         <div style="display: flex; align-items: center; margin-left: auto; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 5px; border: 1px solid #ddd; border-radius: 6px; padding: 2px;">
-                <button id="income-year-prev-btn" style="border: none; background: transparent; cursor: pointer; padding: 5px 8px; font-size: 16px; color: #666;" title="上一年">‹</button>
-                <input type="text" id="income-year-select" readonly style="padding: 5px 10px; border: none; text-align: center; width: 80px; font-size: 14px; background: transparent; cursor: default;">
-                <button id="income-year-next-btn" style="border: none; background: transparent; cursor: pointer; padding: 5px 8px; font-size: 16px; color: #666;" title="下一年">›</button>
-            </div>
+            <select id="income-year-select" class="form-select">
+                <!-- 年份选项将由JavaScript动态生成 -->
+            </select>
             <button id="income-export-btn" class="chart-action-btn">
                 <i class="fas fa-download"></i> 导出数据
             </button>
@@ -8309,104 +8305,34 @@ function loadChargingBoardData() {
                 return obj;
             });
             
-            // 初始化年份选择器（包含初始渲染）
+            // 初始化年份下拉框
             initYearSelect();
+            
+            // 默认显示当前年度的数据
+            const currentYear = new Date().getFullYear();
+            renderChargingBoardTable(currentYear);
         })
         .catch(error => {
         });
 }
 
-// 将时间值转换为Date对象的辅助函数
-function parseTimeToDate(dateValue) {
-    if (!dateValue) return null;
-    
-    // 如果是Date对象
-    if (dateValue instanceof Date) {
-        return dateValue;
-    }
-    
-    // 如果是数字
-    if (typeof dateValue === 'number') {
-        // Excel日期序列号转换
-        if (dateValue > 25569) {
-            const date = new Date((dateValue - 25569) * 86400 * 1000);
-            if (!isNaN(date.getTime())) {
-                return date;
-            }
-        }
-        // 如果数字本身就是年份（如2026、2027），转换为该年1月1日
-        if (dateValue >= 1900 && dateValue <= 2100) {
-            return new Date(Math.floor(dateValue), 0, 1);
-        }
-    }
-    
-    // 如果是字符串
-    if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
-        if (!isNaN(date.getTime())) {
-            return date;
-        }
-    }
-    
-    return null;
-}
-
-// 提取年份的辅助函数
-function extractYear(dateValue) {
-    if (!dateValue) return null;
-    
-    // 如果是Date对象
-    if (dateValue instanceof Date) {
-        return dateValue.getFullYear();
-    }
-    
-    // 如果是数字（可能是Excel日期序列号）
-    if (typeof dateValue === 'number') {
-        // Excel日期序列号转换
-        if (dateValue > 25569) { // 可能是Excel日期序列号
-            const date = new Date((dateValue - 25569) * 86400 * 1000);
-            if (!isNaN(date.getTime())) {
-                return date.getFullYear();
-            }
-        }
-        // 如果数字本身就是年份（如2026）
-        if (dateValue >= 1900 && dateValue <= 2100) {
-            return Math.floor(dateValue);
-        }
-    }
-    
-    // 如果是字符串
-    if (typeof dateValue === 'string') {
-        // 尝试直接解析为日期
-        const date = new Date(dateValue);
-        if (!isNaN(date.getTime())) {
-            return date.getFullYear();
-        }
-        
-        // 使用正则表达式提取4位数字年份
-        const match = dateValue.match(/(\d{4})/);
-        if (match) {
-            const year = parseInt(match[1]);
-            if (year >= 1900 && year <= 2100) {
-                return year;
-            }
-        }
-    }
-    
-    return null;
-}
-
-// 初始化年份选择器（翻页按钮）
+// 初始化年份下拉框
 function initYearSelect() {
     const yearSelect = document.getElementById('year-select');
-    const prevBtn = document.getElementById('year-prev-btn');
-    const nextBtn = document.getElementById('year-next-btn');
-    
     // 获取数据中存在的年份
     const years = new Set();
     chargingBoardData.forEach(item => {
         if (item['时间']) {
-            const year = extractYear(item['时间']);
+            const dateStr = item['时间'];
+            let year;
+            if (dateStr instanceof Date) {
+                year = dateStr.getFullYear();
+            } else if (typeof dateStr === 'string') {
+                const match = dateStr.match(/(\d{4})/);
+                if (match) {
+                    year = parseInt(match[1]);
+                }
+            }
             if (year) {
                 years.add(year);
             }
@@ -8414,81 +8340,30 @@ function initYearSelect() {
     });
     
     // 排序年份
-    const sortedYears = Array.from(years).sort((a, b) => a - b);
+    const sortedYears = Array.from(years).sort();
     
-    // 调试信息：输出提取到的年份
-    console.log('充电数据表格 - 提取到的年份:', sortedYears);
+    // 清空下拉框
+    yearSelect.innerHTML = '';
     
-    // 将可用年份列表存储到元素上
-    yearSelect.dataset.availableYears = JSON.stringify(sortedYears);
+    // 添加年份选项
+    sortedYears.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year + '年';
+        yearSelect.appendChild(option);
+    });
     
     // 设置默认选中当前年份(2025年)
     const currentYear = 2025;
-    let initialYear = currentYear;
-    if (!sortedYears.includes(currentYear) && sortedYears.length > 0) {
-        initialYear = sortedYears[sortedYears.length - 1]; // 如果没有当前年份，选择最后一个
+    if (yearSelect.querySelector(`option[value="${currentYear}"]`)) {
+        yearSelect.value = currentYear;
     }
     
-    yearSelect.value = initialYear + '年';
-    yearSelect.dataset.currentYear = initialYear;
-    
-    // 更新按钮状态
-    updateYearButtons(yearSelect, prevBtn, nextBtn, sortedYears);
-    
-    // 初始渲染
-    renderChargingBoardTable(initialYear);
-    
-    // 添加翻页按钮事件监听
-    prevBtn.addEventListener('click', function() {
-        const availableYears = JSON.parse(yearSelect.dataset.availableYears);
-        const currentYear = parseInt(yearSelect.dataset.currentYear);
-        const currentIndex = availableYears.indexOf(currentYear);
-        
-        if (currentIndex > 0) {
-            const prevYear = availableYears[currentIndex - 1];
-            yearSelect.value = prevYear + '年';
-            yearSelect.dataset.currentYear = prevYear;
-            updateYearButtons(yearSelect, prevBtn, nextBtn, availableYears);
-            renderChargingBoardTable(prevYear);
-        }
+    // 添加事件监听
+    yearSelect.addEventListener('change', function() {
+        const selectedYear = parseInt(this.value);
+        renderChargingBoardTable(selectedYear);
     });
-    
-    nextBtn.addEventListener('click', function() {
-        const availableYears = JSON.parse(yearSelect.dataset.availableYears);
-        const currentYear = parseInt(yearSelect.dataset.currentYear);
-        const currentIndex = availableYears.indexOf(currentYear);
-        
-        if (currentIndex < availableYears.length - 1) {
-            const nextYear = availableYears[currentIndex + 1];
-            yearSelect.value = nextYear + '年';
-            yearSelect.dataset.currentYear = nextYear;
-            updateYearButtons(yearSelect, prevBtn, nextBtn, availableYears);
-            renderChargingBoardTable(nextYear);
-        }
-    });
-}
-
-// 更新年份翻页按钮状态
-function updateYearButtons(yearSelect, prevBtn, nextBtn, availableYears) {
-    const currentYear = parseInt(yearSelect.dataset.currentYear);
-    const currentIndex = availableYears.indexOf(currentYear);
-    
-    // 更新按钮样式（禁用状态）
-    if (currentIndex <= 0) {
-        prevBtn.style.opacity = '0.4';
-        prevBtn.style.cursor = 'not-allowed';
-    } else {
-        prevBtn.style.opacity = '1';
-        prevBtn.style.cursor = 'pointer';
-    }
-    
-    if (currentIndex >= availableYears.length - 1) {
-        nextBtn.style.opacity = '0.4';
-        nextBtn.style.cursor = 'not-allowed';
-    } else {
-        nextBtn.style.opacity = '1';
-        nextBtn.style.cursor = 'pointer';
-    }
 }
 // 渲染充电数据看板表格
 function renderChargingBoardTable(year) {
@@ -8498,7 +8373,16 @@ function renderChargingBoardTable(year) {
     // 过滤出指定年份的数据
     const yearData = chargingBoardData.filter(item => {
         if (item['时间']) {
-            const itemYear = extractYear(item['时间']);
+            const dateStr = item['时间'];
+            let itemYear;
+            if (dateStr instanceof Date) {
+                itemYear = dateStr.getFullYear();
+            } else if (typeof dateStr === 'string') {
+                const match = dateStr.match(/(\d{4})/);
+                if (match) {
+                    itemYear = parseInt(match[1]);
+                }
+            }
             return itemYear === year;
         }
         return false;
@@ -8506,12 +8390,9 @@ function renderChargingBoardTable(year) {
     
     // 按时间排序
     yearData.sort((a, b) => {
-        const dateA = parseTimeToDate(a['时间']);
-        const dateB = parseTimeToDate(b['时间']);
-        if (!dateA && !dateB) return 0;
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        return dateA.getTime() - dateB.getTime();
+        const dateA = new Date(a['时间']);
+        const dateB = new Date(b['时间']);
+        return dateA - dateB;
     });
     
     // 填充数据
@@ -8531,26 +8412,10 @@ function renderChargingBoardTable(year) {
             timeDisplay = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
         } else if (typeof item['时间'] === 'string') {
             const date = new Date(item['时间']);
-            if (!isNaN(date.getTime())) {
+            if (!isNaN(date)) {
                 timeDisplay = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
             } else {
                 timeDisplay = item['时间'];
-            }
-        } else if (typeof item['时间'] === 'number') {
-            // 处理数字类型：可能是Excel日期序列号或年份
-            if (item['时间'] > 25569) {
-                // 可能是Excel日期序列号
-                const date = new Date((item['时间'] - 25569) * 86400 * 1000);
-                if (!isNaN(date.getTime())) {
-                    timeDisplay = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                } else {
-                    timeDisplay = item['时间'].toString();
-                }
-            } else if (item['时间'] >= 1900 && item['时间'] <= 2100) {
-                // 如果数字本身就是年份（如2026、2027），显示为年份-01
-                timeDisplay = `${Math.floor(item['时间'])}-01`;
-            } else {
-                timeDisplay = item['时间'].toString();
             }
         }
         
@@ -8605,12 +8470,9 @@ function renderChargingBoardChart(data) {
     
     // 按时间排序
     data.sort((a, b) => {
-        const dateA = parseTimeToDate(a['时间']);
-        const dateB = parseTimeToDate(b['时间']);
-        if (!dateA && !dateB) return 0;
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        return dateA.getTime() - dateB.getTime();
+        const dateA = new Date(a['时间']);
+        const dateB = new Date(b['时间']);
+        return dateA - dateB;
     });
     
     // 准备图表数据
@@ -8620,26 +8482,10 @@ function renderChargingBoardChart(data) {
             return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
         } else if (typeof item['时间'] === 'string') {
             const date = new Date(item['时间']);
-            if (!isNaN(date.getTime())) {
+            if (!isNaN(date)) {
                 return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
             } else {
                 return item['时间'];
-            }
-        } else if (typeof item['时间'] === 'number') {
-            // 处理数字类型：可能是Excel日期序列号或年份
-            if (item['时间'] > 25569) {
-                // 可能是Excel日期序列号
-                const date = new Date((item['时间'] - 25569) * 86400 * 1000);
-                if (!isNaN(date.getTime())) {
-                    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                } else {
-                    return item['时间'].toString();
-                }
-            } else if (item['时间'] >= 1900 && item['时间'] <= 2100) {
-                // 如果数字本身就是年份（如2026、2027），显示为年份-01
-                return `${Math.floor(item['时间'])}-01`;
-            } else {
-                return item['时间'].toString();
             }
         }
         return '';
@@ -8707,13 +8553,21 @@ function renderChargingBoardChart(data) {
 // 导出充电数据看板数据
 function exportChargingBoardData() {
     // 获取当前显示的年份
-    const yearSelect = document.getElementById('year-select');
-    const year = parseInt(yearSelect.dataset.currentYear || yearSelect.value.replace('年', ''));
+    const year = parseInt(document.getElementById('year-select').value);
     
     // 过滤出指定年份的数据
     const yearData = chargingBoardData.filter(item => {
         if (item['时间']) {
-            const itemYear = extractYear(item['时间']);
+            const dateStr = item['时间'];
+            let itemYear;
+            if (dateStr instanceof Date) {
+                itemYear = dateStr.getFullYear();
+            } else if (typeof dateStr === 'string') {
+                const match = dateStr.match(/(\d{4})/);
+                if (match) {
+                    itemYear = parseInt(match[1]);
+                }
+            }
             return itemYear === year;
         }
         return false;
@@ -9394,12 +9248,9 @@ async function loadIncomeDashboardData() {
     }
 }
 
-// 更新年份选择器（翻页按钮）
+// 更新年份选择器
 function updateYearSelector() {
     const yearSelect = document.getElementById('income-year-select');
-    const prevBtn = document.getElementById('income-year-prev-btn');
-    const nextBtn = document.getElementById('income-year-next-btn');
-    
     const years = [...new Set(incomeDashboardData
         .filter(item => item['时间'])
         .map(item => {
@@ -9407,81 +9258,26 @@ function updateYearSelector() {
             return date.getFullYear();
         })
         .filter(year => !isNaN(year))
-    )].sort((a, b) => a - b); // 改为升序排列，便于翻页
+    )].sort((a, b) => b - a);
     
-    // 将可用年份列表存储到元素上
-    yearSelect.dataset.availableYears = JSON.stringify(years);
-    
-    // 设置默认选中当前年份
-    const currentYear = new Date().getFullYear();
-    let initialYear = currentYear;
-    if (!years.includes(currentYear) && years.length > 0) {
-        initialYear = years[years.length - 1]; // 如果没有当前年份，选择最后一个
-    }
-    
-    yearSelect.value = initialYear;
-    yearSelect.dataset.currentYear = initialYear;
-    
-    // 更新按钮状态
-    updateIncomeYearButtons(yearSelect, prevBtn, nextBtn, years);
-    
-    // 初始加载数据
-    loadYearData(initialYear.toString());
-    
-    // 添加翻页按钮事件监听
-    prevBtn.addEventListener('click', function() {
-        const availableYears = JSON.parse(yearSelect.dataset.availableYears);
-        const currentYear = parseInt(yearSelect.dataset.currentYear);
-        const currentIndex = availableYears.indexOf(currentYear);
-        
-        if (currentIndex > 0) {
-            const prevYear = availableYears[currentIndex - 1];
-            yearSelect.value = prevYear;
-            yearSelect.dataset.currentYear = prevYear;
-            updateIncomeYearButtons(yearSelect, prevBtn, nextBtn, availableYears);
-            loadYearData(prevYear.toString());
+    yearSelect.innerHTML = '';
+    years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        if (year === new Date().getFullYear()) {
+            option.selected = true;
         }
+        yearSelect.appendChild(option);
     });
     
-    nextBtn.addEventListener('click', function() {
-        const availableYears = JSON.parse(yearSelect.dataset.availableYears);
-        const currentYear = parseInt(yearSelect.dataset.currentYear);
-        const currentIndex = availableYears.indexOf(currentYear);
-        
-        if (currentIndex < availableYears.length - 1) {
-            const nextYear = availableYears[currentIndex + 1];
-            yearSelect.value = nextYear;
-            yearSelect.dataset.currentYear = nextYear;
-            updateIncomeYearButtons(yearSelect, prevBtn, nextBtn, availableYears);
-            loadYearData(nextYear.toString());
-        }
+    // 添加年份选择事件监听
+    yearSelect.addEventListener('change', (e) => {
+        loadYearData(e.target.value);
     });
     
     // 添加导出按钮事件监听
-    document.getElementById('income-export-btn').addEventListener('click', exportIncomeData);
-}
-
-// 更新综合收入看板年份翻页按钮状态
-function updateIncomeYearButtons(yearSelect, prevBtn, nextBtn, availableYears) {
-    const currentYear = parseInt(yearSelect.dataset.currentYear);
-    const currentIndex = availableYears.indexOf(currentYear);
-    
-    // 更新按钮样式（禁用状态）
-    if (currentIndex <= 0) {
-        prevBtn.style.opacity = '0.4';
-        prevBtn.style.cursor = 'not-allowed';
-    } else {
-        prevBtn.style.opacity = '1';
-        prevBtn.style.cursor = 'pointer';
-    }
-    
-    if (currentIndex >= availableYears.length - 1) {
-        nextBtn.style.opacity = '0.4';
-        nextBtn.style.cursor = 'not-allowed';
-    } else {
-        nextBtn.style.opacity = '1';
-        nextBtn.style.cursor = 'pointer';
-    }
+document.getElementById('income-export-btn').addEventListener('click', exportIncomeData);
 }
 
 // 加载指定年份数据
@@ -9706,8 +9502,7 @@ function updateIncomeChart(data) {
 // 导出数据功能
 function exportIncomeData() {
     // 获取当前选择的年份
-    const yearSelect = document.getElementById('income-year-select');
-    const year = yearSelect.dataset.currentYear || yearSelect.value;
+    const year = document.getElementById('income-year-select').value;
     
     // 获取当前显示的表格数据（已经过滤掉全为0的字段）
     const table = document.getElementById('income-table');
