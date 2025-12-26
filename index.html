@@ -19609,19 +19609,38 @@ function updateUnchargedTable() {
                 stationCondition = "AND ([电站名称] LIKE N'%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')";
             }
 
-            const query = `SELECT SUM(CAST([充电电费(元)] AS FLOAT)) AS total
+            // 查询特来电表
+            const teldQuery = `SELECT SUM(CAST([充电电费(元)] AS FLOAT)) AS total
                           FROM [特来电]
                           WHERE [充电结束时间] >= '${startDate}'
                           AND [充电结束时间] < DATEADD(day, 1, '${endDate}')
                           ${stationCondition}`;
 
             // 使用统一的executeSQL函数，启用缓存（5分钟）
-            const results = await executeSQL(query, {
+            const teldResults = await executeSQL(teldQuery, {
                 useCache: true,
                 cacheTTL: 5 * 60 * 1000,
-                params: { station, startDate, endDate, type: 'electricityFee' }
+                params: { station, startDate, endDate, type: 'electricityFee', table: 'teld' }
             });
-            return results.length > 0 && results[0].total ? parseFloat(results[0].total) : 0;
+            const teldTotal = teldResults.length > 0 && teldResults[0].total ? parseFloat(teldResults[0].total) : 0;
+
+            // 如果是四方坪站，还需要查询能科表
+            let nkTotal = 0;
+            if (station === '四方坪站') {
+                const nkQuery = `SELECT SUM(CAST([电费] AS FLOAT)) AS total
+                              FROM [能科]
+                              WHERE [结束日期时间] >= '${startDate}'
+                              AND [结束日期时间] < DATEADD(day, 1, '${endDate}')`;
+
+                const nkResults = await executeSQL(nkQuery, {
+                    useCache: true,
+                    cacheTTL: 5 * 60 * 1000,
+                    params: { station, startDate, endDate, type: 'electricityFee', table: 'nk' }
+                });
+                nkTotal = nkResults.length > 0 && nkResults[0].total ? parseFloat(nkResults[0].total) : 0;
+            }
+
+            return teldTotal + nkTotal;
         }
 
         // 查询充电服务费收入
@@ -19633,19 +19652,38 @@ function updateUnchargedTable() {
                 stationCondition = "AND ([电站名称] LIKE N'%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')";
             }
 
-            const query = `SELECT SUM(CAST([充电服务费(元)] AS FLOAT)) AS total
+            // 查询特来电表
+            const teldQuery = `SELECT SUM(CAST([充电服务费(元)] AS FLOAT)) AS total
                           FROM [特来电]
                           WHERE [充电结束时间] >= '${startDate}'
                           AND [充电结束时间] < DATEADD(day, 1, '${endDate}')
                           ${stationCondition}`;
 
             // 使用统一的executeSQL函数，启用缓存（5分钟）
-            const results = await executeSQL(query, {
+            const teldResults = await executeSQL(teldQuery, {
                 useCache: true,
                 cacheTTL: 5 * 60 * 1000,
-                params: { station, startDate, endDate, type: 'serviceFee' }
+                params: { station, startDate, endDate, type: 'serviceFee', table: 'teld' }
             });
-            return results.length > 0 && results[0].total ? parseFloat(results[0].total) : 0;
+            const teldTotal = teldResults.length > 0 && teldResults[0].total ? parseFloat(teldResults[0].total) : 0;
+
+            // 如果是四方坪站，还需要查询能科表
+            let nkTotal = 0;
+            if (station === '四方坪站') {
+                const nkQuery = `SELECT SUM(CAST([服务费] AS FLOAT)) AS total
+                              FROM [能科]
+                              WHERE [结束日期时间] >= '${startDate}'
+                              AND [结束日期时间] < DATEADD(day, 1, '${endDate}')`;
+
+                const nkResults = await executeSQL(nkQuery, {
+                    useCache: true,
+                    cacheTTL: 5 * 60 * 1000,
+                    params: { station, startDate, endDate, type: 'serviceFee', table: 'nk' }
+                });
+                nkTotal = nkResults.length > 0 && nkResults[0].total ? parseFloat(nkResults[0].total) : 0;
+            }
+
+            return teldTotal + nkTotal;
         }
 
         // 查询停车收费系统收入
