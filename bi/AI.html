@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Permissions-Policy" content="storage-access=self">
     <title>AI智能助手</title>
     <style>
         * {
@@ -384,6 +385,26 @@
     </div>
 
     <!-- 使用多个CDN源，提高加载成功率 -->
+    <script>
+        // 抑制Tracking Prevention警告（这些警告不影响功能）
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('Tracking Prevention')) {
+                // 静默处理Tracking Prevention警告
+                return;
+            }
+            originalWarn.apply(console, args);
+        };
+
+        // 捕获并处理可能的扩展脚本错误
+        window.addEventListener('error', function(e) {
+            if (e.filename && e.filename.includes('color-scheme-watcher')) {
+                // 静默处理浏览器扩展相关的错误
+                e.preventDefault();
+                return false;
+            }
+        }, true);
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js" 
             onerror="loadLeanCloudFallback()"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
@@ -458,6 +479,53 @@
             if (!messageInput) {
                 console.error('输入框未找到！');
                 return;
+            }
+
+            // 状态管理：是否正在发送消息
+            let isSending = false;
+            let currentAbortController = null;
+
+            // 更新发送按钮图标
+            function updateSendButtonIcon(isPause = false) {
+                const svg = sendButton.querySelector('svg');
+                if (isPause) {
+                    // 显示暂停图标
+                    svg.innerHTML = `
+                        <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                        <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                    `;
+                } else {
+                    // 显示发送箭头
+                    svg.innerHTML = `
+                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                        <polyline points="5 12 12 5 19 12"></polyline>
+                    `;
+                }
+            }
+
+            // 取消对话
+            function cancelConversation() {
+                if (isSending && currentAbortController) {
+                    console.log('取消对话请求');
+                    currentAbortController.abort();
+                    currentAbortController = null;
+                }
+                
+                // 重置状态
+                isSending = false;
+                currentAbortController = null;
+                
+                // 移除加载动画
+                removeLoading();
+                
+                // 恢复按钮状态
+                updateSendButtonIcon(false);
+                sendButton.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+                
+                // 显示取消消息
+                addMessage('对话已取消', false);
             }
 
             // 简单的Markdown渲染函数
@@ -672,10 +740,20 @@
 
             // 获取或创建sessionId
             function getSessionId() {
-            let sessionId = sessionStorage.getItem('chatSessionId');
-            if (!sessionId) {
-                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                sessionStorage.setItem('chatSessionId', sessionId);
+            let sessionId = null;
+            try {
+                sessionId = sessionStorage.getItem('chatSessionId');
+                if (!sessionId) {
+                    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('chatSessionId', sessionId);
+                }
+            } catch (e) {
+                // 如果存储访问被阻止，使用内存存储
+                console.warn('sessionStorage访问被阻止，使用内存存储:', e);
+                if (!window._tempSessionId) {
+                    window._tempSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                }
+                sessionId = window._tempSessionId;
             }
             return sessionId;
         }
@@ -685,9 +763,21 @@
                 const message = messageInput.value.trim();
                 if (!message) return;
 
-                // 禁用输入和按钮
+                // 如果正在发送，则直接返回（防止重复发送）
+                if (isSending) {
+                    return;
+                }
+
+                // 设置发送状态
+                isSending = true;
+                currentAbortController = new AbortController();
+
+                // 禁用输入，但保持按钮可用（用于取消）
                 messageInput.disabled = true;
-                sendButton.disabled = true;
+                sendButton.disabled = false;
+
+                // 更新按钮图标为暂停键
+                updateSendButtonIcon(true);
 
                 // 显示用户消息
                 addMessage(message, true);
@@ -704,10 +794,17 @@
                     const sessionId = getSessionId();
 
                     // 调用云函数
+                    // 注意：LeanCloud的Cloud.run可能不支持AbortController，但我们可以设置标志
                     const result = await AV.Cloud.run('chatWithAI', { 
                         message: message,
                         sessionId: sessionId
                     });
+
+                    // 检查是否已被取消
+                    if (!isSending) {
+                        console.log('请求已被取消，忽略响应');
+                        return;
+                    }
 
                     console.log('收到响应:', result);
 
@@ -729,6 +826,12 @@
                     addMessage(result.reply, false, metadata, rawData);
 
                 } catch (error) {
+                    // 如果已被取消，不显示错误
+                    if (!isSending) {
+                        console.log('请求已被取消');
+                        return;
+                    }
+
                     console.error('发送消息时出错:', error);
                     console.error('错误详情:', {
                         name: error.name,
@@ -751,9 +854,14 @@
 
                     addMessage(errorMsg);
                 } finally {
+                    // 重置状态
+                    isSending = false;
+                    currentAbortController = null;
+                    
                     // 恢复输入和按钮
                     messageInput.disabled = false;
                     sendButton.disabled = false;
+                    updateSendButtonIcon(false);
                     messageInput.focus();
                 }
             }
@@ -822,12 +930,18 @@
             sendButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('发送按钮被点击');
-                console.log('sendMessage函数类型:', typeof sendMessage);
-                if (typeof sendMessage === 'function') {
-                    sendMessage();
+                console.log('发送按钮被点击, isSending:', isSending);
+                
+                if (isSending) {
+                    // 如果正在发送，则取消对话
+                    cancelConversation();
                 } else {
-                    console.error('sendMessage不是一个函数！');
+                    // 否则发送消息
+                    if (typeof sendMessage === 'function') {
+                        sendMessage();
+                    } else {
+                        console.error('sendMessage不是一个函数！');
+                    }
                 }
             });
 
