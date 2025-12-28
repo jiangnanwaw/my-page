@@ -13561,12 +13561,11 @@ function updateUnchargedTable() {
                     
                     // 在该时间段内，逐个站点组查询
                     for (const group of stationGroups) {
-                        const stationNames = STATION_GROUP_TO_NAMES[group] || [];
-                        if (stationNames.length === 0) continue;
+                        // 构建该站点组在该时间段的WHERE条件（使用新的逻辑）
+                        const stationCondition = buildTeldStationCondition([group]);
+                        if (!stationCondition) continue;
                         
-                        // 构建该站点组在该时间段的WHERE条件
-                        const esc = stationNames.map(n => `N'${n.replace(/'/g, "''")}'`).join(', ');
-                        const whereClause = `WHERE [${timeField}] BETWEEN '${segStart}' AND '${segEnd}' AND [电站名称] IN (${esc})`;
+                        const whereClause = `WHERE ${stationCondition} AND [${timeField}] BETWEEN '${segStart}' AND '${segEnd}'`;
                         
                         // 查询该站点组在该时间段的统计数据
                         const statsSql = `SELECT 
@@ -13648,12 +13647,11 @@ function updateUnchargedTable() {
 
                 // 逐个站点组查询统计
                 for (const group of stationGroups) {
-                    const stationNames = STATION_GROUP_TO_NAMES[group] || [];
-                    if (stationNames.length === 0) continue;
+                    // 构建该站点组的WHERE条件（使用新的逻辑）
+                    const stationCondition = buildTeldStationCondition([group]);
+                    if (!stationCondition) continue;
                     
-                    // 构建该站点组的WHERE条件
-                    const esc = stationNames.map(n => `N'${n.replace(/'/g, "''")}'`).join(', ');
-                    const whereClause = `WHERE [${timeField}] BETWEEN '${start}' AND '${end}' AND [电站名称] IN (${esc})`;
+                    const whereClause = `WHERE ${stationCondition} AND [${timeField}] BETWEEN '${start}' AND '${end}'`;
                     
                     // 查询该站点组的统计数据
                     const statsSql = `SELECT 
@@ -14672,10 +14670,10 @@ function updateUnchargedTable() {
         const STATION_GROUP_TO_NAMES = {
             east: [
                 '长沙飞狐充电站',
-                '长沙特来电飞狐四方坪东区充电站',
-                '长沙特来电飞狐东区充电站',
                 '长沙飞狐四方坪桥下充电站',
-                '长沙飞狐四方坪桥下二期充电站'
+                '长沙飞狐四方坪桥下二期充电站',
+                '长沙特来电飞狐东区充电站',
+                '长沙特来电飞狐四方坪东区充电站'
             ],
             west: [
                 '长沙特来电飞狐四方坪西区充电站',
@@ -14684,7 +14682,9 @@ function updateUnchargedTable() {
             ],
             south: [
                 '长沙特来电飞狐四方坪南区充电站',
-                '长沙特来电飞狐南区充电站'
+                '长沙特来电飞狐南区充电站',
+                '长沙飞狐四方坪桥下三期充电站',
+                '长沙特来电飞狐西区充电站'
             ],
             gaoling: [
                 '长沙市开福区高岭香江国际城充电站建设项目',
@@ -14950,6 +14950,98 @@ function updateUnchargedTable() {
             }
         }
 
+        // 构建特来电查询的站点条件（根据选中的站点组，不包含时间条件）
+        function buildTeldStationCondition(checkedGroups) {
+            const terminalExcludeList = ['F01号直流', 'F02号直流', 'F03号直流', 'F04号直流', 'F05号直流', 'F06号直流', 
+                                         'G01号直流', 'G02号直流', 'G03号直流', 'G04号直流', 'G05号直流', 'G06号直流', 
+                                         'H01号直流', 'H02号直流', 'H03号直流', 'H04号直流', 'H05号直流', 'H06号直流', 
+                                         'I01号直流', 'I02号直流', 'I03号直流', 'I04号直流', 'I05号直流', 'I06号直流'];
+            
+            const stationConditions = [];
+            
+            checkedGroups.forEach(group => {
+                if (group === 'east') {
+                    // 长沙飞狐四方坪东区站：包含以下电站名称的所有数据
+                    const eastStations = [
+                        '长沙飞狐充电站',
+                        '长沙飞狐四方坪桥下充电站',
+                        '长沙飞狐四方坪桥下二期充电站',
+                        '长沙特来电飞狐东区充电站',
+                        '长沙特来电飞狐四方坪东区充电站'
+                    ];
+                    const esc = eastStations.map(n => `N'${n.replace(/'/g, "''")}'`).join(', ');
+                    stationConditions.push(`[电站名称] IN (${esc})`);
+                } else if (group === 'west') {
+                    // 长沙飞狐四方坪西区站：
+                    // 1. "长沙飞狐四方坪桥下三期充电站" 且 "终端名称"不包含指定列表
+                    // 2. "长沙特来电飞狐四方坪西区充电站"
+                    // 3. "长沙特来电飞狐西区充电站" 且 "终端名称"不包含指定列表
+                    const westConditions = [];
+                    
+                    // 条件1：长沙飞狐四方坪桥下三期充电站 且 终端名称不包含指定列表
+                    let terminalExclude = terminalExcludeList.map(t => `[终端名称] NOT LIKE N'%${t.replace(/'/g, "''")}%'`).join(' AND ');
+                    westConditions.push(`([电站名称] = N'长沙飞狐四方坪桥下三期充电站' AND ${terminalExclude})`);
+                    
+                    // 条件2：长沙特来电飞狐四方坪西区充电站
+                    westConditions.push(`[电站名称] = N'长沙特来电飞狐四方坪西区充电站'`);
+                    
+                    // 条件3：长沙特来电飞狐西区充电站 且 终端名称不包含指定列表
+                    westConditions.push(`([电站名称] = N'长沙特来电飞狐西区充电站' AND ${terminalExclude})`);
+                    
+                    stationConditions.push('(' + westConditions.join(' OR ') + ')');
+                } else if (group === 'south') {
+                    // 长沙飞狐四方坪南区站：
+                    // 1. "长沙飞狐四方坪桥下三期充电站" 且 "终端名称"包含指定列表
+                    // 2. "长沙特来电飞狐南区充电站"
+                    // 3. "长沙特来电飞狐四方坪南区充电站"
+                    // 4. "长沙特来电飞狐西区充电站" 且 "终端名称"包含指定列表
+                    const southConditions = [];
+                    
+                    // 条件1：长沙飞狐四方坪桥下三期充电站 且 终端名称包含指定列表（至少包含一个）
+                    let terminalInclude = terminalExcludeList.map(t => `[终端名称] LIKE N'%${t.replace(/'/g, "''")}%'`).join(' OR ');
+                    southConditions.push(`([电站名称] = N'长沙飞狐四方坪桥下三期充电站' AND (${terminalInclude}))`);
+                    
+                    // 条件2：长沙特来电飞狐南区充电站
+                    southConditions.push(`[电站名称] = N'长沙特来电飞狐南区充电站'`);
+                    
+                    // 条件3：长沙特来电飞狐四方坪南区充电站
+                    southConditions.push(`[电站名称] = N'长沙特来电飞狐四方坪南区充电站'`);
+                    
+                    // 条件4：长沙特来电飞狐西区充电站 且 终端名称包含指定列表（至少包含一个）
+                    southConditions.push(`([电站名称] = N'长沙特来电飞狐西区充电站' AND (${terminalInclude}))`);
+                    
+                    stationConditions.push('(' + southConditions.join(' OR ') + ')');
+                } else if (group === 'gaoling') {
+                    // 长沙飞狐四方坪高岭站：包含以下电站名称的所有数据
+                    const gaolingStations = [
+                        '长沙市开福区高岭香江国际城充电站建设项目',
+                        '华为飞狐特来电高岭超充站'
+                    ];
+                    const esc = gaolingStations.map(n => `N'${n.replace(/'/g, "''")}'`).join(', ');
+                    stationConditions.push(`[电站名称] IN (${esc})`);
+                }
+            });
+            
+            if (stationConditions.length > 0) {
+                return '(' + stationConditions.join(' OR ') + ')';
+            }
+            return '';
+        }
+
+        // 构建特来电查询的WHERE条件（根据选中的站点组）
+        function buildTeldWhereCondition(checkedGroups, timeField, start, end) {
+            const whereParts = [];
+            const stationCondition = buildTeldStationCondition(checkedGroups);
+            
+            if (stationCondition) {
+                whereParts.push(stationCondition);
+            }
+            
+            whereParts.push(`[${timeField}] BETWEEN '${start}' AND '${end}'`);
+            
+            return whereParts;
+        }
+
         // 构建查询配置（支持多设备）
         function buildStationQuery() {
             const devices = getSelectedDevices();
@@ -14994,28 +15086,12 @@ function updateUnchargedTable() {
                 timeField = (timeUi === '充电开始时间') ? '开始日期时间' : '结束日期时间';
             whereParts.push(`[${timeField}] BETWEEN '${start}' AND '${end}'`);
             } else {
-                    // 特来电：需要电站名称过滤
+                    // 特来电：根据选中的站点组构建复杂的WHERE条件
                     tableName = '[特来电]';
                     timeField = timeUi;
-
-                    // 添加电站名称过滤条件
-                    if (isAllStations) {
-                        const allStations = getSelectedStationNames();
-                        if (allStations.length > 0) {
-                            const esc = allStations.map(n => `N'${n.replace(/'/g, "''")}'`).join(', ');
-                            whereParts.push(`[电站名称] IN (${esc})`);
-                        }
-                    } else if (stations.length > 0) {
-                        if (stations.length === 1) {
-                            const esc = stations[0].replace(/'/g, "''");
-                            whereParts.push(`[电站名称] = N'${esc}'`);
-                        } else {
-                const esc = stations.map(n => `N'${n.replace(/'/g, "''")}'`).join(', ');
-                whereParts.push(`[电站名称] IN (${esc})`);
-            }
-                    }
-
-                    whereParts.push(`[${timeField}] BETWEEN '${start}' AND '${end}'`);
+                    
+                    // 使用新的函数构建特来电的WHERE条件
+                    whereParts = buildTeldWhereCondition(checkedGroups, timeField, start, end);
             }
 
             const whereClause = whereParts.length ? ('WHERE ' + whereParts.join(' AND ')) : '';
@@ -15663,10 +15739,10 @@ function updateUnchargedTable() {
                     
                     // 统计特来电（所有站点都可以有特来电）
                     if (teldQuery) {
-                        const stationNames = STATION_GROUP_TO_NAMES[group] || [];
-                        if (stationNames.length > 0) {
-                            const esc = stationNames.map(n => `N'${n.replace(/'/g, "''")}'`).join(', ');
-                            const whereClause = `WHERE [电站名称] IN (${esc}) AND [${timeField}] BETWEEN '${start}' AND '${end}'`;
+                        // 构建该站点组的WHERE条件（使用新的逻辑）
+                        const stationCondition = buildTeldStationCondition([group]);
+                        if (stationCondition) {
+                            const whereClause = `WHERE ${stationCondition} AND [${timeField}] BETWEEN '${start}' AND '${end}'`;
                             const statsSql = `SELECT 
                                 COUNT(1) AS total,
                                 SUM(CAST([充电电费(元)] AS DECIMAL(18,4))) AS fee_elec,
