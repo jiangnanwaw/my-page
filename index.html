@@ -2829,8 +2829,11 @@
                                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:14px;">
                                     <input type="checkbox" class="device-option" value="特来电" checked> 特来电
                                 </label>
-                                <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
+                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:14px;">
                                     <input type="checkbox" class="device-option" value="能科"> 能科
+                                </label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
+                                    <input type="checkbox" class="device-option" value="滴滴"> 滴滴
                                 </label>
                                 <div style="text-align:right; margin-top:8px;">
                                     <button onclick="applyDeviceSelection()" style="background:#007bff; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">确定</button>
@@ -3086,7 +3089,7 @@
                         </div>
                         
                         <!-- 数据类别选择（单选） -->
-                        <select id="other-data-category" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;">
+                        <select id="other-data-category" style="width:220px; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;" onchange="onOtherDataCategoryChange()">
                             <option value="" disabled selected hidden>数据类别</option>
                             <option value="判定车牌号">判定车牌号</option>
                             <option value="终端名称">终端名称</option>
@@ -3097,6 +3100,10 @@
                             <option value="用户分类">用户分类</option>
                             <option value="会员等级">会员等级</option>
                             <option value="判定结束原因">判定结束原因</option>
+                            <option value="充电枪ID" class="didi-only" style="display:none;">充电枪ID</option>
+                            <option value="停充原因" class="didi-only" style="display:none;">停充原因</option>
+                            <option value="用户类型" class="didi-only" style="display:none;">用户类型</option>
+                            <option value="手机号" class="didi-only" style="display:none;">手机号</option>
                         </select>
 
                         <!-- 排序方式选择（单选） -->
@@ -13253,9 +13260,10 @@ function updateUnchargedTable() {
         function updateStatsOnly() {
             const statsContainer = document.getElementById('stats-container');
             if (!statsContainer) return;
-            
+
             const hasFullStats = (__statsTotals !== null && __statsTotals !== undefined);
             const isNK = (__currentDevice === '能科');
+            const isDiDi = (__currentDevice === '滴滴');
             
             let total, totalElectricityFee, totalServiceFee, totalChargingFee, totalElectricity, totalDuration;
             
@@ -13286,20 +13294,20 @@ function updateUnchargedTable() {
                             <div style="font-size: 18px; font-weight: 600; color: #495057;">${total !== null ? total + ' 条' : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '电费' : '充电电费'}</div>
+                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isDiDi ? '充电电费' : (isNK ? '电费' : '充电电费')}</div>
                             <div style="font-size: 18px; font-weight: 600; color: #28a745;">${totalElectricityFee !== null ? '¥' + Number(totalElectricityFee).toFixed(2) : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '服务费' : '充电服务费'}</div>
+                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isDiDi ? '充电服务费' : (isNK ? '服务费' : '充电服务费')}</div>
                             <div style="font-size: 18px; font-weight: 600; color: #17a2b8;">${totalServiceFee !== null ? '¥' + Number(totalServiceFee).toFixed(2) : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '消费金额' : '充电收入'}</div>
+                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isDiDi ? '订单总额' : (isNK ? '消费金额' : '充电收入')}</div>
                             <div style="font-size: 18px; font-weight: 600; color: #dc3545;">${totalChargingFee !== null ? '¥' + Number(totalChargingFee).toFixed(2) : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '充电量' : '充电电量'}</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #6f42c1;">${totalElectricity !== null ? Number(totalElectricity).toFixed(2) + (isNK ? '' : ' 度') : statsLoadingMsg}</div>
+                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isDiDi ? '充电量' : (isNK ? '充电量' : '充电电量')}</div>
+                            <div style="font-size: 18px; font-weight: 600; color: #6f42c1;">${totalElectricity !== null ? Number(totalElectricity).toFixed(2) + (isDiDi ? ' 度' : (isNK ? '' : ' 度')) : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
                             <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '充电时长' : '充电时长'}</div>
@@ -13335,6 +13343,7 @@ function updateUnchargedTable() {
             // 判断是否有全量统计数据
             const hasFullStats = (__statsTotals !== null && __statsTotals !== undefined);
             const isNK = (__currentDevice === '能科');
+            const isDiDi = (__currentDevice === '滴滴');
             
             // 统计数据：优先使用全量统计，如果正在计算中则不显示fallback数据
             let total, totalElectricityFee, totalServiceFee, totalChargingFee, totalElectricity, totalDuration;
@@ -13369,20 +13378,20 @@ function updateUnchargedTable() {
                             <div style="font-size: 18px; font-weight: 600; color: #495057;">${total !== null ? total + ' 条' : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '电费' : '充电电费'}</div>
+                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isDiDi ? '充电电费' : (isNK ? '电费' : '充电电费')}</div>
                             <div style="font-size: 18px; font-weight: 600; color: #28a745;">${totalElectricityFee !== null ? '¥' + Number(totalElectricityFee).toFixed(2) : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '服务费' : '充电服务费'}</div>
+                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isDiDi ? '充电服务费' : (isNK ? '服务费' : '充电服务费')}</div>
                             <div style="font-size: 18px; font-weight: 600; color: #17a2b8;">${totalServiceFee !== null ? '¥' + Number(totalServiceFee).toFixed(2) : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '消费金额' : '充电收入'}</div>
+                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isDiDi ? '订单总额' : (isNK ? '消费金额' : '充电收入')}</div>
                             <div style="font-size: 18px; font-weight: 600; color: #dc3545;">${totalChargingFee !== null ? '¥' + Number(totalChargingFee).toFixed(2) : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
-                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '充电量' : '充电电量'}</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #6f42c1;">${totalElectricity !== null ? Number(totalElectricity).toFixed(2) + (isNK ? '' : ' 度') : statsLoadingMsg}</div>
+                            <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isDiDi ? '充电量' : (isNK ? '充电量' : '充电电量')}</div>
+                            <div style="font-size: 18px; font-weight: 600; color: #6f42c1;">${totalElectricity !== null ? Number(totalElectricity).toFixed(2) + (isDiDi ? ' 度' : (isNK ? '' : ' 度')) : statsLoadingMsg}</div>
                         </div>
                         <div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #e9ecef;">
                             <div style="font-size: 14px; color: #6c757d; margin-bottom: 4px;">${isNK ? '充电时长' : '充电时长'}</div>
@@ -13431,11 +13440,14 @@ function updateUnchargedTable() {
                         };
                         const candidates = map[col] || [col];
                         value = getFirstDefined(row, candidates);
-                        
+
                         // 如果是充电时长列，需要格式化显示
                         if (col === '充电时长' && value) {
                             value = formatDuration(value);
                         }
+                    } else if (__currentDevice === '滴滴') {
+                        // 滴滴平台字段直接映射（SQL查询已返回正确的列名）
+                        value = (row[col] !== null && row[col] !== undefined && row[col] !== 'NULL') ? row[col] : '';
                     } else {
                     if (col === '充电前soc') {
                         value = getFirstDefined(row, ['充电前soc', '充电前SOC', '充电前Soc', '开始SOC', '起始SOC']);
@@ -13466,6 +13478,12 @@ function updateUnchargedTable() {
             '电站名称', '终端名称', '充电开始时间', '充电结束时间', '充电电量(度)',
             '充电电费(元)', '充电服务费(元)', '充电费用(元)', '充电时长(分钟)',
             '充电前soc', '充电后soc', '判定车牌号', '车辆所属客户'
+        ];
+        // 滴滴平台显示列（13列）
+        const DIDI_DISPLAY_COLUMNS = [
+            '订单ID', '用户类型', '场站名称', '充电桩ID', '充电枪ID', '开始充电时间',
+            '充电完成时间', '充电时长（分钟）', '充电量（度）', '订单总额（元）',
+            '充电电费（元）', '充电服务费（元）', '车牌号'
         ];
         let __currentDisplayColumns = DISPLAY_COLUMNS.slice();
         // 统计总计（跨全量数据，而非当前页）
@@ -14497,7 +14515,16 @@ function updateUnchargedTable() {
             const tableName = __pagination.tableName || '[特来电]';
             const innerFrom = `FROM ${tableName} ${whereClause}`;
             const overOrder = `ORDER BY [${timeField}] ASC`;
-            const pageSql = `SELECT ${selectCols} FROM (SELECT ROW_NUMBER() OVER (${overOrder}) AS rn, * ${innerFrom}) t WHERE t.rn BETWEEN ${startRn} AND ${endRn}`;
+
+            // 根据设备类型构建不同的分页SQL
+            let pageSql;
+            if (__currentDevice === '滴滴') {
+                // 滴滴表需要特殊处理，因为selectCols包含CAST
+                pageSql = `SELECT ${selectCols} FROM (SELECT ROW_NUMBER() OVER (${overOrder}) AS rn, [订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号] ${innerFrom}) t WHERE t.rn BETWEEN ${startRn} AND ${endRn}`;
+            } else {
+                pageSql = `SELECT ${selectCols} FROM (SELECT ROW_NUMBER() OVER (${overOrder}) AS rn, * ${innerFrom}) t WHERE t.rn BETWEEN ${startRn} AND ${endRn}`;
+            }
+
             callSqlWithRetry(pageSql, 3, 600).then(pageRes => {
                 const rows = (pageRes && pageRes.results) ? pageRes.results : [];
                 const payload = { success: true, results: rows, rowCount: rows.length, query: pageSql };
@@ -14550,21 +14577,22 @@ function updateUnchargedTable() {
             
             const data = result.results;
             const isNK = (__currentDevice === '能科');
-            
+            const isDiDi = (__currentDevice === '滴滴');
+
             let tableHTML = `
                 <div style="overflow-x: auto; height: 100%;">
                     <table style="width: 100%; border-collapse: collapse; margin: 0; min-width: 1200px;">
                         <thead>
                             <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
             `;
-            
+
             // 仅显示固定的13列
             const __cols = (__currentDisplayColumns && __currentDisplayColumns.length) ? __currentDisplayColumns : DISPLAY_COLUMNS;
             __cols.forEach(col => {
                 tableHTML += `<th style="border: 1px solid #dee2e6; padding: 12px 8px; text-align: left; font-weight: 600; color: #495057; white-space: nowrap; min-width: 120px;">${col}</th>`;
             });
             tableHTML += `</tr></thead><tbody>`;
-            
+
             // 数据行（只渲染13列，字段名容错映射）
             data.forEach((row, index) => {
                 const rowClass = index % 2 === 0 ? 'background-color: #fff;' : 'background-color: #f8f9fa;';
@@ -14588,6 +14616,9 @@ function updateUnchargedTable() {
                             '持卡人': row['持卡人'] || ''
                         };
                         value = map[col] !== undefined ? map[col] : '';
+                    } else if (__currentDevice === '滴滴') {
+                        // 滴滴平台字段直接映射（SQL查询已返回正确的列名）
+                        value = (row[col] !== null && row[col] !== undefined && row[col] !== 'NULL') ? row[col] : '';
                     } else {
                         const map = {
                             '电站名称': row['电站名称'] || '',
@@ -15085,18 +15116,45 @@ function updateUnchargedTable() {
                 tableName = '[能科]';
                 timeField = (timeUi === '充电开始时间') ? '开始日期时间' : '结束日期时间';
             whereParts.push(`[${timeField}] BETWEEN '${start}' AND '${end}'`);
+            } else if (device === '滴滴') {
+                    // 滴滴：只能查询"长沙飞狐四方坪东区站"、"长沙飞狐四方坪西区站"和"长沙飞狐四方坪南区站"
+                    const hasSouth = checkedGroups.includes('south');
+                    const hasWest = checkedGroups.includes('west');
+
+                    if (!hasEast && !hasWest && !hasSouth) {
+                        // 如果不包含这三个站点，跳过滴滴查询
+                        return;
+                    }
+
+                    tableName = '[滴滴]';
+                    timeField = (timeUi === '充电开始时间') ? '开始充电时间' : '充电完成时间';
+
+                    // 构建场站名称条件
+                    const stationMappings = [];
+                    if (hasEast) stationMappings.push("N'飞狐四方坪东区充电站'");
+                    if (hasWest) stationMappings.push("N'飞狐四方坪西区充电站'");
+                    if (hasSouth) stationMappings.push("N'飞狐四方坪南区充电站'");
+
+                    whereParts.push(`[场站名称] IN (${stationMappings.join(', ')})`);
+                    whereParts.push(`[${timeField}] BETWEEN '${start}' AND '${end}'`);
             } else {
                     // 特来电：根据选中的站点组构建复杂的WHERE条件
                     tableName = '[特来电]';
                     timeField = timeUi;
-                    
+
                     // 使用新的函数构建特来电的WHERE条件
                     whereParts = buildTeldWhereCondition(checkedGroups, timeField, start, end);
             }
 
             const whereClause = whereParts.length ? ('WHERE ' + whereParts.join(' AND ')) : '';
             // 优化SQL查询：只查询需要的字段，添加索引提示，限制记录数量
-            const sql = `SELECT TOP 10000 [充电订单号], [电站名称], [终端名称], [${timeField}], [充电电量], [充电电费], [充电服务费], [充电费用], [充电时长] FROM ${tableName} WITH (INDEX(idx_${timeField.replace(/[\[\]]/g, '')})) ${whereClause} ORDER BY [${timeField}] ASC`;
+            let sql;
+            if (device === '滴滴') {
+                // 滴滴表查询13列，注意充电量需要类型转换
+                sql = `SELECT TOP 10000 [订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号] FROM ${tableName} ${whereClause} ORDER BY [${timeField}] ASC`;
+            } else {
+                sql = `SELECT TOP 10000 [充电订单号], [电站名称], [终端名称], [${timeField}], [充电电量], [充电电费], [充电服务费], [充电费用], [充电时长] FROM ${tableName} WITH (INDEX(idx_${timeField.replace(/[\[\]]/g, '')})) ${whereClause} ORDER BY [${timeField}] ASC`;
+            }
 
                 queries.push({
                     device,
@@ -15109,7 +15167,7 @@ function updateUnchargedTable() {
             });
             
             if (queries.length === 0) {
-                return { ok: false, error: '能科设备只能查询"长沙飞狐四方坪东区站"，请选择正确的电站' };
+                return { ok: false, error: '能科设备只能查询"长沙飞狐四方坪东区站"；滴滴平台只能查询"长沙飞狐四方坪东区站"、"长沙飞狐四方坪西区站"和"长沙飞狐四方坪南区站"，请选择正确的电站' };
             }
             
             return { ok: true, queries, devices, timeField: timeUi, isAllStations };
@@ -15118,13 +15176,14 @@ function updateUnchargedTable() {
 
         // 缓存合并查询的所有数据（避免每次翻页都重新查询）
         let __mergedAllData = {
-            nkData: [],  // 能科数据
-            teldData: [] // 特来电数据
+            nkData: [],    // 能科数据
+            teldData: [],  // 特来电数据
+            didiData: []   // 滴滴数据
         };
-        
+
         // 多设备查询的统计结果（按站点分组）
         let __multiDeviceStats = {
-            byStation: {}, // { stationName: { teld: {...}, nk: {...} } }
+            byStation: {}, // { stationName: { teld: {...}, nk: {...}, didi: {...} } }
             total: null
         };
         
@@ -15171,22 +15230,23 @@ function updateUnchargedTable() {
             // 确保统计容器显示正确（runStationQuery已经设置，这里不再重复设置，避免样式冲突）
             
             // 清空缓存和统计
-            __mergedAllData = { nkData: [], teldData: [] };
+            __mergedAllData = { nkData: [], teldData: [], didiData: [] };
             __multiDeviceStats = { byStation: {}, total: null };
             __statsTotals = null;
-            
+
             // 分别查询每个设备
             const nkQuery = build.queries.find(q => q.device === '能科');
             const teldQuery = build.queries.find(q => q.device === '特来电');
-            
-            if (!nkQuery && !teldQuery) {
+            const didiQuery = build.queries.find(q => q.device === '滴滴');
+
+            if (!nkQuery && !teldQuery && !didiQuery) {
                 resultContent.innerHTML = '<div style="color:#c00;">查询配置错误</div>';
                 return;
             }
-            
+
             // 查询总数并设置分页
-            let nkTotal = 0, teldTotal = 0;
-            
+            let nkTotal = 0, teldTotal = 0, didiTotal = 0;
+
             try {
                 // 查询能科总数
                 if (nkQuery) {
@@ -15194,19 +15254,26 @@ function updateUnchargedTable() {
                     const nkCountRes = await callSqlWithRetry(nkCountSql, 3, 600).catch(() => ({ results: [{ total: 0 }] }));
                     nkTotal = Number((nkCountRes && nkCountRes.results && nkCountRes.results[0] && nkCountRes.results[0].total) || 0);
                 }
-                
+
                 // 查询特来电总数
                 if (teldQuery) {
                     const teldCountSql = `SELECT COUNT(1) AS total FROM ${teldQuery.tableName} ${teldQuery.whereClause}`;
                     const teldCountRes = await callSqlWithRetry(teldCountSql, 3, 600).catch(() => ({ results: [{ total: 0 }] }));
                     teldTotal = Number((teldCountRes && teldCountRes.results && teldCountRes.results[0] && teldCountRes.results[0].total) || 0);
                 }
-                
-                // 多设备查询：显示统计结果和表格数据（先能科，后特来电）
+
+                // 查询滴滴总数
+                if (didiQuery) {
+                    const didiCountSql = `SELECT COUNT(1) AS total FROM ${didiQuery.tableName} ${didiQuery.whereClause}`;
+                    const didiCountRes = await callSqlWithRetry(didiCountSql, 3, 600).catch(() => ({ results: [{ total: 0 }] }));
+                    didiTotal = Number((didiCountRes && didiCountRes.results && didiCountRes.results[0] && didiCountRes.results[0].total) || 0);
+                }
+
+                // 多设备查询：显示统计结果和表格数据（能科、特来电、滴滴）
                 // 设置分页参数
                 __pagination.enabled = true;
                 __pagination.pageSize = 20;
-                __pagination.total = nkTotal + teldTotal;
+                __pagination.total = nkTotal + teldTotal + didiTotal;
                 __pagination.currentPage = 1;
                 __pagination.queries = build.queries;
                 __pagination.devices = build.devices;
@@ -15214,6 +15281,7 @@ function updateUnchargedTable() {
                 __pagination.isAllStations = build.isAllStations;
                 __pagination.nkTotal = nkTotal;
                 __pagination.teldTotal = teldTotal;
+                __pagination.didiTotal = didiTotal;
                 __pagination.tableName = '[合并]'; // 标记为多设备查询
                 __currentDevice = '合并';
                 __currentDisplayColumns = DISPLAY_COLUMNS.slice();
@@ -15234,7 +15302,7 @@ function updateUnchargedTable() {
                 }
                 
                 // 异步加载统计数据（按站点分组），统计完成后再加载表格数据
-                loadMultiDeviceStatsByStation(nkQuery, teldQuery, build.isAllStations).then(() => {
+                loadMultiDeviceStatsByStation(nkQuery, teldQuery, didiQuery, build.isAllStations).then(() => {
                     // 统计完成后，确保表格已清空，然后加载第一页数据
                     if (resultContent) {
                         // 再次确认清空（使用同步方式）
@@ -15247,7 +15315,7 @@ function updateUnchargedTable() {
                     }
                     // 确保分页已启用
                     __pagination.enabled = true;
-                    // 加载第一页数据（先能科，后特来电）
+                    // 加载第一页数据（能科、特来电、滴滴）
                     loadSimpleMergedPage(1).then(() => {
                         // 数据加载完成后，启用导出按钮
                         if (__pagination.total > 0) {
@@ -15270,18 +15338,18 @@ function updateUnchargedTable() {
             }
         }
 
-        // 简化的分页加载（先能科所有数据，后特来电所有数据）
+        // 简化的分页加载（能科、滴滴、特来电按顺序显示）
         async function loadSimpleMergedPage(page) {
             const resultContent = document.getElementById('query-result-content');
             if (!resultContent) {
                 return Promise.resolve();
             }
-            
+
             if (!__pagination.queries || __pagination.queries.length === 0) {
                 resultContent.innerHTML = '<div style="color:#c00;">查询配置错误</div>';
                 return Promise.resolve();
             }
-            
+
             // 每次加载前都强制清空表格内容（使用多种方式确保彻底清空）
             resultContent.innerHTML = '';
             resultContent.textContent = '';
@@ -15289,81 +15357,95 @@ function updateUnchargedTable() {
                 resultContent.removeChild(resultContent.firstChild);
             }
             void resultContent.offsetHeight; // 强制浏览器重新渲染
-            
+
             // 使用requestAnimationFrame确保清空操作完成
             await new Promise(resolve => requestAnimationFrame(resolve));
-            
+
             // 第一页时显示"正在加载数据"，后续页面显示"正在加载第X页"
             if (page === 1) {
                 resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#666;"><i class="fas fa-spinner fa-spin"></i> 正在加载数据，请稍候...</div>';
             } else {
                 resultContent.innerHTML = '<p style="padding:20px; text-align:center; color:#666;"><i class="fas fa-spinner fa-spin"></i> 正在加载第 ' + page + ' 页数据...</p>';
             }
-            
+
             // 再次确保内容已更新
             void resultContent.offsetHeight;
-            
+
             const pageSize = __pagination.pageSize;
             const offset = (page - 1) * pageSize;
             const nkTotal = __pagination.nkTotal || 0;
+            const didiTotal = __pagination.didiTotal || 0;
             const teldTotal = __pagination.teldTotal || 0;
             const nkQuery = __pagination.queries.find(q => q.device === '能科');
+            const didiQuery = __pagination.queries.find(q => q.device === '滴滴');
             const teldQuery = __pagination.queries.find(q => q.device === '特来电');
-            
+
             try {
                 let pageData = [];
-                
-                
+
                 // 判断当前页应该显示哪个设备的数据
-                // 先显示能科的所有数据（从第1页到第Math.ceil(nkTotal/pageSize)页）
-                // 然后显示特来电的所有数据（从第Math.ceil(nkTotal/pageSize)+1页开始）
+                // 顺序：先能科 → 滴滴 → 特来电
                 if (nkTotal > 0 && offset < nkTotal) {
                     // 当前页显示能科数据
-                    const nkPage = Math.floor(offset / pageSize) + 1; // 能科数据的页码（从1开始）
-                    const nkOffset = (nkPage - 1) * pageSize; // 能科数据在能科表中的offset
+                    const nkPage = Math.floor(offset / pageSize) + 1;
+                    const nkOffset = (nkPage - 1) * pageSize;
                     const nkStartRn = nkOffset + 1;
                     const nkEndRn = Math.min(nkOffset + pageSize, nkTotal);
-                    
-                    
+
                     if (nkQuery) {
                         const nkPageSql = `SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY [${nkQuery.timeField}] ASC) AS rn, * FROM ${nkQuery.tableName} ${nkQuery.whereClause}) t WHERE t.rn BETWEEN ${nkStartRn} AND ${nkEndRn}`;
                         const nkResult = await callSqlWithRetry(nkPageSql, 3, 600);
-                        
+
                         if (nkResult && nkResult.success && nkResult.results) {
                             let nkRows = nkResult.results.map(row => {
                                 const { rn, ...rest } = row;
                                 return mapNkRowToTeld(rest);
                             });
                             pageData = nkRows.map(row => ({ ...row, __device: '能科' }));
-                        } else {
+                        }
+                    }
+                } else if (didiTotal > 0 && offset < (nkTotal + didiTotal)) {
+                    // 当前页显示滴滴数据
+                    const didiOffset = offset - nkTotal;
+                    const didiPage = Math.floor(didiOffset / pageSize) + 1;
+                    const didiPageOffset = (didiPage - 1) * pageSize;
+                    const didiStartRn = didiPageOffset + 1;
+                    const didiEndRn = Math.min(didiPageOffset + pageSize, didiTotal);
+
+                    if (didiQuery) {
+                        const didiPageSql = `SELECT [订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号] FROM (SELECT ROW_NUMBER() OVER (ORDER BY [${didiQuery.timeField}] ASC) AS rn, * FROM ${didiQuery.tableName} ${didiQuery.whereClause}) t WHERE t.rn BETWEEN ${didiStartRn} AND ${didiEndRn}`;
+                        const didiResult = await callSqlWithRetry(didiPageSql, 3, 600);
+
+                        if (didiResult && didiResult.success && didiResult.results) {
+                            let didiRows = didiResult.results.map(row => {
+                                const { rn, ...rest } = row;
+                                return rest;
+                            });
+                            pageData = didiRows.map(row => ({ ...row, __device: '滴滴' }));
                         }
                     }
                 } else if (teldTotal > 0) {
-                    // 当前页显示特来电数据（只有当能科数据已经显示完或没有能科数据时）
-                    // 计算特来电在全局分页中的offset
-                    const teldOffset = Math.max(0, offset - nkTotal); // 特来电数据在特来电表中的offset
-                    const teldPage = Math.floor(teldOffset / pageSize) + 1; // 特来电数据的页码（从1开始）
-                    const teldPageOffset = (teldPage - 1) * pageSize; // 特来电数据在特来电表中的offset
+                    // 当前页显示特来电数据
+                    const teldOffset = offset - nkTotal - didiTotal;
+                    const teldPage = Math.floor(teldOffset / pageSize) + 1;
+                    const teldPageOffset = (teldPage - 1) * pageSize;
                     const teldStartRn = teldPageOffset + 1;
                     const teldEndRn = Math.min(teldPageOffset + pageSize, teldTotal);
-                    
-                    
+
                     if (teldQuery) {
                         const teldPageSql = `SELECT [电站名称], [终端名称], [充电开始时间], [充电结束时间], [充电电量(度)], [充电电费(元)], [充电服务费(元)], [充电费用(元)], [充电时长(分钟)], [充电前soc], [充电后soc], [判定车牌号], [车辆所属客户] FROM (SELECT ROW_NUMBER() OVER (ORDER BY [${teldQuery.timeField}] ASC) AS rn, * FROM ${teldQuery.tableName} ${teldQuery.whereClause}) t WHERE t.rn BETWEEN ${teldStartRn} AND ${teldEndRn}`;
                         const teldResult = await callSqlWithRetry(teldPageSql, 3, 600);
-                        
+
                         if (teldResult && teldResult.success && teldResult.results) {
                             let teldRows = teldResult.results.map(row => {
                                 const { rn, ...rest } = row;
                                 return rest;
                             });
                             pageData = teldRows.map(row => ({ ...row, __device: '特来电' }));
-                        } else {
                         }
                     }
-                } else {
                 }
-                
+
                 // 显示结果（不在这里显示统计，统计由updateMultiDeviceStatsDisplay独立显示）
                 if (pageData.length === 0) {
                     resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">当前页暂无数据</div>';
@@ -15374,10 +15456,10 @@ function updateUnchargedTable() {
                 __pagination.currentPage = page;
                 __pagination.enabled = true; // 确保分页已启用，以便翻页正常工作
                 renderPagination();
-                
+
                 // 返回Promise，以便调用者可以等待完成
                 return Promise.resolve();
-                
+
             } catch (err) {
                 resultContent.innerHTML = '<div style="color:#c00; padding:12px;">加载数据失败：' + err.message + '</div>';
                 return Promise.reject(err);
@@ -15679,14 +15761,15 @@ function updateUnchargedTable() {
                 resultContent.innerHTML = '<p>暂无数据</p>';
                 return;
             }
-            
-            // 分离能科和特来电数据
+
+            // 分离能科、滴滴和特来电数据
             const nkRows = data.filter(row => row.__device === '能科');
+            const didiRows = data.filter(row => row.__device === '滴滴');
             const teldRows = data.filter(row => row.__device === '特来电');
-            
+
             // 构建表格HTML（不包含统计，统计由updateMultiDeviceStatsDisplay独立显示）
             let tableHTML = '<div style="overflow-x: auto; height: 100%;">';
-            
+
             // 能科数据表格
             if (nkRows.length > 0) {
                 tableHTML += '<div style="margin-bottom: 20px;">';
@@ -15694,7 +15777,15 @@ function updateUnchargedTable() {
                 tableHTML += buildMergedTable(nkRows, DISPLAY_COLUMNS);
                 tableHTML += '</div>';
             }
-            
+
+            // 滴滴数据表格
+            if (didiRows.length > 0) {
+                tableHTML += '<div style="margin-bottom: 20px;">';
+                tableHTML += '<div style="font-weight: 600; margin-bottom: 8px; color: #495057; font-size: 16px; padding: 8px; background-color: #e9ecef; border-radius: 4px;">滴滴数据</div>';
+                tableHTML += buildMergedTable(didiRows, DIDI_DISPLAY_COLUMNS);
+                tableHTML += '</div>';
+            }
+
             // 特来电数据表格
             if (teldRows.length > 0) {
                 tableHTML += '<div>';
@@ -15702,48 +15793,48 @@ function updateUnchargedTable() {
                 tableHTML += buildMergedTable(teldRows, DISPLAY_COLUMNS);
                 tableHTML += '</div>';
             }
-            
+
             tableHTML += '</div>';
             resultContent.innerHTML = tableHTML;
         }
 
         // 按站点分组加载多设备统计数据
-        async function loadMultiDeviceStatsByStation(nkQuery, teldQuery, isAllStations) {
+        async function loadMultiDeviceStatsByStation(nkQuery, teldQuery, didiQuery, isAllStations) {
             try {
                 const start = toSqlDateTime((document.getElementById('start-datetime') || {}).value, false);
                 const end = toSqlDateTime((document.getElementById('end-datetime') || {}).value, true);
                 const timeField = (document.getElementById('time-field-select') || {}).value || '充电结束时间';
-                
+
                 // 获取站点信息
                 const allBox = document.getElementById('station-all');
                 const items = Array.from(document.querySelectorAll('#station-menu .station-group'));
-                const checkedGroups = allBox && allBox.checked 
+                const checkedGroups = allBox && allBox.checked
                     ? ['east', 'west', 'south', 'gaoling']
                     : items.filter(i => i.checked).map(i => i.getAttribute('data-group'));
-                
-                const stationMapToLabel = { 
-                    east: '长沙飞狐四方坪东区站', 
-                    west: '长沙飞狐四方坪西区站', 
-                    south: '长沙飞狐四方坪南区站', 
-                    gaoling: '长沙飞狐高岭站' 
+
+                const stationMapToLabel = {
+                    east: '长沙飞狐四方坪东区站',
+                    west: '长沙飞狐四方坪西区站',
+                    south: '长沙飞狐四方坪南区站',
+                    gaoling: '长沙飞狐高岭站'
                 };
-                
+
                 // 按站点分组统计
                 const stationStats = {};
-                
+
                 for (const group of checkedGroups) {
                     const stationName = stationMapToLabel[group];
                     if (!stationName) continue;
-                    
-                    stationStats[stationName] = { teld: null, nk: null };
-                    
+
+                    stationStats[stationName] = { teld: null, nk: null, didi: null };
+
                     // 统计特来电（所有站点都可以有特来电）
                     if (teldQuery) {
                         // 构建该站点组的WHERE条件（使用新的逻辑）
                         const stationCondition = buildTeldStationCondition([group]);
                         if (stationCondition) {
                             const whereClause = `WHERE ${stationCondition} AND [${timeField}] BETWEEN '${start}' AND '${end}'`;
-                            const statsSql = `SELECT 
+                            const statsSql = `SELECT
                                 COUNT(1) AS total,
                                 SUM(CAST([充电电费(元)] AS DECIMAL(18,4))) AS fee_elec,
                                 SUM(CAST([充电服务费(元)] AS DECIMAL(18,4))) AS fee_service,
@@ -15751,7 +15842,7 @@ function updateUnchargedTable() {
                                 SUM(CAST([充电电量(度)] AS DECIMAL(18,4))) AS kwh_total,
                                 SUM(CAST([充电时长(分钟)] AS DECIMAL(18,4))) AS minutes_total
                                 FROM [特来电] ${whereClause}`;
-                            
+
                             try {
                                 const result = await callSqlWithRetry(statsSql, 3, 600);
                                 if (result && result.success && result.results && result.results[0]) {
@@ -15769,18 +15860,18 @@ function updateUnchargedTable() {
                             }
                         }
                     }
-                    
+
                     // 统计能科（只有东区站）
                     if (nkQuery && group === 'east') {
                         const whereClause = `WHERE [${nkQuery.timeField}] BETWEEN '${start}' AND '${end}'`;
-                        const statsSql = `SELECT 
+                        const statsSql = `SELECT
                             COUNT(1) AS total,
                             SUM(CAST([电费] AS DECIMAL(18,4))) AS fee_elec,
                             SUM(CAST([服务费] AS DECIMAL(18,4))) AS fee_service,
                             SUM(CAST([消费金额] AS DECIMAL(18,4))) AS fee_total,
                             SUM(CAST([充电量] AS DECIMAL(18,4))) AS kwh_total
                             FROM [能科] ${whereClause}`;
-                        
+
                         try {
                             const result = await callSqlWithRetry(statsSql, 3, 600);
                             if (result && result.success && result.results && result.results[0]) {
@@ -15792,6 +15883,43 @@ function updateUnchargedTable() {
                                     chargingFee: Number(row.fee_total) || 0,
                                     electricity: Number(row.kwh_total) || 0,
                                     duration: 0 // 能科时长需要单独计算，统一在最后处理
+                                };
+                            }
+                        } catch (err) {
+                        }
+                    }
+
+                    // 统计滴滴（东区、西区、南区站）
+                    if (didiQuery && (group === 'east' || group === 'west' || group === 'south')) {
+                        // 映射站点组到滴滴表中的场站名称
+                        const didiStationMap = {
+                            'east': '飞狐四方坪东区充电站',
+                            'west': '飞狐四方坪西区充电站',
+                            'south': '飞狐四方坪南区充电站'
+                        };
+                        const didiStationName = didiStationMap[group];
+                        const didiTimeField = (timeField === '充电开始时间') ? '开始充电时间' : '充电完成时间';
+                        const whereClause = `WHERE [场站名称] = N'${didiStationName}' AND [${didiTimeField}] BETWEEN '${start}' AND '${end}'`;
+                        const statsSql = `SELECT
+                            COUNT(1) AS total,
+                            SUM(CAST([充电电费（元）] AS DECIMAL(18,4))) AS fee_elec,
+                            SUM(CAST([充电服务费（元）] AS DECIMAL(18,4))) AS fee_service,
+                            SUM(CAST([订单总额（元）] AS DECIMAL(18,4))) AS fee_total,
+                            SUM(CAST([充电量（度）] AS DECIMAL(18,4))) AS kwh_total,
+                            SUM(CAST([充电时长（分钟）] AS DECIMAL(18,4))) AS minutes_total
+                            FROM [滴滴] ${whereClause}`;
+
+                        try {
+                            const result = await callSqlWithRetry(statsSql, 3, 600);
+                            if (result && result.success && result.results && result.results[0]) {
+                                const row = result.results[0];
+                                stationStats[stationName].didi = {
+                                    total: Number(row.total) || 0,
+                                    electricityFee: Number(row.fee_elec) || 0,
+                                    serviceFee: Number(row.fee_service) || 0,
+                                    chargingFee: Number(row.fee_total) || 0,
+                                    electricity: Number(row.kwh_total) || 0,
+                                    duration: Number(row.minutes_total) || 0
                                 };
                             }
                         } catch (err) {
@@ -15840,6 +15968,14 @@ function updateUnchargedTable() {
                         total.chargingFee += station.nk.chargingFee || 0;
                         total.electricity += station.nk.electricity || 0;
                         total.duration += station.nk.duration || 0;
+                    }
+                    if (station.didi) {
+                        total.total += station.didi.total || 0;
+                        total.electricityFee += station.didi.electricityFee || 0;
+                        total.serviceFee += station.didi.serviceFee || 0;
+                        total.chargingFee += station.didi.chargingFee || 0;
+                        total.electricity += station.didi.electricity || 0;
+                        total.duration += station.didi.duration || 0;
                     }
                 });
                 
@@ -16066,9 +16202,8 @@ function updateUnchargedTable() {
                 });
             }
 
-            // 判断是否需要合并查询：只有当同时选择特来电和能科时才合并
-            const needMerge = build.devices && build.devices.length === 2 && 
-                             build.devices.includes('特来电') && build.devices.includes('能科');
+            // 判断是否需要合并查询：当选择多个设备时需要合并（特来电、能科、滴滴的任意组合）
+            const needMerge = build.devices && build.devices.length >= 2;
             
             if (needMerge && build.queries && build.queries.length > 1) {
                 // 简化的多设备查询：只显示统计结果，不显示表格数据
@@ -16158,6 +16293,9 @@ function updateUnchargedTable() {
                 if (device === '能科') {
                     __pagination.selectCols = '*';
                     __currentDisplayColumns = ['卡号','充电桩名称','开始日期时间','结束日期时间','充电量','电费','服务费','消费金额','充电时长','开始SOC','结束SOC','车牌号','持卡人'];
+                } else if (device === '滴滴') {
+                    __pagination.selectCols = '[订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号]';
+                    __currentDisplayColumns = DIDI_DISPLAY_COLUMNS.slice();
                 } else {
                     __pagination.selectCols = '[电站名称], [终端名称], [充电开始时间], [充电结束时间], [充电电量(度)], [充电电费(元)], [充电服务费(元)], [充电费用(元)], [充电时长(分钟)], [充电前soc], [充电后soc], [判定车牌号], [车辆所属客户]';
                     __currentDisplayColumns = DISPLAY_COLUMNS.slice();
@@ -16169,14 +16307,14 @@ function updateUnchargedTable() {
 
                 // 异步统计查询
                 if (device === '能科') {
-                    const statsSql = `SELECT 
+                    const statsSql = `SELECT
                         COUNT(1) AS total,
                         SUM(CAST([电费] AS DECIMAL(18,4))) AS fee_elec,
                         SUM(CAST([服务费] AS DECIMAL(18,4))) AS fee_service,
                         SUM(CAST([消费金额] AS DECIMAL(18,4))) AS fee_total,
                         SUM(CAST([充电量] AS DECIMAL(18,4))) AS kwh_total
                         FROM ${tableName} ${whereClause}`;
-                    
+
                     callSqlWithRetry(statsSql, 3, 800).then(statsRes => {
                         const row = (statsRes && statsRes.results && statsRes.results[0]) || {};
                         const total = Number(row.total) || 0;
@@ -16184,10 +16322,10 @@ function updateUnchargedTable() {
                         const sumService = Number(row.fee_service) || 0;
                         const sumAmount = Number(row.fee_total) || 0;
                         const sumKwh = Number(row.kwh_total) || 0;
-                        
+
                         __pagination.total = total;
                 renderPagination();
-                        
+
                         __statsTotals = {
                             total: total,
                             electricityFee: sumFee,
@@ -16197,7 +16335,7 @@ function updateUnchargedTable() {
                             duration: 0
                         };
                         updateStatsOnly();
-                        
+
                         // 如果没有数据，显示提示信息
                         if (total === 0) {
                             if (resultContent) {
@@ -16217,23 +16355,23 @@ function updateUnchargedTable() {
                         }
             }).catch(err => {
                     });
-                } else {
-                    const statsSql = `SELECT 
+                } else if (device === '滴滴') {
+                    const statsSql = `SELECT
                         COUNT(1) AS total,
-                        SUM(CAST([充电电费(元)] AS DECIMAL(18,4))) AS fee_elec,
-                        SUM(CAST([充电服务费(元)] AS DECIMAL(18,4))) AS fee_service,
-                        SUM(CAST([充电费用(元)] AS DECIMAL(18,4))) AS fee_total,
-                        SUM(CAST([充电电量(度)] AS DECIMAL(18,4))) AS kwh_total,
-                        SUM(CAST([充电时长(分钟)] AS DECIMAL(18,4))) AS minutes_total
+                        SUM(CAST([充电电费（元）] AS DECIMAL(18,4))) AS fee_elec,
+                        SUM(CAST([充电服务费（元）] AS DECIMAL(18,4))) AS fee_service,
+                        SUM(CAST([订单总额（元）] AS DECIMAL(18,4))) AS fee_total,
+                        SUM(CAST([充电量（度）] AS DECIMAL(18,4))) AS kwh_total,
+                        SUM(CAST([充电时长（分钟）] AS DECIMAL(18,4))) AS minutes_total
                         FROM ${tableName} ${whereClause}`;
-                    
+
                     callSqlWithRetry(statsSql, 3, 800).then(statsRes => {
                         const row = (statsRes && statsRes.results && statsRes.results[0]) || {};
                         const total = Number(row.total) || 0;
-                        
+
                         __pagination.total = total;
                         renderPagination();
-                        
+
                         __statsTotals = {
                             total: total,
                             electricityFee: Number(row.fee_elec) || 0,
@@ -16243,7 +16381,46 @@ function updateUnchargedTable() {
                             duration: Number(row.minutes_total) || 0
                         };
                         updateStatsOnly();
-                        
+
+                        // 如果没有数据，显示提示信息
+                        if (total === 0) {
+                            if (resultContent) {
+                                resultContent.innerHTML = `
+                                    <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 4px; color: #0c5460; text-align: center;">
+                                        <h4>查询完成</h4>
+                                        <p>未找到符合条件的数据</p>
+                                    </div>`;
+                            }
+                        }
+                    }).catch(err => {
+                    });
+                } else {
+                    const statsSql = `SELECT
+                        COUNT(1) AS total,
+                        SUM(CAST([充电电费(元)] AS DECIMAL(18,4))) AS fee_elec,
+                        SUM(CAST([充电服务费(元)] AS DECIMAL(18,4))) AS fee_service,
+                        SUM(CAST([充电费用(元)] AS DECIMAL(18,4))) AS fee_total,
+                        SUM(CAST([充电电量(度)] AS DECIMAL(18,4))) AS kwh_total,
+                        SUM(CAST([充电时长(分钟)] AS DECIMAL(18,4))) AS minutes_total
+                        FROM ${tableName} ${whereClause}`;
+
+                    callSqlWithRetry(statsSql, 3, 800).then(statsRes => {
+                        const row = (statsRes && statsRes.results && statsRes.results[0]) || {};
+                        const total = Number(row.total) || 0;
+
+                        __pagination.total = total;
+                        renderPagination();
+
+                        __statsTotals = {
+                            total: total,
+                            electricityFee: Number(row.fee_elec) || 0,
+                            serviceFee: Number(row.fee_service) || 0,
+                            chargingFee: Number(row.fee_total) || 0,
+                            electricity: Number(row.kwh_total) || 0,
+                            duration: Number(row.minutes_total) || 0
+                        };
+                        updateStatsOnly();
+
                         // 如果没有数据，显示提示信息
                         if (total === 0) {
                             if (resultContent) {
@@ -19581,6 +19758,125 @@ function updateUnchargedTable() {
             }
         }
 
+        // 计算平台服务费（带时间分界逻辑）
+        async function calculatePlatformServiceFee(station, startDate, endDate, totalChargingServiceFee) {
+            if (station !== '四方坪站') {
+                return 0;
+            }
+
+            const cutoffDate = new Date('2026-01-01');
+            const queryStartDate = new Date(startDate);
+            const queryEndDate = new Date(endDate);
+
+            // 情况1：查询时间完全在2026年1月之前
+            if (queryEndDate < cutoffDate) {
+                console.log('   查询时间段完全在2026年1月之前，使用旧逻辑：4%总服务费');
+                return totalChargingServiceFee * 0.04;
+            }
+
+            // 情况2：查询时间完全在2026年1月及之后
+            if (queryStartDate >= cutoffDate) {
+                console.log('   查询时间段完全在2026年1月之后，使用新逻辑：15%滴滴服务费');
+                // 查询滴滴服务费
+                const didiQuery = `SELECT SUM(CAST([充电服务费（元）] AS DECIMAL(18,4))) AS total
+                              FROM [滴滴]
+                              WHERE [充电完成时间] >= '${startDate}'
+                              AND [充电完成时间] < DATEADD(day, 1, '${endDate}')`;
+
+                const didiResults = await executeSQL(didiQuery, {
+                    useCache: true,
+                    cacheTTL: 5 * 60 * 1000,
+                    params: { station, startDate, endDate, type: 'platformServiceFee', table: 'didi' }
+                });
+                const didiServiceFee = didiResults.length > 0 && didiResults[0].total ? parseFloat(didiResults[0].total) : 0;
+                return didiServiceFee * 0.15;
+            }
+
+            // 情况3：查询时间跨越2026年1月
+            console.log('   查询时间段跨越2026年1月，需要分段计算');
+
+            // 计算2026年1月之前的部分（使用旧逻辑）
+            const beforeCutoffEnd = '2025-12-31';
+
+            // 查询2026年1月之前的特来电和能科服务费
+            const teldQueryBefore = `SELECT SUM(CAST([充电服务费(元)] AS FLOAT)) AS total
+                          FROM [特来电]
+                          WHERE [充电结束时间] >= '${startDate}'
+                          AND [充电结束时间] < DATEADD(day, 1, '${beforeCutoffEnd}')
+                          AND [电站名称] NOT LIKE N'%华为飞狐特来电高岭超充站%'
+                          AND [电站名称] NOT LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%'`;
+
+            const nkQueryBefore = `SELECT SUM(CAST([服务费] AS FLOAT)) AS total
+                          FROM [能科]
+                          WHERE [结束日期时间] >= '${startDate}'
+                          AND [结束日期时间] < DATEADD(day, 1, '${beforeCutoffEnd}')`;
+
+            const [teldResultsBefore, nkResultsBefore] = await Promise.all([
+                executeSQL(teldQueryBefore, {
+                    useCache: true,
+                    cacheTTL: 5 * 60 * 1000,
+                    params: { station, startDate, endDate: beforeCutoffEnd, type: 'platformServiceFeeBefore', table: 'teld' }
+                }),
+                executeSQL(nkQueryBefore, {
+                    useCache: true,
+                    cacheTTL: 5 * 60 * 1000,
+                    params: { station, startDate, endDate: beforeCutoffEnd, type: 'platformServiceFeeBefore', table: 'nk' }
+                })
+            ]);
+
+            const teldServiceFeeBefore = teldResultsBefore.length > 0 && teldResultsBefore[0].total ? parseFloat(teldResultsBefore[0].total) : 0;
+            const nkServiceFeeBefore = nkResultsBefore.length > 0 && nkResultsBefore[0].total ? parseFloat(nkResultsBefore[0].total) : 0;
+            const totalServiceFeeBefore = teldServiceFeeBefore + nkServiceFeeBefore;
+            const platformFeeBefore = totalServiceFeeBefore * 0.04;
+
+            console.log(`   2026年1月之前服务费: ${totalServiceFeeBefore}, 平台服务费(4%): ${platformFeeBefore}`);
+
+            // 计算2026年1月之后的部分（使用新逻辑：15%滴滴服务费）
+            const afterCutoffStart = '2026-01-01';
+
+            const didiQueryAfter = `SELECT SUM(CAST([充电服务费（元）] AS DECIMAL(18,4))) AS total
+                          FROM [滴滴]
+                          WHERE [充电完成时间] >= '${afterCutoffStart}'
+                          AND [充电完成时间] < DATEADD(day, 1, '${endDate}')`;
+
+            const didiResultsAfter = await executeSQL(didiQueryAfter, {
+                useCache: true,
+                cacheTTL: 5 * 60 * 1000,
+                params: { station, startDate: afterCutoffStart, endDate, type: 'platformServiceFeeAfter', table: 'didi' }
+            });
+
+            const didiServiceFeeAfter = didiResultsAfter.length > 0 && didiResultsAfter[0].total ? parseFloat(didiResultsAfter[0].total) : 0;
+            const platformFeeAfter = didiServiceFeeAfter * 0.15;
+
+            console.log(`   2026年1月之后滴滴服务费: ${didiServiceFeeAfter}, 平台服务费(15%): ${platformFeeAfter}`);
+
+            return platformFeeBefore + platformFeeAfter;
+        }
+
+        // 查询活动优惠券成本（带日期检查）
+        async function queryCouponCostWithDateCheck(station, startDate, endDate) {
+            const cutoffDate = new Date('2026-01-01');
+            const queryStartDate = new Date(startDate);
+            const queryEndDate = new Date(endDate);
+
+            // 情况1：查询时间完全在2026年1月及之后，不计算优惠券
+            if (queryStartDate >= cutoffDate) {
+                console.log('   查询时间段完全在2026年1月之后，不计算活动优惠券');
+                return 0;
+            }
+
+            // 情况2：查询时间完全在2026年1月之前，正常计算
+            if (queryEndDate < cutoffDate) {
+                console.log('   查询时间段完全在2026年1月之前，正常计算活动优惠券');
+                return await queryCouponCost(station, startDate, endDate);
+            }
+
+            // 情况3：查询时间跨越2026年1月，只计算2026年1月之前的部分
+            console.log('   查询时间段跨越2026年1月，只计算2026年1月之前的活动优惠券');
+            const beforeCutoffEnd = '2025-12-31';
+            return await queryCouponCost(station, startDate, beforeCutoffEnd);
+        }
+
         // 查询单个站点的数据
         async function queryStationData(station, startDate, endDate) {
             console.log(`\n========== 开始查询 ${station} 数据 ==========`);
@@ -19650,7 +19946,8 @@ function updateUnchargedTable() {
                 // 6. 计算平台服务费
                 console.log('5. 计算平台服务费...');
                 if (station === '四方坪站') {
-                    stationData.platformServiceFee = stationData.chargingServiceFee * 0.04;
+                    // 需要区分2026年1月前后的计算逻辑
+                    stationData.platformServiceFee = await calculatePlatformServiceFee(station, startDateFormatted, endDateFormatted, stationData.chargingServiceFee);
                 } else {
                     stationData.platformServiceFee = 0;
                 }
@@ -19658,7 +19955,8 @@ function updateUnchargedTable() {
 
                 // 7. 查询活动优惠券成本
                 console.log('6. 查询活动优惠券成本...');
-                stationData.couponCost = await queryCouponCost(station, startDateFormatted, endDateFormatted);
+                // 2026年1月之后（含2026年1月）不再计算活动优惠券
+                stationData.couponCost = await queryCouponCostWithDateCheck(station, startDateFormatted, endDateFormatted);
                 console.log(`   结果: ${stationData.couponCost}`);
 
                 // 8. 其他成本
@@ -19716,7 +20014,23 @@ function updateUnchargedTable() {
                 nkTotal = nkResults.length > 0 && nkResults[0].total ? parseFloat(nkResults[0].total) : 0;
             }
 
-            return teldTotal + nkTotal;
+            // 如果是四方坪站，还需要查询滴滴表
+            let didiTotal = 0;
+            if (station === '四方坪站') {
+                const didiQuery = `SELECT SUM(CAST([充电电费（元）] AS DECIMAL(18,4))) AS total
+                              FROM [滴滴]
+                              WHERE [充电完成时间] >= '${startDate}'
+                              AND [充电完成时间] < DATEADD(day, 1, '${endDate}')`;
+
+                const didiResults = await executeSQL(didiQuery, {
+                    useCache: true,
+                    cacheTTL: 5 * 60 * 1000,
+                    params: { station, startDate, endDate, type: 'electricityFee', table: 'didi' }
+                });
+                didiTotal = didiResults.length > 0 && didiResults[0].total ? parseFloat(didiResults[0].total) : 0;
+            }
+
+            return teldTotal + nkTotal + didiTotal;
         }
 
         // 查询充电服务费收入
@@ -19759,7 +20073,23 @@ function updateUnchargedTable() {
                 nkTotal = nkResults.length > 0 && nkResults[0].total ? parseFloat(nkResults[0].total) : 0;
             }
 
-            return teldTotal + nkTotal;
+            // 如果是四方坪站，还需要查询滴滴表
+            let didiTotal = 0;
+            if (station === '四方坪站') {
+                const didiQuery = `SELECT SUM(CAST([充电服务费（元）] AS DECIMAL(18,4))) AS total
+                              FROM [滴滴]
+                              WHERE [充电完成时间] >= '${startDate}'
+                              AND [充电完成时间] < DATEADD(day, 1, '${endDate}')`;
+
+                const didiResults = await executeSQL(didiQuery, {
+                    useCache: true,
+                    cacheTTL: 5 * 60 * 1000,
+                    params: { station, startDate, endDate, type: 'serviceFee', table: 'didi' }
+                });
+                didiTotal = didiResults.length > 0 && didiResults[0].total ? parseFloat(didiResults[0].total) : 0;
+            }
+
+            return teldTotal + nkTotal + didiTotal;
         }
 
         // 查询停车收费系统收入
@@ -20293,62 +20623,94 @@ function updateUnchargedTable() {
             const endParts = endDate.split('-');
             const lastDay = new Date(parseInt(endParts[0]), parseInt(endParts[1]), 0).getDate();
             const endDateFormatted = `${endDate}-${lastDay}`;
-            const stationCondition = buildStationCondition(station);
 
-            const terminalSql = `
-                SELECT COUNT(DISTINCT [电站名称] + N'&' + [终端名称]) AS terminals
-                FROM [特来电]
-                WHERE [充电结束时间] >= '${startDateFormatted}'
-                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
-                ${stationCondition}
-            `;
-            const terminalsRes = await executeLeanCloudSQL(terminalSql);
-            const terminals = terminalsRes && terminalsRes[0] && terminalsRes[0].terminals ? parseInt(terminalsRes[0].terminals) : 0;
+            const cutoffDate = new Date('2026-01-01');
+            const queryStartDate = new Date(startDateFormatted);
+            const queryEndDate = new Date(endDateFormatted);
 
-            const sumSql = `
-                SELECT 
-                    SUM(CAST([充电时长(分钟)] AS FLOAT)) AS totalDuration,
-                    SUM(CAST([充电电量(度)] AS FLOAT)) AS totalKwh,
-                    SUM(CAST([充电服务费(元)] AS FLOAT)) AS totalServiceFee,
-                    COUNT(1) AS totalSessions
-                FROM [特来电]
-                WHERE [充电结束时间] >= '${startDateFormatted}'
-                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
-                ${stationCondition}
-            `;
-            const sumRes = await executeLeanCloudSQL(sumSql);
-            const totalDuration = sumRes && sumRes[0] && sumRes[0].totalDuration ? parseFloat(sumRes[0].totalDuration) : 0;
-            const totalKwh = sumRes && sumRes[0] && sumRes[0].totalKwh ? parseFloat(sumRes[0].totalKwh) : 0;
-            const totalServiceFee = sumRes && sumRes[0] && sumRes[0].totalServiceFee ? parseFloat(sumRes[0].totalServiceFee) : 0;
-            const totalSessions = sumRes && sumRes[0] && sumRes[0].totalSessions ? parseInt(sumRes[0].totalSessions) : 0;
-
-            // 查询实际数据中"充电结束时间"的最大值和最小值
-            const dateRangeSql = `
-                SELECT 
-                    MIN(CAST([充电结束时间] AS DATE)) AS minDate,
-                    MAX(CAST([充电结束时间] AS DATE)) AS maxDate
-                FROM [特来电]
-                WHERE [充电结束时间] >= '${startDateFormatted}'
-                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
-                ${stationCondition}
-            `;
-            const dateRangeRes = await executeLeanCloudSQL(dateRangeSql);
-            let dayCount = 0;
-            if (dateRangeRes && dateRangeRes[0] && dateRangeRes[0].minDate && dateRangeRes[0].maxDate) {
-                // 根据实际数据中的最小和最大日期计算天数
-                const minDateStr = dateRangeRes[0].minDate;
-                const maxDateStr = dateRangeRes[0].maxDate;
-                dayCount = calcDayCount(minDateStr, maxDateStr);
+            // 场景判断
+            let queryScenario = '';
+            if (queryEndDate < cutoffDate) {
+                queryScenario = 'before'; // 完全在2026年1月之前
+            } else if (queryStartDate >= cutoffDate) {
+                queryScenario = 'after'; // 完全在2026年1月及之后
             } else {
-                // 如果没有数据，使用原来的计算方式作为后备
+                queryScenario = 'across'; // 跨越2026年1月
+            }
+
+            console.log(`[充电效率分析] ${station} 查询时间段: ${startDateFormatted} 至 ${endDateFormatted}, 场景: ${queryScenario}`);
+
+            let terminals = 0;
+            let totalDuration = 0;
+            let totalKwh = 0;
+            let totalServiceFee = 0;
+            let totalSessions = 0;
+            let minDate = null;
+            let maxDate = null;
+
+            if (queryScenario === 'before') {
+                // 场景1：完全在2026年1月之前，使用特来电表
+                const result = await queryEfficiencyFromTeld(station, startDateFormatted, endDateFormatted);
+                terminals = result.terminals;
+                totalDuration = result.totalDuration;
+                totalKwh = result.totalKwh;
+                totalServiceFee = result.totalServiceFee;
+                totalSessions = result.totalSessions;
+                minDate = result.minDate;
+                maxDate = result.maxDate;
+            } else if (queryScenario === 'after') {
+                // 场景2：完全在2026年1月及之后，使用滴滴表
+                const result = await queryEfficiencyFromDidi(station, startDateFormatted, endDateFormatted);
+                terminals = result.terminals;
+                totalDuration = result.totalDuration;
+                totalKwh = result.totalKwh;
+                totalServiceFee = result.totalServiceFee;
+                totalSessions = result.totalSessions;
+                minDate = result.minDate;
+                maxDate = result.maxDate;
+            } else {
+                // 场景3：跨越2026年1月，需要合并两个表的数据
+                const beforeCutoffEnd = '2025-12-31';
+                const afterCutoffStart = '2026-01-01';
+
+                const [teldResult, didiResult] = await Promise.all([
+                    queryEfficiencyFromTeld(station, startDateFormatted, beforeCutoffEnd),
+                    queryEfficiencyFromDidi(station, afterCutoffStart, endDateFormatted)
+                ]);
+
+                // 合并终端数（取并集，使用集合去重）
+                terminals = Math.max(teldResult.terminals, didiResult.terminals);
+
+                // 合并其他指标（求和）
+                totalDuration = teldResult.totalDuration + didiResult.totalDuration;
+                totalKwh = teldResult.totalKwh + didiResult.totalKwh;
+                totalServiceFee = teldResult.totalServiceFee + didiResult.totalServiceFee;
+                totalSessions = teldResult.totalSessions + didiResult.totalSessions;
+
+                // 合并日期范围
+                const dates = [teldResult.minDate, teldResult.maxDate, didiResult.minDate, didiResult.maxDate].filter(d => d);
+                if (dates.length > 0) {
+                    dates.sort();
+                    minDate = dates[0];
+                    maxDate = dates[dates.length - 1];
+                }
+            }
+
+            // 计算天数
+            let dayCount = 0;
+            if (minDate && maxDate) {
+                dayCount = calcDayCount(minDate, maxDate);
+            } else {
                 dayCount = calcDayCount(startDateFormatted, endDateFormatted);
             }
             if (dayCount <= 0) throw new Error('日期范围无效或无数据');
 
+            // 查询抄表电量
             const [startYear, startMonth] = startDate.split('-');
             const [endYear, endMonth] = endDate.split('-');
             const meterKwh = await queryMeterKwhForEfficiency(station, startYear, startMonth, endYear, endMonth);
 
+            // 计算效率指标
             const safeTerminals = terminals > 0 ? terminals : 1;
             const terminalDailyMinutes = (totalDuration / dayCount) / safeTerminals;
             const terminalUtilization = terminalDailyMinutes / 1440 * 100;
@@ -20373,6 +20735,101 @@ function updateUnchargedTable() {
                 lossKwh,
                 lossRate
             };
+        }
+
+        // 从特来电表查询效率数据
+        async function queryEfficiencyFromTeld(station, startDateFormatted, endDateFormatted) {
+            const stationCondition = buildStationCondition(station);
+
+            const terminalSql = `
+                SELECT COUNT(DISTINCT [电站名称] + N'&' + [终端名称]) AS terminals
+                FROM [特来电]
+                WHERE [充电结束时间] >= '${startDateFormatted}'
+                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
+                ${stationCondition}
+            `;
+            const terminalsRes = await executeLeanCloudSQL(terminalSql);
+            const terminals = terminalsRes && terminalsRes[0] && terminalsRes[0].terminals ? parseInt(terminalsRes[0].terminals) : 0;
+
+            const sumSql = `
+                SELECT
+                    SUM(CAST([充电时长(分钟)] AS FLOAT)) AS totalDuration,
+                    SUM(CAST([充电电量(度)] AS FLOAT)) AS totalKwh,
+                    SUM(CAST([充电服务费(元)] AS FLOAT)) AS totalServiceFee,
+                    COUNT(1) AS totalSessions
+                FROM [特来电]
+                WHERE [充电结束时间] >= '${startDateFormatted}'
+                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
+                ${stationCondition}
+            `;
+            const sumRes = await executeLeanCloudSQL(sumSql);
+            const totalDuration = sumRes && sumRes[0] && sumRes[0].totalDuration ? parseFloat(sumRes[0].totalDuration) : 0;
+            const totalKwh = sumRes && sumRes[0] && sumRes[0].totalKwh ? parseFloat(sumRes[0].totalKwh) : 0;
+            const totalServiceFee = sumRes && sumRes[0] && sumRes[0].totalServiceFee ? parseFloat(sumRes[0].totalServiceFee) : 0;
+            const totalSessions = sumRes && sumRes[0] && sumRes[0].totalSessions ? parseInt(sumRes[0].totalSessions) : 0;
+
+            const dateRangeSql = `
+                SELECT
+                    MIN(CAST([充电结束时间] AS DATE)) AS minDate,
+                    MAX(CAST([充电结束时间] AS DATE)) AS maxDate
+                FROM [特来电]
+                WHERE [充电结束时间] >= '${startDateFormatted}'
+                AND [充电结束时间] < DATEADD(day, 1, '${endDateFormatted}')
+                ${stationCondition}
+            `;
+            const dateRangeRes = await executeLeanCloudSQL(dateRangeSql);
+            const minDate = dateRangeRes && dateRangeRes[0] && dateRangeRes[0].minDate ? dateRangeRes[0].minDate : null;
+            const maxDate = dateRangeRes && dateRangeRes[0] && dateRangeRes[0].maxDate ? dateRangeRes[0].maxDate : null;
+
+            return { terminals, totalDuration, totalKwh, totalServiceFee, totalSessions, minDate, maxDate };
+        }
+
+        // 从滴滴表查询效率数据
+        async function queryEfficiencyFromDidi(station, startDateFormatted, endDateFormatted) {
+            // 滴滴表只有四方坪站的数据
+            if (station !== '四方坪站') {
+                return { terminals: 0, totalDuration: 0, totalKwh: 0, totalServiceFee: 0, totalSessions: 0, minDate: null, maxDate: null };
+            }
+
+            // 滴滴表使用"场站名称"字段，不需要stationCondition，直接查询所有四方坪相关站点
+            const terminalSql = `
+                SELECT COUNT(DISTINCT [场站名称] + N'&' + [充电枪ID]) AS terminals
+                FROM [滴滴]
+                WHERE [充电完成时间] >= '${startDateFormatted}'
+                AND [充电完成时间] < DATEADD(day, 1, '${endDateFormatted}')
+            `;
+            const terminalsRes = await executeLeanCloudSQL(terminalSql);
+            const terminals = terminalsRes && terminalsRes[0] && terminalsRes[0].terminals ? parseInt(terminalsRes[0].terminals) : 0;
+
+            const sumSql = `
+                SELECT
+                    SUM(CAST([充电时长（分钟）] AS DECIMAL(18,4))) AS totalDuration,
+                    SUM(CAST([充电量（度）] AS DECIMAL(18,4))) AS totalKwh,
+                    SUM(CAST([充电服务费（元）] AS DECIMAL(18,4))) AS totalServiceFee,
+                    COUNT(1) AS totalSessions
+                FROM [滴滴]
+                WHERE [充电完成时间] >= '${startDateFormatted}'
+                AND [充电完成时间] < DATEADD(day, 1, '${endDateFormatted}')
+            `;
+            const sumRes = await executeLeanCloudSQL(sumSql);
+            const totalDuration = sumRes && sumRes[0] && sumRes[0].totalDuration ? parseFloat(sumRes[0].totalDuration) : 0;
+            const totalKwh = sumRes && sumRes[0] && sumRes[0].totalKwh ? parseFloat(sumRes[0].totalKwh) : 0;
+            const totalServiceFee = sumRes && sumRes[0] && sumRes[0].totalServiceFee ? parseFloat(sumRes[0].totalServiceFee) : 0;
+            const totalSessions = sumRes && sumRes[0] && sumRes[0].totalSessions ? parseInt(sumRes[0].totalSessions) : 0;
+
+            const dateRangeSql = `
+                SELECT
+                    MIN(CAST([充电完成时间] AS DATE)) AS minDate,
+                    MAX(CAST([充电完成时间] AS DATE)) AS maxDate
+                FROM [滴滴]
+                WHERE [充电完成时间] >= '${startDateFormatted}'
+                AND [充电完成时间] < DATEADD(day, 1, '${endDateFormatted}')
+            `;
+            const dateRangeRes = await executeLeanCloudSQL(dateRangeSql);
+            const minDate = dateRangeRes && dateRangeRes[0] && dateRangeRes[0].minDate ? dateRangeRes[0].minDate : null;
+            const maxDate = dateRangeRes && dateRangeRes[0] && dateRangeRes[0].maxDate ? dateRangeRes[0].maxDate : null;
+
+            return { terminals, totalDuration, totalKwh, totalServiceFee, totalSessions, minDate, maxDate };
         }
 
         async function queryMeterKwhForEfficiency(station, startYear, startMonth, endYear, endMonth) {
@@ -21747,6 +22204,43 @@ function updateUnchargedTable() {
                     display.textContent = '电站：未选择';
                 }
             }
+
+            // 更新数据类别选项的可见性
+            updateOtherDataCategoryOptions();
+        }
+
+        // 更新数据类别选项的可见性（只有选择四方坪站时才显示滴滴专用选项）
+        function updateOtherDataCategoryOptions() {
+            const all = document.getElementById('other-station-all');
+            const items = Array.from(document.querySelectorAll('#other-station-menu .other-station-option'));
+            const checked = items.filter(i => i.checked).map(i => i.value);
+            const categorySelect = document.getElementById('other-data-category');
+
+            if (!categorySelect) return;
+
+            // 获取滴滴专用选项
+            const didiOptions = categorySelect.querySelectorAll('.didi-only');
+
+            // 判断是否只选择了四方坪站（不包括高岭站）
+            const isSifangpingOnly = checked.includes('四方坪站') && !checked.includes('高岭站');
+
+            // 显示或隐藏滴滴专用选项
+            didiOptions.forEach(option => {
+                if (isSifangpingOnly) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                    // 如果当前选中的是滴滴专用选项，则重置选择
+                    if (categorySelect.value === option.value) {
+                        categorySelect.value = '';
+                    }
+                }
+            });
+        }
+
+        // 数据类别变化时的处理（可选，用于未来扩展）
+        function onOtherDataCategoryChange() {
+            // 暂时不需要特殊处理
         }
 
         // 初始化其它数据页面日期选择器
@@ -23142,44 +23636,130 @@ function updateUnchargedTable() {
             }
             
             try {
-                // 构建电站条件
-                let stationCondition = '';
-                if (selectedStations.length === 2) {
-                    // 全选，不添加条件
-                    stationCondition = '';
-                } else if (selectedStations.includes('四方坪站') && !selectedStations.includes('高岭站')) {
-                    // 只选四方坪站
-                    stationCondition = "AND [电站名称] NOT LIKE N'%华为飞狐特来电高岭超充站%' AND [电站名称] NOT LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%'";
-                } else if (selectedStations.includes('高岭站') && !selectedStations.includes('四方坪站')) {
-                    // 只选高岭站
-                    stationCondition = "AND ([电站名称] LIKE N'%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')";
+                // 判断是否查询滴滴表：新增的4个类别只在四方坪站且使用滴滴表
+                const didiCategories = ['充电枪ID', '停充原因', '用户类型', '手机号'];
+                const isDidiCategory = didiCategories.includes(dataCategory);
+
+                // 如果是滴滴类别但不是只选四方坪站，则提示错误
+                if (isDidiCategory && !(selectedStations.includes('四方坪站') && !selectedStations.includes('高岭站'))) {
+                    if (resultContent) {
+                        resultContent.innerHTML = '<div style="color:#c00; padding:12px;">该数据类别仅在选择"四方坪站"时可用</div>';
+                    }
+                    __otherPagination.enabled = false;
+                    renderOtherPagination();
+                    return;
                 }
-                
-                // 构建字段名（特殊处理终端名称）
-                let groupByField = `[${dataCategory}]`;
-                let selectField = `[${dataCategory}]`;
-                if (dataCategory === '终端名称') {
-                    // 终端名称需要显示电站名称&终端名称
-                    selectField = `[电站名称] + N'&' + [终端名称]`;
-                    groupByField = `[电站名称], [终端名称]`;
-                }
-                
-                // 构建排序
-                const orderBy = sortOrder === '升序' ? 'ASC' : 'DESC';
-                
+
                 // 格式化时间
                 const formattedStartTime = toSqlDateTime(startTime, false);
                 const formattedEndTime = toSqlDateTime(endTime, true);
-                
-                // 先查询充电结束时间的最大和最小日期，用于计算天数
-                const dateRangeSql = `SELECT 
-                    MIN(CAST([充电结束时间] AS DATE)) AS [最小日期],
-                    MAX(CAST([充电结束时间] AS DATE)) AS [最大日期]
-                FROM [特来电]
-                WHERE [${timeField}] >= '${formattedStartTime}'
-                AND [${timeField}] <= '${formattedEndTime}'
-                ${stationCondition}`;
-                
+
+                let sql, dateRangeSql, tableName, timeFieldName, kwhField, elecFeeField, serviceFeeField, totalFeeField;
+
+                if (isDidiCategory) {
+                    // 查询滴滴表
+                    tableName = '[滴滴]';
+                    timeFieldName = timeField === '充电开始时间' ? '开始充电时间' : '充电完成时间';
+
+                    // 滴滴表的字段映射
+                    kwhField = '[充电量（度）]';
+                    elecFeeField = '[充电电费（元）]';
+                    serviceFeeField = '[充电服务费（元）]';
+                    totalFeeField = '[订单总额（元）]';
+
+                    // 滴滴表的类别字段映射
+                    const didiFieldMap = {
+                        '充电枪ID': '[充电枪ID]',
+                        '停充原因': '[停充原因]',
+                        '用户类型': '[用户类型]',
+                        '手机号': '[手机号]'
+                    };
+
+                    const categoryField = didiFieldMap[dataCategory];
+
+                    // 先查询日期范围
+                    dateRangeSql = `SELECT
+                        MIN(CAST([${timeFieldName}] AS DATE)) AS [最小日期],
+                        MAX(CAST([${timeFieldName}] AS DATE)) AS [最大日期]
+                    FROM ${tableName}
+                    WHERE [${timeFieldName}] >= '${formattedStartTime}'
+                    AND [${timeFieldName}] <= '${formattedEndTime}'`;
+
+                    // 构建排序
+                    const orderBy = sortOrder === '升序' ? 'ASC' : 'DESC';
+
+                    // 构建查询SQL
+                    sql = `SELECT
+                        ${categoryField} AS [数据类别],
+                        SUM(CAST(${kwhField} AS FLOAT)) AS [充电电量(度)],
+                        SUM(CAST(${elecFeeField} AS FLOAT)) AS [充电电费(元)],
+                        SUM(CAST(${serviceFeeField} AS FLOAT)) AS [充电服务费(元)],
+                        SUM(CAST(${totalFeeField} AS FLOAT)) AS [充电费用(元)]
+                    FROM ${tableName}
+                    WHERE [${timeFieldName}] >= '${formattedStartTime}'
+                    AND [${timeFieldName}] <= '${formattedEndTime}'
+                    GROUP BY ${categoryField}
+                    ORDER BY SUM(CAST(${kwhField} AS FLOAT)) ${orderBy}`;
+
+                } else {
+                    // 查询特来电表（原有逻辑）
+                    tableName = '[特来电]';
+                    timeFieldName = timeField;
+                    kwhField = '[充电电量(度)]';
+                    elecFeeField = '[充电电费(元)]';
+                    serviceFeeField = '[充电服务费(元)]';
+                    totalFeeField = '[充电费用(元)]';
+
+                    // 构建电站条件
+                    let stationCondition = '';
+                    if (selectedStations.length === 2) {
+                        // 全选，不添加条件
+                        stationCondition = '';
+                    } else if (selectedStations.includes('四方坪站') && !selectedStations.includes('高岭站')) {
+                        // 只选四方坪站
+                        stationCondition = "AND [电站名称] NOT LIKE N'%华为飞狐特来电高岭超充站%' AND [电站名称] NOT LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%'";
+                    } else if (selectedStations.includes('高岭站') && !selectedStations.includes('四方坪站')) {
+                        // 只选高岭站
+                        stationCondition = "AND ([电站名称] LIKE N'%华为飞狐特来电高岭超充站%' OR [电站名称] LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%')";
+                    }
+
+                    // 构建字段名（特殊处理终端名称）
+                    let groupByField = `[${dataCategory}]`;
+                    let selectField = `[${dataCategory}]`;
+                    if (dataCategory === '终端名称') {
+                        // 终端名称需要显示电站名称&终端名称
+                        selectField = `[电站名称] + N'&' + [终端名称]`;
+                        groupByField = `[电站名称], [终端名称]`;
+                    }
+
+                    // 构建排序
+                    const orderBy = sortOrder === '升序' ? 'ASC' : 'DESC';
+
+                    // 先查询充电结束时间的最大和最小日期，用于计算天数
+                    dateRangeSql = `SELECT
+                        MIN(CAST([充电结束时间] AS DATE)) AS [最小日期],
+                        MAX(CAST([充电结束时间] AS DATE)) AS [最大日期]
+                    FROM ${tableName}
+                    WHERE [${timeFieldName}] >= '${formattedStartTime}'
+                    AND [${timeFieldName}] <= '${formattedEndTime}'
+                    ${stationCondition}`;
+
+                    // 构建SQL查询
+                    sql = `SELECT
+                        ${selectField} AS [数据类别],
+                        SUM(CAST(${kwhField} AS FLOAT)) AS [充电电量(度)],
+                        SUM(CAST(${elecFeeField} AS FLOAT)) AS [充电电费(元)],
+                        SUM(CAST(${serviceFeeField} AS FLOAT)) AS [充电服务费(元)],
+                        SUM(CAST(${totalFeeField} AS FLOAT)) AS [充电费用(元)]
+                    FROM ${tableName}
+                    WHERE [${timeFieldName}] >= '${formattedStartTime}'
+                    AND [${timeFieldName}] <= '${formattedEndTime}'
+                    ${stationCondition}
+                    GROUP BY ${groupByField}
+                    ORDER BY SUM(CAST(${kwhField} AS FLOAT)) ${orderBy}`;
+                }
+
+                // 查询日期范围以计算天数
                 const dateRangeResults = await executeLeanCloudSQL(dateRangeSql);
                 let days = 1; // 默认天数为1
                 if (dateRangeResults && dateRangeResults.length > 0) {
@@ -23192,21 +23772,7 @@ function updateUnchargedTable() {
                         days = Math.max(1, Math.ceil((max - min) / (1000 * 60 * 60 * 24)) + 1);
                     }
                 }
-                
-                // 构建SQL查询
-                const sql = `SELECT 
-                    ${selectField} AS [数据类别],
-                    SUM(CAST([充电电量(度)] AS FLOAT)) AS [充电电量(度)],
-                    SUM(CAST([充电电费(元)] AS FLOAT)) AS [充电电费(元)],
-                    SUM(CAST([充电服务费(元)] AS FLOAT)) AS [充电服务费(元)],
-                    SUM(CAST([充电费用(元)] AS FLOAT)) AS [充电费用(元)]
-                FROM [特来电]
-                WHERE [${timeField}] >= '${formattedStartTime}'
-                AND [${timeField}] <= '${formattedEndTime}'
-                ${stationCondition}
-                GROUP BY ${groupByField}
-                ORDER BY SUM(CAST([充电电量(度)] AS FLOAT)) ${orderBy}`;
-                
+
                 // 执行查询
                 const results = await executeLeanCloudSQL(sql);
                 
