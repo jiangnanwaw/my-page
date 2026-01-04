@@ -19208,6 +19208,8 @@ function updateUnchargedTable() {
             let sql = '';
             let tableName = '';
             let deviceType = '';
+            let sqlTeld = '';  // 特来电SQL
+            let sqlDidi = '';  // 滴滴SQL
 
             if (isPhoneNumber(userInput)) {
                 // 手机号查询：查询能科表，卡号字段前面补5个0
@@ -19217,15 +19219,47 @@ function updateUnchargedTable() {
                 const esc = phoneWithZeros.replace(/'/g, "''");
                 sql = `SELECT TOP 10000 * FROM [能科] WHERE [卡号] = N'${esc}' AND [结束日期时间] BETWEEN '${start}' AND '${end}' ORDER BY [结束日期时间] DESC`;
             } else {
-                // 车牌号查询：模糊匹配特来电表的判定车牌号字段
+                // 车牌号查询：同时查询特来电表和滴滴表
                 deviceType = '车牌号';
                 tableName = '[特来电]';
                 const plateNumber = userInput.trim().replace(/ /g, '');
-                const esc = plateNumber.replace(/'/g, "''");
-                sql = `SELECT TOP 10000 * FROM [特来电] WHERE REPLACE([判定车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE N'%${esc}%' AND [${timeField}] BETWEEN '${start}' AND '${end}' ORDER BY [${timeField}] DESC`;
+                
+                // 处理车牌号格式：将星号(*)转换为SQL通配符(%)
+                // 例如：湘A***053 -> 湘A%053，用于匹配特来电表中所有符合该模式的车牌号
+                // 滴滴表中车牌号格式为"湘A***053"（星号是实际字符），在特来电表中需要匹配所有"湘A***053"模式的数据
+                // 如果输入包含星号，将星号转换为通配符；如果不包含星号，也尝试匹配（在字母和数字之间插入通配符）
+                let teldPattern = plateNumber.replace(/\*/g, '%');
+                // 如果输入不包含星号，但格式类似"省份+字母+数字结尾"（如"湘A053"），
+                // 则在字母和数字之间插入通配符，以匹配所有"湘A***053"格式的数据
+                if (!plateNumber.includes('*')) {
+                    // 匹配格式：省份+字母+数字结尾，例如"湘A053"、"京B123"等
+                    const match = plateNumber.match(/^([\u4e00-\u9fa5]+[A-Za-z]+)(\d+)$/);
+                    if (match) {
+                        const prefix = match[1]; // 例如："湘A"
+                        const suffix = match[2]; // 例如："053"
+                        teldPattern = prefix + '%' + suffix; // 例如："湘A%053"
+                    }
+                }
+                const escTeld = teldPattern.replace(/'/g, "''");
+                
+                // 滴滴表查询：直接使用原始输入（可能包含星号，星号是实际字符）
+                const escDidi = plateNumber.replace(/'/g, "''");
+                
+                // 特来电表查询：使用转换后的模式匹配所有符合该格式的车牌号
+                // 例如：输入"湘A***053"或"湘A053"会匹配"湘A123053"、"湘A456053"等所有符合"湘A***053"模式的车牌号
+                const teldTimeField = timeField;
+                sqlTeld = `SELECT TOP 10000 * FROM [特来电] WHERE REPLACE([判定车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE N'%${escTeld}%' AND [${teldTimeField}] BETWEEN '${start}' AND '${end}' ORDER BY [${teldTimeField}] DESC`;
+                
+                // 滴滴表查询：根据时间字段选择对应的滴滴表字段
+                // 滴滴表中车牌号格式为"湘A***053"（星号是实际字符），直接匹配
+                const didiTimeField = (timeField === '充电开始时间') ? '开始充电时间' : '充电完成时间';
+                sqlDidi = `SELECT TOP 10000 [订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号] FROM [滴滴] WHERE REPLACE([车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE N'%${escDidi}%' AND [${didiTimeField}] BETWEEN '${start}' AND '${end}' ORDER BY [${didiTimeField}] DESC`;
+                
+                // 保留原有的sql字段用于兼容
+                sql = sqlTeld;
             }
 
-            return { ok: true, sql, tableName, deviceType, userInput: userInput.trim(), timeField, start, end };
+            return { ok: true, sql, sqlTeld, sqlDidi, tableName, deviceType, userInput: userInput.trim(), timeField, start, end };
         }
 
         // 更新当前查询条件显示
@@ -19286,28 +19320,100 @@ function updateUnchargedTable() {
             }
 
             try {
-                // 执行查询
-                const result = await callSqlWithRetry(build.sql, 3, 600);
+                let allResults = [];
+                
+                if (build.deviceType === '车牌号') {
+                    // 车牌号查询：同时查询特来电表和滴滴表
+                    const [teldResult, didiResult] = await Promise.all([
+                        callSqlWithRetry(build.sqlTeld, 3, 600),
+                        callSqlWithRetry(build.sqlDidi, 3, 600)
+                    ]);
 
-                if (!result || !result.success) {
-                    throw new Error(result && result.error ? result.error : '查询失败');
-                }
+                    // 处理特来电结果
+                    if (teldResult && teldResult.success && teldResult.results) {
+                        allResults = allResults.concat(teldResult.results);
+                    }
 
-                // 保存查询结果供导出使用
-                __lastUserQueryResults = {
-                    success: true,
-                    results: result.results || [],
-                    tableName: build.tableName,
-                    deviceType: build.deviceType,
-                    userInput: build.userInput
-                };
+                    // 处理滴滴结果：将滴滴表字段映射为特来电表字段格式
+                    if (didiResult && didiResult.success && didiResult.results) {
+                        const mappedDidiResults = didiResult.results.map(row => {
+                            return {
+                                '电站名称': row['场站名称'] || '',
+                                '终端名称': row['充电枪ID'] || '',
+                                '充电开始时间': row['开始充电时间'] || '',
+                                '充电结束时间': row['充电完成时间'] || '',
+                                '充电电量(度)': row['充电量（度）'] || '',
+                                '充电电费(元)': row['充电电费（元）'] || '',
+                                '充电服务费(元)': row['充电服务费（元）'] || '',
+                                '充电费用(元)': row['订单总额（元）'] || '',
+                                '充电时长(分钟)': row['充电时长（分钟）'] || '',
+                                '判定车牌号': row['车牌号'] || '',
+                                // 保留原始字段用于统计
+                                '__source': '滴滴',
+                                '__订单ID': row['订单ID'] || '',
+                                '__充电量（度）': row['充电量（度）'] || '',
+                                '__充电电费（元）': row['充电电费（元）'] || '',
+                                '__充电服务费（元）': row['充电服务费（元）'] || '',
+                                '__订单总额（元）': row['订单总额（元）'] || ''
+                            };
+                        });
+                        allResults = allResults.concat(mappedDidiResults);
+                    }
 
-                // 显示查询结果
-                displayUserQueryResult(result, build);
+                    // 按时间字段排序（降序）
+                    const timeField = build.timeField;
+                    allResults.sort((a, b) => {
+                        const timeA = a[timeField] || '';
+                        const timeB = b[timeField] || '';
+                        return timeB.localeCompare(timeA);
+                    });
 
-                // 启用导出按钮(如果有数据)
-                if (result.results && result.results.length > 0) {
-                    setUserExportEnabled(true);
+                    // 构建合并后的结果对象
+                    const result = {
+                        success: true,
+                        results: allResults
+                    };
+
+                    // 保存查询结果供导出使用
+                    __lastUserQueryResults = {
+                        success: true,
+                        results: allResults,
+                        tableName: build.tableName,
+                        deviceType: build.deviceType,
+                        userInput: build.userInput
+                    };
+
+                    // 显示查询结果
+                    displayUserQueryResult(result, build);
+
+                    // 启用导出按钮(如果有数据)
+                    if (allResults.length > 0) {
+                        setUserExportEnabled(true);
+                    }
+                } else {
+                    // 手机号查询：保持原有逻辑
+                    const result = await callSqlWithRetry(build.sql, 3, 600);
+
+                    if (!result || !result.success) {
+                        throw new Error(result && result.error ? result.error : '查询失败');
+                    }
+
+                    // 保存查询结果供导出使用
+                    __lastUserQueryResults = {
+                        success: true,
+                        results: result.results || [],
+                        tableName: build.tableName,
+                        deviceType: build.deviceType,
+                        userInput: build.userInput
+                    };
+
+                    // 显示查询结果
+                    displayUserQueryResult(result, build);
+
+                    // 启用导出按钮(如果有数据)
+                    if (result.results && result.results.length > 0) {
+                        setUserExportEnabled(true);
+                    }
                 }
 
             } catch (err) {
@@ -19344,7 +19450,7 @@ function updateUnchargedTable() {
             let totalOrders = rows.length;
 
             if (build.deviceType === '车牌号') {
-                // 特来电数据
+                // 车牌号查询：包含特来电数据和滴滴数据
                 rows.forEach(row => {
                     const clean = (v) => {
                         if (v === null || v === undefined) return 0;
@@ -19357,10 +19463,25 @@ function updateUnchargedTable() {
                         return isNaN(num) ? 0 : num;
                     };
 
-                    totalElectricity += clean(row['充电电量(度)'] || row['充电电量']);
-                    totalElectricityFee += clean(row['充电电费(元)'] || row['充电电费']);
-                    totalServiceFee += clean(row['充电服务费(元)'] || row['充电服务费']);
-                    totalChargingFee += clean(row['充电费用(元)'] || row['充电费用']);
+                    // 判断数据来源：滴滴表数据有__source标记
+                    if (row.__source === '滴滴') {
+                        // 滴滴表数据：使用保留的原始字段
+                        // 订单数：使用订单ID计数（已在totalOrders中统计）
+                        // 总充电量：充电量（度）字段求和（已转换为数值类型）
+                        totalElectricity += clean(row['__充电量（度）'] || row['充电电量(度)']);
+                        // 总电费：充电电费（元）字段求和
+                        totalElectricityFee += clean(row['__充电电费（元）'] || row['充电电费(元)']);
+                        // 总服务费：充电服务费（元）字段求和
+                        totalServiceFee += clean(row['__充电服务费（元）'] || row['充电服务费(元)']);
+                        // 总费用：订单总额（元）字段求和
+                        totalChargingFee += clean(row['__订单总额（元）'] || row['充电费用(元)']);
+                    } else {
+                        // 特来电表数据：使用原有字段
+                        totalElectricity += clean(row['充电电量(度)'] || row['充电电量']);
+                        totalElectricityFee += clean(row['充电电费(元)'] || row['充电电费']);
+                        totalServiceFee += clean(row['充电服务费(元)'] || row['充电服务费']);
+                        totalChargingFee += clean(row['充电费用(元)'] || row['充电费用']);
+                    }
                 });
             } else {
                 // 能科数据
