@@ -3104,6 +3104,7 @@
                             <option value="停充原因" class="didi-only" style="display:none;">停充原因</option>
                             <option value="用户类型" class="didi-only" style="display:none;">用户类型</option>
                             <option value="手机号" class="didi-only" style="display:none;">手机号</option>
+                            <option value="车牌号" class="didi-only" style="display:none;">车牌号</option>
                         </select>
 
                         <!-- 排序方式选择（单选） -->
@@ -22628,9 +22629,39 @@ function updateUnchargedTable() {
                     sqlQueries.push({ sql: nengkeSql, type: 'nengke' });
                 }
 
+                // 查询滴滴表数据（四方坪站或全选时查询）
+                if (queryAll || querySifangping) {
+                    const didiSql = `SELECT 
+                        CAST([充电完成时间] AS DATE) AS [日期],
+                        SUM(CASE 
+                            WHEN [充电量（度）] IS NOT NULL AND [充电量（度）] <> '' AND ISNUMERIC([充电量（度）]) = 1 THEN CAST([充电量（度）] AS FLOAT)
+                            ELSE 0 
+                        END) AS [充电电量],
+                        SUM(CASE 
+                            WHEN [充电服务费（元）] IS NOT NULL AND [充电服务费（元）] <> '' AND ISNUMERIC([充电服务费（元）]) = 1 THEN CAST([充电服务费（元）] AS FLOAT)
+                            ELSE 0 
+                        END) AS [充电服务费],
+                        SUM(CASE 
+                            WHEN [订单总额（元）] IS NOT NULL AND [订单总额（元）] <> '' AND ISNUMERIC([订单总额（元）]) = 1 THEN CAST([订单总额（元）] AS FLOAT)
+                            ELSE 0 
+                        END) AS [充电费用],
+                        SUM(CASE 
+                            WHEN [充电时长（分钟）] IS NOT NULL AND [充电时长（分钟）] <> '' AND ISNUMERIC([充电时长（分钟）]) = 1 THEN CAST([充电时长（分钟）] AS FLOAT)
+                            ELSE 0 
+                        END) AS [充电时长],
+                        COUNT([订单ID]) AS [订单数]
+                    FROM [滴滴]
+                    WHERE [充电完成时间] BETWEEN '${start}' AND '${end}'
+                    GROUP BY CAST([充电完成时间] AS DATE)
+                    ORDER BY CAST([充电完成时间] AS DATE)`;
+                    
+                    sqlQueries.push({ sql: didiSql, type: 'didi' });
+                }
+
                 // 执行查询
                 const teldaiData = [];
                 const nengkeData = [];
+                const didiData = [];
                 for (const queryInfo of sqlQueries) {
                     try {
                         const result = await callSqlWithRetry(queryInfo.sql);
@@ -22646,6 +22677,8 @@ function updateUnchargedTable() {
                                 teldaiData.push(...data);
                             } else if (queryInfo.type === 'nengke') {
                                 nengkeData.push(...data);
+                            } else if (queryInfo.type === 'didi') {
+                                didiData.push(...data);
                             }
                         }
                     } catch (error) {
@@ -22690,7 +22723,12 @@ function updateUnchargedTable() {
                             nengkeService: 0,
                             nengkeCost: 0,
                             nengkeDuration: 0,
-                            nengkeOrders: 0
+                            nengkeOrders: 0,
+                            didiCharge: 0,
+                            didiService: 0,
+                            didiCost: 0,
+                            didiDuration: 0,
+                            didiOrders: 0
                         };
                     }
                     
@@ -22745,7 +22783,12 @@ function updateUnchargedTable() {
                             nengkeService: 0,
                             nengkeCost: 0,
                             nengkeDuration: 0,
-                            nengkeOrders: 0
+                            nengkeOrders: 0,
+                            didiCharge: 0,
+                            didiService: 0,
+                            didiCost: 0,
+                            didiDuration: 0,
+                            didiOrders: 0
                         };
                     }
                     
@@ -22765,6 +22808,66 @@ function updateUnchargedTable() {
                     dailyData[dateStr].nengkeCost += cost;
                     dailyData[dateStr].nengkeDuration += duration;
                     dailyData[dateStr].nengkeOrders += orders;
+                });
+                
+                // 处理滴滴数据
+                didiData.forEach(row => {
+                    let date = row['日期'];
+                    if (!date) return;
+                    
+                    let dateStr = '';
+                    if (typeof date === 'string') {
+                        dateStr = date.split('T')[0].split(' ')[0];
+                    } else if (date instanceof Date) {
+                        dateStr = date.toISOString().split('T')[0];
+                    } else {
+                        dateStr = String(date).split('T')[0].split(' ')[0];
+                    }
+                    
+                    if (!dateStr || dateStr.length < 10) return;
+                    
+                    if (!dailyData[dateStr]) {
+                        dailyData[dateStr] = {
+                            date: dateStr,
+                            charge: 0,
+                            service: 0,
+                            cost: 0,
+                            duration: 0,
+                            orders: 0,
+                            teldaiCharge: 0,
+                            teldaiService: 0,
+                            teldaiCost: 0,
+                            teldaiDuration: 0,
+                            teldaiOrders: 0,
+                            nengkeCharge: 0,
+                            nengkeService: 0,
+                            nengkeCost: 0,
+                            nengkeDuration: 0,
+                            nengkeOrders: 0,
+                            didiCharge: 0,
+                            didiService: 0,
+                            didiCost: 0,
+                            didiDuration: 0,
+                            didiOrders: 0
+                        };
+                    }
+                    
+                    const charge = parseFloat(row['充电电量'] || 0) || 0;
+                    const service = parseFloat(row['充电服务费'] || 0) || 0;
+                    const cost = parseFloat(row['充电费用'] || 0) || 0;
+                    const duration = parseFloat(row['充电时长'] || 0) || 0;
+                    const orders = parseInt(row['订单数'] || 0) || 0;
+                    
+                    dailyData[dateStr].charge += charge;
+                    dailyData[dateStr].service += service;
+                    dailyData[dateStr].cost += cost;
+                    dailyData[dateStr].duration += duration;
+                    dailyData[dateStr].orders += orders;
+                    dailyData[dateStr].didiCharge += charge;
+                    dailyData[dateStr].didiService += service;
+                    dailyData[dateStr].didiCost += cost;
+                    dailyData[dateStr].didiDuration += duration;
+                    dailyData[dateStr].didiOrders += orders;
                 });
 
                 // 转换为数组并排序
@@ -22877,7 +22980,12 @@ function updateUnchargedTable() {
                             nengkeService: 0,
                             nengkeCost: 0,
                             nengkeDuration: 0,
-                            nengkeOrders: 0
+                            nengkeOrders: 0,
+                            didiCharge: 0,
+                            didiService: 0,
+                            didiCost: 0,
+                            didiDuration: 0,
+                            didiOrders: 0
                         };
                     }
                     monthlyData[monthKey].charge += d.charge;
@@ -22895,6 +23003,11 @@ function updateUnchargedTable() {
                     monthlyData[monthKey].nengkeCost += d.nengkeCost;
                     monthlyData[monthKey].nengkeDuration += d.nengkeDuration;
                     monthlyData[monthKey].nengkeOrders += d.nengkeOrders;
+                    monthlyData[monthKey].didiCharge += d.didiCharge;
+                    monthlyData[monthKey].didiService += d.didiService;
+                    monthlyData[monthKey].didiCost += d.didiCost;
+                    monthlyData[monthKey].didiDuration += d.didiDuration;
+                    monthlyData[monthKey].didiOrders += d.didiOrders;
                 });
                 
                 const monthlyArray = Object.values(monthlyData);
@@ -22945,7 +23058,12 @@ function updateUnchargedTable() {
                             nengkeService: 0,
                             nengkeCost: 0,
                             nengkeDuration: 0,
-                            nengkeOrders: 0
+                            nengkeOrders: 0,
+                            didiCharge: 0,
+                            didiService: 0,
+                            didiCost: 0,
+                            didiDuration: 0,
+                            didiOrders: 0
                         };
                     }
                     yearlyData[yearKey].charge += d.charge;
@@ -22963,6 +23081,11 @@ function updateUnchargedTable() {
                     yearlyData[yearKey].nengkeCost += d.nengkeCost;
                     yearlyData[yearKey].nengkeDuration += d.nengkeDuration;
                     yearlyData[yearKey].nengkeOrders += d.nengkeOrders;
+                    yearlyData[yearKey].didiCharge += d.didiCharge;
+                    yearlyData[yearKey].didiService += d.didiService;
+                    yearlyData[yearKey].didiCost += d.didiCost;
+                    yearlyData[yearKey].didiDuration += d.didiDuration;
+                    yearlyData[yearKey].didiOrders += d.didiOrders;
                 });
                 
                 const yearlyArray = Object.values(yearlyData);
@@ -23803,8 +23926,8 @@ function updateUnchargedTable() {
             }
             
             try {
-                // 判断是否查询滴滴表：新增的4个类别只在四方坪站且使用滴滴表
-                const didiCategories = ['充电枪ID', '停充原因', '用户类型', '手机号'];
+                // 判断是否查询滴滴表：新增的5个类别只在四方坪站且使用滴滴表
+                const didiCategories = ['充电枪ID', '停充原因', '用户类型', '手机号', '车牌号'];
                 const isDidiCategory = didiCategories.includes(dataCategory);
 
                 // 如果是滴滴类别但不是只选四方坪站，则提示错误
@@ -23839,7 +23962,8 @@ function updateUnchargedTable() {
                         '充电枪ID': '[充电枪ID]',
                         '停充原因': '[停充原因]',
                         '用户类型': '[用户类型]',
-                        '手机号': '[手机号]'
+                        '手机号': '[手机号]',
+                        '车牌号': '[车牌号]'
                     };
 
                     const categoryField = didiFieldMap[dataCategory];
