@@ -20769,10 +20769,39 @@ function updateUnchargedTable() {
             let minDate = null;
             let maxDate = null;
 
+            // 四方坪站终端数量固定值判断（2024年5月为分界点）
+            const sifangTerminalCutoffDate = new Date('2024-05-01');
+            const isSifangping = station === '四方坪站';
+
+            // 四方坪站终端数量计算函数
+            function getSifangTerminals(dataMinDate, dataMaxDate, queryStart, queryEnd) {
+                // 优先根据实际数据日期范围判断
+                if (dataMaxDate && new Date(dataMaxDate) < sifangTerminalCutoffDate) {
+                    return 172; // 数据全部在2024年5月以前
+                }
+                if (dataMinDate && new Date(dataMinDate) >= sifangTerminalCutoffDate) {
+                    return 142; // 数据全部在2024年5月及以后
+                }
+                // 如果没有数据日期或跨越2024年5月，根据查询范围判断
+                if (queryEnd < sifangTerminalCutoffDate) {
+                    return 172; // 查询结束日期在2024年5月以前
+                }
+                if (queryStart >= sifangTerminalCutoffDate) {
+                    return 142; // 查询开始日期在2024年5月及以后
+                }
+                // 跨越2024年5月，使用142（取较新的值）
+                return 142;
+            }
+
             if (queryScenario === 'before') {
                 // 场景1：完全在2026年1月之前，使用特来电表
                 const result = await queryEfficiencyFromTeld(station, startDateFormatted, endDateFormatted);
-                terminals = result.terminals;
+                // 四方坪站：根据实际数据日期范围或查询范围判断终端数量
+                if (isSifangping) {
+                    terminals = getSifangTerminals(result.minDate, result.maxDate, queryStartDate, queryEndDate);
+                } else {
+                    terminals = result.terminals;
+                }
                 totalDuration = result.totalDuration;
                 totalKwh = result.totalKwh;
                 totalServiceFee = result.totalServiceFee;
@@ -20782,7 +20811,12 @@ function updateUnchargedTable() {
             } else if (queryScenario === 'after') {
                 // 场景2：完全在2026年1月及之后，使用滴滴表
                 const result = await queryEfficiencyFromDidi(station, startDateFormatted, endDateFormatted);
-                terminals = result.terminals;
+                // 四方坪站：2026年1月及之后的数据都在2024年5月之后，固定为142
+                if (isSifangping) {
+                    terminals = 142;
+                } else {
+                    terminals = result.terminals;
+                }
                 totalDuration = result.totalDuration;
                 totalKwh = result.totalKwh;
                 totalServiceFee = result.totalServiceFee;
@@ -20799,8 +20833,20 @@ function updateUnchargedTable() {
                     queryEfficiencyFromDidi(station, afterCutoffStart, endDateFormatted)
                 ]);
 
-                // 合并终端数（取并集，使用集合去重）
-                terminals = Math.max(teldResult.terminals, didiResult.terminals);
+                // 四方坪站：根据实际数据日期范围判断终端数量
+                if (isSifangping) {
+                    // 判断特来电表数据的时间范围
+                    const teldStartDate = new Date(startDateFormatted);
+                    const teldEndDate = new Date(beforeCutoffEnd);
+                    const teldTerminals = getSifangTerminals(teldResult.minDate, teldResult.maxDate, teldStartDate, teldEndDate);
+                    // 滴滴表数据都在2024年5月之后，固定为142
+                    const didiTerminals = 142;
+                    // 合并终端数（取最大值）
+                    terminals = Math.max(teldTerminals, didiTerminals);
+                } else {
+                    // 合并终端数（取并集，使用集合去重）
+                    terminals = Math.max(teldResult.terminals, didiResult.terminals);
+                }
 
                 // 合并其他指标（求和）
                 totalDuration = teldResult.totalDuration + didiResult.totalDuration;
