@@ -3181,6 +3181,7 @@
                             <option value="车海洋洗车">车海洋洗车</option>
                             <option value="微信">微信</option>
                             <option value="智小盟">智小盟</option>
+                            <option value="超时占位费">超时占位费</option>
                         </select>
 
                         <!-- 开始时间 -->
@@ -17317,6 +17318,13 @@ function updateUnchargedTable() {
                 selectColumns: '[交易时间], [商户号], [微信订单号], [订单金额], [退款金额]',
                 whereClauseType: 'datetime',
                 orderByType: 'normal'
+            }],
+            ['超时占位费', {
+                timeField: '支付时间',
+                tableName: '[超时占位费]',
+                selectColumns: '[订单编号], [电站名称], [终端名称], CASE WHEN ISNUMERIC([应收金额]) = 1 AND [应收金额] IS NOT NULL AND [应收金额] != \'\' THEN CAST([应收金额] AS FLOAT) ELSE 0 END AS [应收金额], [支付时间], [插枪时间], [拔枪时间], [客户类型], [总占用时长], [充电时长], [限时免费时长], [超时占用时长], [客户手机号]',
+                whereClauseType: 'datetime',
+                orderByType: 'normal'
             }]
         ]);
 
@@ -17667,6 +17675,17 @@ function updateUnchargedTable() {
                                     });
                                     return filtered;
                                 });
+                            } else if (query.project === '超时占位费') {
+                                const allowedCols = ['订单编号', '电站名称', '终端名称', '应收金额', '支付时间', '插枪时间', '拔枪时间', '客户类型', '总占用时长', '充电时长', '限时免费时长', '超时占用时长', '客户手机号'];
+                                cleanedResults = dataResult.results.map(row => {
+                                    const filtered = {};
+                                    allowedCols.forEach(col => {
+                                        if (row.hasOwnProperty(col)) {
+                                            filtered[col] = row[col];
+                                        }
+                                    });
+                                    return filtered;
+                                });
                             }
                             
                             __lastZhQueryResults = { ...dataResult, results: cleanedResults };
@@ -17721,6 +17740,8 @@ function updateUnchargedTable() {
                     await calculateWeixinStats();
                 } else if (project === '车颜知己洗车') {
                     await calculateCheyanzhijiStats();
+                } else if (project === '超时占位费') {
+                    await calculateChaoshiStats();
                 }
             } catch (err) {
             }
@@ -18209,6 +18230,35 @@ function updateUnchargedTable() {
             }
         }
 
+        // 超时占位费统计：统计应收金额汇总
+        async function calculateChaoshiStats() {
+            const query = buildZhQuery();
+            const sql = `SELECT SUM(CAST([应收金额] AS FLOAT)) as 应收金额合计 
+                        FROM ${query.tableName} ${query.whereClause}`;
+            
+            try {
+                const result = await callSqlWithRetry(sql);
+                if (result && result.results && result.results.length > 0) {
+                    const totalAmount = parseFloat(result.results[0]['应收金额合计'] || 0);
+                    
+                    __zhStatsTotals = {
+                        totalAmount: totalAmount
+                    };
+                    updateZhStatsDisplay();
+                } else {
+                    __zhStatsTotals = {
+                        totalAmount: 0
+                    };
+                    updateZhStatsDisplay();
+                }
+            } catch (err) {
+                __zhStatsTotals = {
+                    totalAmount: 0
+                };
+                updateZhStatsDisplay();
+            }
+        }
+
         // 快易洁洗车统计：按日期统计所有字段汇总
         async function calculateKuaijijieStats() {
             const query = buildZhQuery();
@@ -18662,6 +18712,12 @@ function updateUnchargedTable() {
                     <span style="margin-left:auto; padding-left:20px;">订单金额总计：<span style="color:#28a745; font-weight:bold;">${totalOrderAmount.toFixed(2)}</span>元</span>
                 </div>`;
                 html += '</div>';
+            } else if (project === '超时占位费') {
+                // 超时占位费：显示超时占位费收入
+                const stats = __zhStatsTotals || {};
+                html += `<div style="margin-top:8px; font-size:14px; line-height:1.8;">
+                    <div>超时占位费收入：<span style="color:#28a745; font-weight:bold;">${(stats.totalAmount || 0).toFixed(2)}</span>元</div>
+                </div>`;
             } else if (!__zhStatsTotals) {
                 // 其他项目：暂无统计
                 html += '<div style="color:#666;">暂无统计数据</div>';
