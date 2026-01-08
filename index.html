@@ -22010,6 +22010,7 @@ function updateUnchargedTable() {
                 xingYuanIncome: 0,
                 kuaiYiJieIncome: 0,
                 monthlyCardIncome: 0,
+                occupancyFee: 0,
                 saiFeiMuIncome: 0,
                 hongMenIncome: 0,
                 venueCost: 0,
@@ -22071,7 +22072,14 @@ function updateUnchargedTable() {
                     console.log(`   结果: ${stationData.monthlyCardIncome}`);
                 }
 
-                // 8. 道闸收入
+                // 8. 超时占位费（高岭站）
+                if (station === '高岭站') {
+                    console.log('8. 查询超时占位费...');
+                    stationData.occupancyFee = await queryOccupancyFee(startDateFormatted, endDateFormatted);
+                    console.log(`   结果: ${stationData.occupancyFee}`);
+                }
+
+                // 9. 道闸收入
                 if (station === '四方坪站') {
                     console.log('8.1 查询赛菲姆道闸收入...');
                     stationData.saiFeiMuIncome = await querySaiFeiMuIncome(startDateFormatted, endDateFormatted);
@@ -22291,6 +22299,7 @@ function updateUnchargedTable() {
                                 parseFloat(stationData.xingYuanIncome || 0) +
                                 parseFloat(stationData.kuaiYiJieIncome || 0) +
                                 parseFloat(stationData.monthlyCardIncome || 0) +
+                                parseFloat(stationData.occupancyFee || 0) +
                                 parseFloat(stationData.saiFeiMuIncome || 0) +
                                 parseFloat(stationData.hongMenIncome || 0);
 
@@ -22378,6 +22387,11 @@ function updateUnchargedTable() {
                                 <td style="padding:8px 12px; border:1px solid #dee2e6; text-align:right;">${formatMoney(stationData.monthlyCardIncome)}</td>
                                 <td style="padding:8px 12px; border:1px solid #dee2e6;"></td>
                             </tr>
+                            <tr>
+                                <td style="padding:8px 12px 8px 30px; border:1px solid #dee2e6;">9、超时占位费</td>
+                                <td style="padding:8px 12px; border:1px solid #dee2e6; text-align:right;">${formatMoney(stationData.occupancyFee)}</td>
+                                <td style="padding:8px 12px; border:1px solid #dee2e6;"></td>
+                            </tr>
                             <tr style="background:#f8f9fa; font-weight:600;">
                                 <td style="padding:10px 12px; border:1px solid #dee2e6;">营业收入合计</td>
                                 <td style="padding:10px 12px; border:1px solid #dee2e6; text-align:right;">${formatMoney(totalRevenue)}</td>
@@ -22453,7 +22467,8 @@ function updateUnchargedTable() {
             // 计算高岭站营业收入
             const glRevenue = parseFloat(glData.cheYanZhiJiIncome || 0) +
                              parseFloat(glData.xingYuanIncome || 0) +
-                             parseFloat(glData.kuaiYiJieIncome || 0);
+                             parseFloat(glData.kuaiYiJieIncome || 0) +
+                             parseFloat(glData.occupancyFee || 0);
 
             const totalRevenue = sfpRevenue + glRevenue;
 
