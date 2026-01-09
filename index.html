@@ -17060,9 +17060,46 @@ function updateUnchargedTable() {
             return { startDate, endDate, startYear, startMonthNum, endYear, endMonthNum };
         }
 
+        // 将年月转换为特殊日期范围（用于2022年6月之前的查询：上月10号到本月9号）
+        function getDateRangeFromMonthsBefore202206(startMonth, endMonth) {
+            const [startYear, startMonthNum] = startMonth.split('-').map(Number);
+            const [endYear, endMonthNum] = endMonth.split('-').map(Number);
+            
+            // 开始日期：开始时间的上月的10号 00:00:00
+            let startYearNum = startYear;
+            let startMonthNumPrev = startMonthNum - 1;
+            if (startMonthNumPrev < 1) {
+                startMonthNumPrev = 12;
+                startYearNum -= 1;
+            }
+            const startDate = `${startYearNum}-${String(startMonthNumPrev).padStart(2, '0')}-10 00:00:00`;
+            
+            // 结束日期：结束时间的本月的10号 00:00:00（使用 < 条件，所以实际包含到9号 23:59:59）
+            const endDate = `${endYear}-${String(endMonthNum).padStart(2, '0')}-10 00:00:00`;
+            
+            return { startDate, endDate, startYear, startMonthNum, endYear, endMonthNum };
+        }
+
         // 查询额外的充电数据（特来电、滴滴、能科）
         function queryExtraChargingData(startMonth, endMonth, customers) {
-            const { startDate, endDate } = getDateRangeFromMonths(startMonth, endMonth);
+            // 判断是否为2022年6月之前（包含2022年6月）的查询
+            const [endYear, endMonthNum] = endMonth.split('-').map(Number);
+            const isBefore202207 = endYear < 2022 || (endYear === 2022 && endMonthNum <= 6);
+            
+            // 根据时间范围选择不同的日期计算方式
+            let startDate, endDate;
+            if (isBefore202207) {
+                // 2022年6月之前（包含）：上月10号到本月9号
+                const dateRange = getDateRangeFromMonthsBefore202206(startMonth, endMonth);
+                startDate = dateRange.startDate;
+                endDate = dateRange.endDate;
+            } else {
+                // 2022年6月之后：原有逻辑（本月1日到下月1日）
+                const dateRange = getDateRangeFromMonths(startMonth, endMonth);
+                startDate = dateRange.startDate;
+                endDate = dateRange.endDate;
+            }
+            
             const isOnly4350001671599 = customers.length === 1 && customers[0] === '4350001671599';
             const isBoth3111439077And3118481453 = customers.length === 2 && 
                 customers.includes('3111439077') && customers.includes('3118481453');
@@ -17109,6 +17146,7 @@ function updateUnchargedTable() {
                 );
             } else if (isBoth3111439077And3118481453) {
                 // 四方坪站：查询特来电（不包含高岭站）、滴滴、能科
+                // 注意：2022年6月之前（包含）不查询滴滴表
                 const teldaiSql = `SELECT 
                     SUM([充电电量(度)]) AS totalPower,
                     SUM([充电电费(元)]) AS totalFee
@@ -17117,15 +17155,9 @@ function updateUnchargedTable() {
                 AND [电站名称] NOT LIKE N'%华为飞狐特来电高岭超充站%'
                 AND [电站名称] NOT LIKE N'%长沙市开福区高岭香江国际城充电站建设项目%'`;
                 
-                const didiSql = `SELECT 
-                    SUM(CASE WHEN ISNUMERIC([充电量（度）]) = 1 AND [充电量（度）] IS NOT NULL AND [充电量（度）] != '' THEN CAST([充电量（度）] AS FLOAT) ELSE 0 END) AS totalPower,
-                    SUM(CASE WHEN ISNUMERIC([充电电费（元）]) = 1 AND [充电电费（元）] IS NOT NULL AND [充电电费（元）] != '' THEN CAST([充电电费（元）] AS FLOAT) ELSE 0 END) AS totalFee
-                FROM [滴滴]
-                WHERE [充电完成时间] >= '${startDate}' AND [充电完成时间] < '${endDate}'`;
-                
                 const nengkeSql = `SELECT 
-                    SUM([电量]) AS totalPower,
-                    SUM([电费]) AS totalFee
+                    SUM(CAST([充电量] AS FLOAT)) AS totalPower,
+                    SUM(CAST([电费] AS FLOAT)) AS totalFee
                 FROM [能科]
                 WHERE [结束日期时间] >= '${startDate}' AND [结束日期时间] < '${endDate}'`;
                 
@@ -17155,31 +17187,40 @@ function updateUnchargedTable() {
                     .catch(() => ({ type: 'teldai', power: 0, fee: 0 }))
                 );
                 
-                promises.push(
-                    fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery', {
-                        method: 'POST',
-                        headers: {
-                            'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
-                            'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ query: didiSql })
-                    })
-                    .then(r => r.json())
-                    .then(result => {
-                        const payload = (result && result.result) ? result.result : result;
-                        if (payload && payload.success && payload.results && payload.results.length > 0) {
-                            return {
-                                type: 'didi',
-                                power: parseFloat(payload.results[0].totalPower || 0),
-                                fee: parseFloat(payload.results[0].totalFee || 0)
-                            };
-                        }
-                        return { type: 'didi', power: 0, fee: 0 };
-                    })
-                    .catch(() => ({ type: 'didi', power: 0, fee: 0 }))
-                );
+                // 只在2022年7月之后才查询滴滴表
+                if (!isBefore202207) {
+                    const didiSql = `SELECT 
+                        SUM(CASE WHEN ISNUMERIC([充电量（度）]) = 1 AND [充电量（度）] IS NOT NULL AND [充电量（度）] != '' THEN CAST([充电量（度）] AS FLOAT) ELSE 0 END) AS totalPower,
+                        SUM(CASE WHEN ISNUMERIC([充电电费（元）]) = 1 AND [充电电费（元）] IS NOT NULL AND [充电电费（元）] != '' THEN CAST([充电电费（元）] AS FLOAT) ELSE 0 END) AS totalFee
+                    FROM [滴滴]
+                    WHERE [充电完成时间] >= '${startDate}' AND [充电完成时间] < '${endDate}'`;
+                    
+                    promises.push(
+                        fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery', {
+                            method: 'POST',
+                            headers: {
+                                'X-LC-Id': '0RRQT8VRdc9scK3XWD3ZrfWu-gzGzoHsz',
+                                'X-LC-Key': 'w5k7ze9JvM7JGUY7O5DVeLVA',
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ query: didiSql })
+                        })
+                        .then(r => r.json())
+                        .then(result => {
+                            const payload = (result && result.result) ? result.result : result;
+                            if (payload && payload.success && payload.results && payload.results.length > 0) {
+                                return {
+                                    type: 'didi',
+                                    power: parseFloat(payload.results[0].totalPower || 0),
+                                    fee: parseFloat(payload.results[0].totalFee || 0)
+                                };
+                            }
+                            return { type: 'didi', power: 0, fee: 0 };
+                        })
+                        .catch(() => ({ type: 'didi', power: 0, fee: 0 }))
+                    );
+                }
                 
                 promises.push(
                     fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery', {
