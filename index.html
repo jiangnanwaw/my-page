@@ -20329,28 +20329,168 @@ function updateUnchargedTable() {
             return platformFeeBefore + platformFeeAfter;
         }
 
+        // 查询滴滴账单表中的商家承担营销费用（用于2026年1月之后的活动优惠券）
+        async function queryDidiBillMarketingCost(startDate, endDate) {
+            // 格式化日期为 yyyy-mm-dd hh:mm:ss 格式（SQL Server标准格式）
+            // startDate和endDate格式为 'YYYY-MM-DD'
+            const startDateStr = startDate + ' 00:00:00';
+            const endDateStr = endDate + ' 23:59:59';
+            
+            // 滴滴账单表中的"充电开始时间"字段格式为：yyyy/mm/dd hh:mm
+            // 需要转换为标准DATETIME格式进行比较
+            // 使用SQL Server 2008 R2兼容的语法
+            const query = `SELECT 
+                SUM(CAST(CASE 
+                    WHEN ISNUMERIC(ISNULL([商家承担营销费用], '0')) = 1 
+                    THEN ISNULL([商家承担营销费用], '0') 
+                    ELSE '0' 
+                END AS FLOAT)) AS total
+            FROM [滴滴账单]
+            WHERE [充电开始时间] IS NOT NULL
+            AND LEN([充电开始时间]) > 0
+            AND CASE 
+                WHEN ISDATE(REPLACE([充电开始时间], '/', '-') + ':00') = 1 
+                THEN CONVERT(DATETIME, REPLACE([充电开始时间], '/', '-') + ':00', 120) 
+                ELSE NULL 
+            END IS NOT NULL
+            AND CASE 
+                WHEN ISDATE(REPLACE([充电开始时间], '/', '-') + ':00') = 1 
+                THEN CONVERT(DATETIME, REPLACE([充电开始时间], '/', '-') + ':00', 120) 
+                ELSE NULL 
+            END >= '${startDateStr}'
+            AND CASE 
+                WHEN ISDATE(REPLACE([充电开始时间], '/', '-') + ':00') = 1 
+                THEN CONVERT(DATETIME, REPLACE([充电开始时间], '/', '-') + ':00', 120) 
+                ELSE NULL 
+            END <= '${endDateStr}'`;
+
+            console.log(`  滴滴账单商家承担营销费用查询SQL生成完成，日期范围: ${startDateStr} 到 ${endDateStr}`);
+
+            try {
+                const result = await callSqlWithRetry(query, 3, 600);
+                const rows = (result && result.results)
+                    ? result.results
+                    : Array.isArray(result)
+                        ? result
+                        : (result && result.data)
+                            ? result.data
+                            : (result && result.rows)
+                                ? result.rows
+                                : [];
+
+                if (rows && rows.length > 0) {
+                    const total = rows[0].total ? parseFloat(rows[0].total) : 0;
+                    const finalTotal = Number.isFinite(total) ? Number(total.toFixed(2)) : 0;
+                    console.log(`  滴滴账单商家承担营销费用查询成功，总金额: ${finalTotal}`);
+                    return finalTotal;
+                } else {
+                    console.log('  滴滴账单商家承担营销费用查询返回空结果');
+                    return 0;
+                }
+            } catch (e) {
+                console.error('  滴滴账单商家承担营销费用查询失败:', e);
+                return 0;
+            }
+        }
+
         // 查询活动优惠券成本（带日期检查）
         async function queryCouponCostWithDateCheck(station, startDate, endDate) {
             const cutoffDate = new Date('2026-01-01');
             const queryStartDate = new Date(startDate);
             const queryEndDate = new Date(endDate);
 
-            // 情况1：查询时间完全在2026年1月及之后，不计算优惠券
+            // 如果是四方坪站，需要特殊处理2026年1月之后的逻辑
+            if (station === '四方坪站') {
+                // 情况1：查询时间完全在2026年1月及之后，从滴滴账单表查询
+                if (queryStartDate >= cutoffDate) {
+                    console.log('   四方坪站：查询时间段完全在2026年1月之后，从滴滴账单表查询商家承担营销费用');
+                    return await queryDidiBillMarketingCost(startDate, endDate);
+                }
+
+                // 情况2：查询时间完全在2026年1月之前，正常计算（使用活动优惠券表）
+                if (queryEndDate < cutoffDate) {
+                    console.log('   四方坪站：查询时间段完全在2026年1月之前，正常计算活动优惠券');
+                    return await queryCouponCost(station, startDate, endDate);
+                }
+
+                // 情况3：查询时间跨越2026年1月，需要分别计算两部分
+                console.log('   四方坪站：查询时间段跨越2026年1月，分别计算两部分');
+                const beforeCutoffEnd = '2025-12-31';
+                const afterCutoffStart = '2026-01-01';
+                
+                // 计算2026年1月之前的部分（使用活动优惠券表）
+                const beforeTotal = await queryCouponCost(station, startDate, beforeCutoffEnd);
+                // 计算2026年1月及之后的部分（使用滴滴账单表）
+                const afterTotal = await queryDidiBillMarketingCost(afterCutoffStart, endDate);
+                
+                return beforeTotal + afterTotal;
+            } else {
+                // 非四方坪站，保持原有逻辑
+                // 情况1：查询时间完全在2026年1月及之后，不计算优惠券
+                if (queryStartDate >= cutoffDate) {
+                    console.log('   查询时间段完全在2026年1月之后，不计算活动优惠券');
+                    return 0;
+                }
+
+                // 情况2：查询时间完全在2026年1月之前，正常计算
+                if (queryEndDate < cutoffDate) {
+                    console.log('   查询时间段完全在2026年1月之前，正常计算活动优惠券');
+                    return await queryCouponCost(station, startDate, endDate);
+                }
+
+                // 情况3：查询时间跨越2026年1月，只计算2026年1月之前的部分
+                console.log('   查询时间段跨越2026年1月，只计算2026年1月之前的活动优惠券');
+                const beforeCutoffEnd = '2025-12-31';
+                return await queryCouponCost(station, startDate, beforeCutoffEnd);
+            }
+        }
+
+        // 计算交易手续费（带日期检查）
+        // startDate和endDate格式为 YYYY-MM
+        // 如果查询跨越2026年1月，需要查询2026年1月之前的充电收入来计算
+        async function calculateTransactionFee(chargingTotalIncome, startDate, endDate, station) {
+            const cutoffDate = '2026-01';
+            const queryStartDate = startDate; // YYYY-MM格式
+            const queryEndDate = endDate; // YYYY-MM格式
+
+            // 情况1：查询时间完全在2026年1月及之后，不计算交易手续费
             if (queryStartDate >= cutoffDate) {
-                console.log('   查询时间段完全在2026年1月之后，不计算活动优惠券');
+                console.log('   查询时间段完全在2026年1月及之后，不计算交易手续费');
                 return 0;
             }
 
-            // 情况2：查询时间完全在2026年1月之前，正常计算
+            // 情况2：查询时间完全在2026年1月之前，正常计算（0.6%）
             if (queryEndDate < cutoffDate) {
-                console.log('   查询时间段完全在2026年1月之前，正常计算活动优惠券');
-                return await queryCouponCost(station, startDate, endDate);
+                console.log('   查询时间段完全在2026年1月之前，正常计算交易手续费（0.6%）');
+                return parseFloat(chargingTotalIncome || 0) * 0.006;
             }
 
-            // 情况3：查询时间跨越2026年1月，只计算2026年1月之前的部分
-            console.log('   查询时间段跨越2026年1月，只计算2026年1月之前的活动优惠券');
-            const beforeCutoffEnd = '2025-12-31';
-            return await queryCouponCost(station, startDate, beforeCutoffEnd);
+            // 情况3：查询时间跨越2026年1月，需要查询2026年1月之前的充电收入
+            console.log('   查询时间段跨越2026年1月，查询2026年1月之前的充电收入来计算交易手续费');
+            
+            if (!station) {
+                // 如果没有站点信息，采用保守策略：不计算交易手续费
+                console.log('   缺少站点信息，不计算交易手续费');
+                return 0;
+            }
+
+            // 查询2026年1月之前的充电收入
+            const beforeCutoffEnd = '2025-12';
+            const beforeCutoffEndFormatted = '2025-12-31';
+            const startDateFormatted = startDate + '-01';
+            
+            try {
+                const beforeElectricityFee = await queryChargingElectricityFee(station, startDateFormatted, beforeCutoffEndFormatted);
+                const beforeServiceFee = await queryChargingServiceFee(station, startDateFormatted, beforeCutoffEndFormatted);
+                const beforeChargingTotalIncome = beforeElectricityFee + beforeServiceFee;
+                
+                console.log(`   2026年1月之前充电收入: ${beforeChargingTotalIncome}, 交易手续费(0.6%): ${beforeChargingTotalIncome * 0.006}`);
+                return beforeChargingTotalIncome * 0.006;
+            } catch (error) {
+                console.error('   查询2026年1月之前的充电收入失败:', error);
+                // 查询失败时，采用保守策略：不计算交易手续费
+                return 0;
+            }
         }
 
         // 查询单个站点的数据
@@ -20726,7 +20866,7 @@ function updateUnchargedTable() {
         }
 
         // 生成报表
-        function generateReport(data, stations, startDate, endDate) {
+        async function generateReport(data, stations, startDate, endDate) {
             const reportResult = document.getElementById('report-result');
             let html = '';
 
@@ -20741,10 +20881,10 @@ function updateUnchargedTable() {
             // 判断是单站还是双站查询
             if (stations.length === 1) {
                 // 单站报表
-                html = generateSingleStationReport(data, stations[0], startDate, endDate);
+                html = await generateSingleStationReport(data, stations[0], startDate, endDate);
             } else if (stations.length === 2) {
                 // 双站对比报表
-                html = generateDualStationReport(data, stations, startDate, endDate);
+                html = await generateDualStationReport(data, stations, startDate, endDate);
             }
 
             reportResult.innerHTML = html;
@@ -20761,7 +20901,7 @@ function updateUnchargedTable() {
         }
 
         // 生成单站报表
-        function generateSingleStationReport(data, station, startDate, endDate) {
+        async function generateSingleStationReport(data, station, startDate, endDate) {
             const stationData = data[station] || {};
 
             // 格式化日期显示
@@ -20841,8 +20981,8 @@ function updateUnchargedTable() {
             }
 
             const totalRevenue = parseFloat(stationData.chargingTotalIncome || 0) + parseFloat(stationData.otherIncome || 0);
-            // 计算交易手续费：充电收入 * 0.6%
-            const transactionFee = parseFloat(stationData.chargingTotalIncome || 0) * 0.006;
+            // 计算交易手续费（带日期检查）：2026年1月之前按0.6%计算，2026年1月及之后不计算
+            const transactionFee = await calculateTransactionFee(stationData.chargingTotalIncome, startDate, endDate, station);
             const totalCost = parseFloat(stationData.electricityCost || 0) + parseFloat(stationData.platformServiceFee || 0) +
                             parseFloat(stationData.couponCost || 0) + transactionFee + parseFloat(stationData.otherCost || 0);
             const grossProfit = totalRevenue - totalCost;
@@ -21479,7 +21619,7 @@ function updateUnchargedTable() {
         }
 
         // 生成双站对比报表
-        function generateDualStationReport(data, stations, startDate, endDate) {
+        async function generateDualStationReport(data, stations, startDate, endDate) {
             const sfpData = data['四方坪站'] || {};
             const glData = data['高岭站'] || {};
 
@@ -21501,9 +21641,9 @@ function updateUnchargedTable() {
             const glElectricity = parseFloat(glData.electricityCost || 0);
             const totalElectricity = sfpElectricity + glElectricity;
 
-            // 计算交易手续费：充电收入 * 0.6%
-            const sfpTransactionFee = parseFloat(sfpData.chargingTotalIncome || 0) * 0.006;
-            const glTransactionFee = parseFloat(glData.chargingTotalIncome || 0) * 0.006;
+            // 计算交易手续费（带日期检查）：2026年1月之前按0.6%计算，2026年1月及之后不计算
+            const sfpTransactionFee = await calculateTransactionFee(sfpData.chargingTotalIncome, startDate, endDate, '四方坪站');
+            const glTransactionFee = await calculateTransactionFee(glData.chargingTotalIncome, startDate, endDate, '高岭站');
             const totalTransactionFee = sfpTransactionFee + glTransactionFee;
 
             const sfpOtherCost = parseFloat(sfpData.platformServiceFee || 0) + parseFloat(sfpData.couponCost || 0) + sfpTransactionFee + parseFloat(sfpData.otherCost || 0);
