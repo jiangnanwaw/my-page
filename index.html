@@ -3105,6 +3105,8 @@
                             <option value="用户类型" class="didi-only" style="display:none;">用户类型</option>
                             <option value="手机号" class="didi-only" style="display:none;">手机号</option>
                             <option value="车牌号" class="didi-only" style="display:none;">车牌号</option>
+                            <option value="滴滴营销费用" class="didi-only" style="display:none;">滴滴营销费用</option>
+                            <option value="滴滴未结算订单" class="didi-only" style="display:none;">滴滴未结算订单</option>
                         </select>
 
                         <!-- 排序方式选择（单选） -->
@@ -3141,6 +3143,11 @@
                     <div id="other-query-result" style="margin-top: 16px; height: calc(100vh - 200px); display: flex; flex-direction: column;">
                         <div id="other-current-conditions" style="margin-bottom: 12px; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; font-size: 14px;">
                             <strong style="color: #495057;">当前条件：</strong><span id="other-current-conditions-text" style="color: #6c757d;">请选择查询条件后点击查询</span>
+                        </div>
+                        <!-- 汇总统计显示区域 -->
+                        <div id="other-summary-stats" style="margin-bottom: 12px; padding: 10px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px; font-size: 14px; display: none;">
+                            <strong style="color: #495057;">查询汇总统计：</strong>
+                            <div id="other-summary-stats-content" style="color: #333; margin-top: 8px;"></div>
                         </div>
                         <!-- 分页和导出按钮 -->
                         <div id="other-pagination-controls" style="margin-bottom: 12px; display: none; justify-content: space-between; align-items: center; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px;">
@@ -24223,6 +24230,12 @@ function updateUnchargedTable() {
                 resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#666;"><i class="fas fa-spinner fa-spin"></i> 正在查询数据，请稍候...</div>';
             }
             
+            // 隐藏汇总统计区域
+            const summaryDiv = document.getElementById('other-summary-stats');
+            if (summaryDiv) {
+                summaryDiv.style.display = 'none';
+            }
+            
             // 获取查询条件
             const allCheckbox = document.getElementById('other-station-all');
             const stationOptions = Array.from(document.querySelectorAll('#other-station-menu .other-station-option'));
@@ -24288,9 +24301,11 @@ function updateUnchargedTable() {
             }
             
             try {
-                // 判断是否查询滴滴表：新增的5个类别只在四方坪站且使用滴滴表
-                const didiCategories = ['充电枪ID', '停充原因', '用户类型', '手机号', '车牌号'];
+                // 判断是否查询滴滴表：新增的类别只在四方坪站且使用滴滴表
+                const didiCategories = ['充电枪ID', '停充原因', '用户类型', '手机号', '车牌号', '滴滴营销费用', '滴滴未结算订单'];
                 const isDidiCategory = didiCategories.includes(dataCategory);
+                const isDidiBillCategory = dataCategory === '滴滴营销费用';
+                const isDidiUnsettledCategory = dataCategory === '滴滴未结算订单';
 
                 // 如果是滴滴类别但不是只选四方坪站，则提示错误
                 if (isDidiCategory && !(selectedStations.includes('四方坪站') && !selectedStations.includes('高岭站'))) {
@@ -24308,8 +24323,159 @@ function updateUnchargedTable() {
 
                 let sql, dateRangeSql, tableName, timeFieldName, kwhField, elecFeeField, serviceFeeField, totalFeeField;
 
-                if (isDidiCategory) {
-                    // 查询滴滴表
+                // 处理滴滴营销费用查询
+                if (isDidiBillCategory) {
+                    // 查询滴滴账单表
+                    tableName = '[滴滴账单]';
+                    timeFieldName = '充电开始时间';
+
+                    // 滴滴账单表中的"充电开始时间"字段格式为：yyyy/mm/dd hh:mm
+                    // 需要将格式转换为标准格式进行比较
+                    // 使用CASE WHEN ISDATE安全转换，兼容旧版SQL Server
+                    // 先查询汇总统计
+                    const summarySql = `SELECT
+                        SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([总营销费用], '0')) = 1 THEN ISNULL([总营销费用], '0') ELSE '0' END AS FLOAT)) AS [总营销费用],
+                        SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([商家承担营销费用], '0')) = 1 THEN ISNULL([商家承担营销费用], '0') ELSE '0' END AS FLOAT)) AS [商家承担营销费用],
+                        SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([平台营销补贴], '0')) = 1 THEN ISNULL([平台营销补贴], '0') ELSE '0' END AS FLOAT)) AS [平台营销补贴],
+                        SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([支出-合同技术服务费], '0')) = 1 THEN ISNULL([支出-合同技术服务费], '0') ELSE '0' END AS FLOAT)) AS [支出合同技术服务费],
+                        SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([平台给司机的营销补贴], '0')) = 1 THEN ISNULL([平台给司机的营销补贴], '0') ELSE '0' END AS FLOAT)) AS [平台给司机的营销补贴],
+                        SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([平台给商户的营销补贴], '0')) = 1 THEN ISNULL([平台给商户的营销补贴], '0') ELSE '0' END AS FLOAT)) AS [平台给商户的营销补贴]
+                    FROM ${tableName}
+                    WHERE [${timeFieldName}] IS NOT NULL
+                    AND LEN([${timeFieldName}]) > 0
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END IS NOT NULL
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END >= '${formattedStartTime}'
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END <= '${formattedEndTime}'`;
+
+                    // 查询详细数据
+                    sql = `SELECT
+                        [订单id],
+                        [站点名称],
+                        [充电开始时间],
+                        [充电完成时间],
+                        [订单充电量],
+                        [实收总金额],
+                        [商家承担营销费用],
+                        [平台营销补贴],
+                        [支出-合同技术服务费],
+                        [平台给商户的营销补贴]
+                    FROM ${tableName}
+                    WHERE [${timeFieldName}] IS NOT NULL
+                    AND LEN([${timeFieldName}]) > 0
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END IS NOT NULL
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END >= '${formattedStartTime}'
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END <= '${formattedEndTime}'
+                    ORDER BY CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END ${sortOrder === '升序' ? 'ASC' : 'DESC'}`;
+
+                    // 执行汇总查询
+                    const summaryResults = await executeLeanCloudSQL(summarySql);
+                    const summaryData = summaryResults && summaryResults.length > 0 ? summaryResults[0] : {};
+                    
+                    // 显示汇总统计
+                    const summaryDiv = document.getElementById('other-summary-stats');
+                    const summaryContent = document.getElementById('other-summary-stats-content');
+                    if (summaryDiv && summaryContent) {
+                        summaryDiv.style.display = 'block';
+                        summaryContent.innerHTML = `
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div><strong>本期总营销费用：</strong><span style="color: #007bff; font-weight: 600;">${(parseFloat(summaryData['总营销费用'] || 0)).toFixed(2)}</span>元</div>
+                                <div style="padding-left: 20px;">
+                                    <strong>其中：</strong>
+                                    <span>商家承担营销费用：<span style="color: #007bff; font-weight: 600;">${(parseFloat(summaryData['商家承担营销费用'] || 0)).toFixed(2)}</span>元；</span>
+                                    <span>平台营销补贴：<span style="color: #007bff; font-weight: 600;">${(parseFloat(summaryData['平台营销补贴'] || 0)).toFixed(2)}</span>元</span>
+                                    <span>（平台给司机的营销补贴：<span style="color: #007bff; font-weight: 600;">${(parseFloat(summaryData['平台给司机的营销补贴'] || 0)).toFixed(2)}</span>元；</span>
+                                    <span>平台给商户的营销补贴：<span style="color: #007bff; font-weight: 600;">${(parseFloat(summaryData['平台给商户的营销补贴'] || 0)).toFixed(2)}</span>元）</span>
+                                </div>
+                                <div><strong>本期支出-合同技术服务费：</strong><span style="color: #007bff; font-weight: 600;">${(parseFloat(summaryData['支出合同技术服务费'] || 0)).toFixed(2)}</span>元</div>
+                            </div>
+                        `;
+                    }
+
+                    dateRangeSql = `SELECT
+                        MIN(CAST(CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END AS DATE)) AS [最小日期],
+                        MAX(CAST(CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END AS DATE)) AS [最大日期]
+                    FROM ${tableName}
+                    WHERE [${timeFieldName}] IS NOT NULL
+                    AND LEN([${timeFieldName}]) > 0
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END IS NOT NULL
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END >= '${formattedStartTime}'
+                    AND CASE WHEN ISDATE(REPLACE([${timeFieldName}], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([${timeFieldName}], '/', '-') + ':00', 120) ELSE NULL END <= '${formattedEndTime}'`;
+
+                } else if (isDidiUnsettledCategory) {
+                    // 查询滴滴未结算订单
+                    tableName = '[滴滴]';
+                    timeFieldName = '创建时间';
+
+                    // 先查询统计信息
+                    const statsSql = `SELECT
+                        (SELECT COUNT(DISTINCT [订单ID]) FROM [滴滴] WHERE [${timeFieldName}] >= '${formattedStartTime}' AND [${timeFieldName}] <= '${formattedEndTime}') AS [总订单数],
+                        (SELECT COUNT(DISTINCT d.[订单ID]) 
+                         FROM [滴滴] d
+                         LEFT JOIN [滴滴账单] db ON d.[订单ID] = db.[订单id]
+                         WHERE d.[${timeFieldName}] >= '${formattedStartTime}'
+                         AND d.[${timeFieldName}] <= '${formattedEndTime}'
+                         AND db.[订单id] IS NULL
+                         AND CAST(d.[充电量（度）] AS FLOAT) != 0
+                         AND CAST(d.[订单总额（元）] AS FLOAT) != 0) AS [未结算订单数],
+                        (SELECT COUNT(DISTINCT d.[订单ID])
+                         FROM [滴滴] d
+                         INNER JOIN [滴滴账单] db ON d.[订单ID] = db.[订单id]
+                         WHERE d.[${timeFieldName}] >= '${formattedStartTime}'
+                         AND d.[${timeFieldName}] <= '${formattedEndTime}') AS [已结算订单数],
+                        (SELECT COUNT(DISTINCT [订单ID])
+                         FROM [滴滴]
+                         WHERE [${timeFieldName}] >= '${formattedStartTime}'
+                         AND [${timeFieldName}] <= '${formattedEndTime}'
+                         AND CAST([充电量（度）] AS FLOAT) = 0
+                         AND CAST([订单总额（元）] AS FLOAT) = 0) AS [异常订单数]`;
+
+                    // 查询未结算订单详细数据
+                    sql = `SELECT
+                        d.[订单ID] AS [未结算订单],
+                        d.[场站名称],
+                        d.[开始充电时间],
+                        d.[充电完成时间],
+                        d.[充电量（度）],
+                        d.[订单总额（元）],
+                        d.[手机号],
+                        d.[车牌号]
+                    FROM [滴滴] d
+                    LEFT JOIN [滴滴账单] db ON d.[订单ID] = db.[订单id]
+                    WHERE d.[${timeFieldName}] >= '${formattedStartTime}'
+                    AND d.[${timeFieldName}] <= '${formattedEndTime}'
+                    AND db.[订单id] IS NULL
+                    AND CAST(d.[充电量（度）] AS FLOAT) != 0
+                    AND CAST(d.[订单总额（元）] AS FLOAT) != 0
+                    ORDER BY d.[${timeFieldName}] ${sortOrder === '升序' ? 'ASC' : 'DESC'}`;
+
+                    // 执行统计查询
+                    const statsResults = await executeLeanCloudSQL(statsSql);
+                    const statsData = statsResults && statsResults.length > 0 ? statsResults[0] : {};
+                    
+                    // 显示汇总统计
+                    const summaryDiv = document.getElementById('other-summary-stats');
+                    const summaryContent = document.getElementById('other-summary-stats-content');
+                    if (summaryDiv && summaryContent) {
+                        summaryDiv.style.display = 'block';
+                        summaryContent.innerHTML = `
+                            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                                <div><strong>本期总订单：</strong><span style="color: #007bff; font-weight: 600;">${parseInt(statsData['总订单数'] || 0)}</span>笔</div>
+                                <div><strong>本期未结算订单：</strong><span style="color: #dc3545; font-weight: 600;">${parseInt(statsData['未结算订单数'] || 0)}</span>笔</div>
+                                <div><strong>本期已结算订单：</strong><span style="color: #28a745; font-weight: 600;">${parseInt(statsData['已结算订单数'] || 0)}</span>笔</div>
+                                <div><strong>本期异常订单(不结算）：</strong><span style="color: #ffc107; font-weight: 600;">${parseInt(statsData['异常订单数'] || 0)}</span>笔</div>
+                            </div>
+                        `;
+                    }
+
+                    dateRangeSql = `SELECT
+                        MIN(CAST([${timeFieldName}] AS DATE)) AS [最小日期],
+                        MAX(CAST([${timeFieldName}] AS DATE)) AS [最大日期]
+                    FROM ${tableName}
+                    WHERE [${timeFieldName}] >= '${formattedStartTime}'
+                    AND [${timeFieldName}] <= '${formattedEndTime}'`;
+
+                } else if (isDidiCategory) {
+                    // 查询滴滴表（原有逻辑）
                     tableName = '[滴滴]';
                     timeFieldName = timeField === '充电开始时间' ? '开始充电时间' : '充电完成时间';
 
@@ -24353,6 +24519,12 @@ function updateUnchargedTable() {
                     AND [${timeFieldName}] <= '${formattedEndTime}'
                     GROUP BY ${categoryField}
                     ORDER BY SUM(CAST(${kwhField} AS FLOAT)) ${orderBy}`;
+
+                    // 隐藏汇总统计
+                    const summaryDiv = document.getElementById('other-summary-stats');
+                    if (summaryDiv) {
+                        summaryDiv.style.display = 'none';
+                    }
 
                 } else {
                     // 查询特来电表（原有逻辑）
@@ -24412,9 +24584,10 @@ function updateUnchargedTable() {
                     ORDER BY SUM(CAST(${kwhField} AS FLOAT)) ${orderBy}`;
                 }
 
-                // 查询日期范围以计算天数
-                const dateRangeResults = await executeLeanCloudSQL(dateRangeSql);
+                // 查询日期范围以计算天数（仅对需要计算天数的查询）
                 let days = 1; // 默认天数为1
+                if (!isDidiBillCategory && !isDidiUnsettledCategory && dateRangeSql) {
+                    const dateRangeResults = await executeLeanCloudSQL(dateRangeSql);
                 if (dateRangeResults && dateRangeResults.length > 0) {
                     const minDate = dateRangeResults[0]['最小日期'];
                     const maxDate = dateRangeResults[0]['最大日期'];
@@ -24423,6 +24596,7 @@ function updateUnchargedTable() {
                         const max = new Date(maxDate);
                         // 计算天数差（包含首尾两天）
                         days = Math.max(1, Math.ceil((max - min) / (1000 * 60 * 60 * 24)) + 1);
+                        }
                     }
                 }
 
@@ -24433,6 +24607,11 @@ function updateUnchargedTable() {
                     if (resultContent) {
                         resultContent.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">未查询到数据</div>';
                     }
+                    // 隐藏汇总统计区域
+                    const summaryDiv = document.getElementById('other-summary-stats');
+                    if (summaryDiv) {
+                        summaryDiv.style.display = 'none';
+                    }
                     __otherPagination.enabled = false;
                     __otherPagination.data = [];
                     __otherPagination.total = 0;
@@ -24440,8 +24619,37 @@ function updateUnchargedTable() {
                     return;
                 }
                 
-                // 处理数据（确保数值字段正确，并计算日均值）
-                const processedData = results.map(row => {
+                // 处理数据
+                let processedData;
+                if (isDidiBillCategory) {
+                    // 滴滴营销费用：直接使用查询结果
+                    processedData = results.map(row => ({
+                        '订单id': row['订单id'] || '',
+                        '站点名称': row['站点名称'] || '',
+                        '充电开始时间': row['充电开始时间'] || '',
+                        '充电完成时间': row['充电完成时间'] || '',
+                        '订单充电量': row['订单充电量'] || '',
+                        '实收总金额': row['实收总金额'] || '',
+                        '商家承担营销费用': row['商家承担营销费用'] || '',
+                        '平台营销补贴': row['平台营销补贴'] || '',
+                        '支出-合同技术服务费': row['支出-合同技术服务费'] || '',
+                        '平台给商户的营销补贴': row['平台给商户的营销补贴'] || ''
+                    }));
+                } else if (isDidiUnsettledCategory) {
+                    // 滴滴未结算订单：直接使用查询结果
+                    processedData = results.map(row => ({
+                        '未结算订单': row['未结算订单'] || '',
+                        '场站名称': row['场站名称'] || '',
+                        '开始充电时间': row['开始充电时间'] || '',
+                        '充电完成时间': row['充电完成时间'] || '',
+                        '充电量（度）': row['充电量（度）'] || '',
+                        '订单总额（元）': row['订单总额（元）'] || '',
+                        '手机号': row['手机号'] || '',
+                        '车牌号': row['车牌号'] || ''
+                    }));
+                } else {
+                    // 原有逻辑：处理数据（确保数值字段正确，并计算日均值）
+                    processedData = results.map(row => {
                     const kwh = parseFloat(row['充电电量(度)'] || 0);
                     const serviceFee = parseFloat(row['充电服务费(元)'] || 0);
                     const dailyKwh = days > 0 ? (kwh / days).toFixed(2) : '0.00';
@@ -24457,6 +24665,7 @@ function updateUnchargedTable() {
                         '充电费用(元)': parseFloat(row['充电费用(元)'] || 0).toFixed(2)
                     };
                 });
+                }
                 
                 // 设置分页数据
                 __otherPagination.enabled = true;
@@ -24474,6 +24683,11 @@ function updateUnchargedTable() {
                 console.error('查询其它数据失败:', error);
                 if (resultContent) {
                     resultContent.innerHTML = `<div style="color:#c00; padding:12px;">查询失败：${error.message || '未知错误'}</div>`;
+                }
+                // 隐藏汇总统计区域
+                const summaryDiv = document.getElementById('other-summary-stats');
+                if (summaryDiv) {
+                    summaryDiv.style.display = 'none';
                 }
                 __otherPagination.enabled = false;
                 renderOtherPagination();
@@ -24494,16 +24708,75 @@ function updateUnchargedTable() {
                 return;
             }
             
-            // 计算所有数据的总电量（用于计算占比）
+            const categoryLabel = __otherPagination.categoryLabel || '数据类别';
+            let html = '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+            
+            // 根据类别显示不同的表格结构
+            if (categoryLabel === '滴滴营销费用') {
+                // 滴滴营销费用表格
+                html += '<thead><tr style="background:#f8f9fa;">';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">订单id</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">站点名称</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">充电开始时间</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">充电完成时间</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">订单充电量</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">实收总金额</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">商家承担营销费用</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">平台营销补贴</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">支出-合同技术服务费</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">平台给商户的营销补贴</th>';
+                html += '</tr></thead><tbody>';
+                
+                pageData.forEach((row, index) => {
+                    const bgColor = index % 2 === 0 ? '#fff' : '#f8f9fa';
+                    html += `<tr style="background:${bgColor};">`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['订单id'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['站点名称'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['充电开始时间'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['充电完成时间'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['订单充电量'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['实收总金额'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['商家承担营销费用'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['平台营销补贴'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['支出-合同技术服务费'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['平台给商户的营销补贴'] || ''}</td>`;
+                    html += '</tr>';
+                });
+                
+            } else if (categoryLabel === '滴滴未结算订单') {
+                // 滴滴未结算订单表格
+                html += '<thead><tr style="background:#f8f9fa;">';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">未结算订单</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">场站名称</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">开始充电时间</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">充电完成时间</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电量（度）</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">订单总额（元）</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">手机号</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">车牌号</th>';
+                html += '</tr></thead><tbody>';
+                
+                pageData.forEach((row, index) => {
+                    const bgColor = index % 2 === 0 ? '#fff' : '#f8f9fa';
+                    html += `<tr style="background:${bgColor};">`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['未结算订单'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['场站名称'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['开始充电时间'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['充电完成时间'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电量（度）'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['订单总额（元）'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['手机号'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['车牌号'] || ''}</td>`;
+                    html += '</tr>';
+                });
+                
+            } else {
+                // 原有逻辑：计算所有数据的总电量（用于计算占比）
             const totalKwh = __otherPagination.data.reduce((sum, row) => {
                 const kwh = parseFloat(row['充电电量(度)'] || 0);
                 return sum + kwh;
             }, 0);
 
-            const categoryLabel = __otherPagination.categoryLabel || '数据类别';
-            
-            // 构建表格HTML
-            let html = '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
             html += '<thead><tr style="background:#f8f9fa;">';
             html += `<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">${categoryLabel}</th>`;
             html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电电量(度)</th>';
@@ -24532,6 +24805,7 @@ function updateUnchargedTable() {
                 html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电费用(元)'] || '0.00'}</td>`;
                 html += '</tr>';
             });
+            }
             
             html += '</tbody></table>';
             resultContent.innerHTML = html;
