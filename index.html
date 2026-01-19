@@ -24559,9 +24559,13 @@ function updateUnchargedTable() {
                          AND CAST(d.[订单总额（元）] AS FLOAT) != 0) AS [未结算订单数],
                         (SELECT COUNT(DISTINCT d.[订单ID])
                          FROM [滴滴] d
-                         INNER JOIN [滴滴账单] db ON d.[订单ID] = db.[订单id]
+                         LEFT JOIN [滴滴账单] db ON d.[订单ID] = db.[订单id]
                          WHERE d.[${timeFieldName}] >= '${formattedStartTime}'
-                         AND d.[${timeFieldName}] <= '${formattedEndTime}') AS [已结算订单数],
+                         AND d.[${timeFieldName}] <= '${formattedEndTime}'
+                         AND (
+                             db.[订单id] IS NOT NULL
+                             OR (CAST(d.[充电量（度）] AS FLOAT) != 0 AND CAST(d.[订单总额（元）] AS FLOAT) != 0)
+                         )) AS [已结算订单数],
                         (SELECT COUNT(DISTINCT [订单ID])
                          FROM [滴滴]
                          WHERE [${timeFieldName}] >= '${formattedStartTime}'
