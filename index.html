@@ -3106,7 +3106,7 @@
                             <option value="手机号" class="didi-only" style="display:none;">手机号</option>
                             <option value="车牌号" class="didi-only" style="display:none;">车牌号</option>
                             <option value="滴滴营销费用" class="didi-only" style="display:none;">滴滴营销费用</option>
-                            <option value="滴滴未结算订单" class="didi-only" style="display:none;">滴滴未结算订单</option>
+                            <option value="滴滴未结算订单" class="didi-only" style="display:none;">滴滴订单汇总</option>
                         </select>
 
                         <!-- 排序方式选择（单选） -->
@@ -24351,7 +24351,8 @@ function updateUnchargedTable() {
             total: 0,
             totalPages: 0,
             data: [],
-            categoryLabel: '数据类别'
+            categoryLabel: '数据类别',
+            selectedOrderType: '未结算订单' // 当前选择的订单类型
         };
 
         // 其它数据页面查询函数
@@ -24599,16 +24600,28 @@ function updateUnchargedTable() {
                          WHERE [${timeFieldName}] >= '${formattedStartTime}'
                          AND [${timeFieldName}] <= '${formattedEndTime}'
                          AND CAST([充电量（度）] AS FLOAT) = 0
-                         AND CAST([订单总额（元）] AS FLOAT) = 0) AS [异常订单数]`;
+                         AND CAST([订单总额（元）] AS FLOAT) = 0) AS [异常订单数],
+                        (SELECT COUNT(DISTINCT [订单ID])
+                         FROM [滴滴]
+                         WHERE [${timeFieldName}] >= '${formattedStartTime}'
+                         AND [${timeFieldName}] <= '${formattedEndTime}'
+                         AND (CAST([充电电费（元）] AS FLOAT) = 0 OR [充电电费（元）] IS NULL OR [充电电费（元）] = '')
+                         AND CAST([订单总额（元）] AS FLOAT) != 0) AS [异常订单电费为0数]`;
 
-                    // 查询未结算订单详细数据
+                    // 查询所有四种类型的订单详细数据
+                    // 1. 未结算订单：在滴滴表中但不在滴滴账单表中，且充电量和订单总额都不为0
+                    // 2. 已结算订单：在滴滴表和滴滴账单表中都存在
+                    // 3. 异常订单(不结算）：充电量和订单总额都为0
+                    // 4. 异常订单(电费为0)：充电电费为0但订单总额不为0
                     sql = `SELECT
-                        d.[订单ID] AS [未结算订单],
+                        d.[订单ID] AS [订单ID],
+                        '未结算订单' AS [订单类型],
                         d.[场站名称],
                         d.[开始充电时间],
                         d.[充电完成时间],
                         d.[充电量（度）],
                         d.[订单总额（元）],
+                        d.[充电电费（元）],
                         d.[手机号],
                         d.[车牌号]
                     FROM [滴滴] d
@@ -24618,7 +24631,70 @@ function updateUnchargedTable() {
                     AND db.[订单id] IS NULL
                     AND CAST(d.[充电量（度）] AS FLOAT) != 0
                     AND CAST(d.[订单总额（元）] AS FLOAT) != 0
-                    ORDER BY d.[${timeFieldName}] ${sortOrder === '升序' ? 'ASC' : 'DESC'}`;
+                    
+                    UNION ALL
+                    
+                    SELECT
+                        d.[订单ID] AS [订单ID],
+                        '已结算订单' AS [订单类型],
+                        d.[场站名称],
+                        d.[开始充电时间],
+                        d.[充电完成时间],
+                        d.[充电量（度）],
+                        d.[订单总额（元）],
+                        d.[充电电费（元）],
+                        d.[手机号],
+                        d.[车牌号]
+                    FROM [滴滴] d
+                    INNER JOIN [滴滴账单] db ON d.[订单ID] = db.[订单id]
+                    WHERE d.[${timeFieldName}] >= '${formattedStartTime}'
+                    AND d.[${timeFieldName}] <= '${formattedEndTime}'
+                    AND NOT (
+                        ISNUMERIC(ISNULL(db.[订单充电量], '0')) = 1
+                        AND CAST(CASE WHEN ISNUMERIC(ISNULL(db.[订单充电量], '0')) = 1 THEN ISNULL(db.[订单充电量], '0') ELSE '0' END AS FLOAT) = 0
+                        AND ISNUMERIC(ISNULL(db.[订单总额], '0')) = 1
+                        AND CAST(CASE WHEN ISNUMERIC(ISNULL(db.[订单总额], '0')) = 1 THEN ISNULL(db.[订单总额], '0') ELSE '0' END AS FLOAT) = 0
+                    )
+                    
+                    UNION ALL
+                    
+                    SELECT
+                        d.[订单ID] AS [订单ID],
+                        '异常订单(不结算）' AS [订单类型],
+                        d.[场站名称],
+                        d.[开始充电时间],
+                        d.[充电完成时间],
+                        d.[充电量（度）],
+                        d.[订单总额（元）],
+                        d.[充电电费（元）],
+                        d.[手机号],
+                        d.[车牌号]
+                    FROM [滴滴] d
+                    WHERE d.[${timeFieldName}] >= '${formattedStartTime}'
+                    AND d.[${timeFieldName}] <= '${formattedEndTime}'
+                    AND CAST(d.[充电量（度）] AS FLOAT) = 0
+                    AND CAST(d.[订单总额（元）] AS FLOAT) = 0
+                    
+                    UNION ALL
+                    
+                    SELECT
+                        d.[订单ID] AS [订单ID],
+                        '异常订单(电费为0)' AS [订单类型],
+                        d.[场站名称],
+                        d.[开始充电时间],
+                        d.[充电完成时间],
+                        d.[充电量（度）],
+                        d.[订单总额（元）],
+                        d.[充电电费（元）],
+                        d.[手机号],
+                        d.[车牌号]
+                    FROM [滴滴] d
+                    WHERE d.[${timeFieldName}] >= '${formattedStartTime}'
+                    AND d.[${timeFieldName}] <= '${formattedEndTime}'
+                    AND (CAST(d.[充电电费（元）] AS FLOAT) = 0 OR d.[充电电费（元）] IS NULL OR d.[充电电费（元）] = '')
+                    AND CAST(d.[订单总额（元）] AS FLOAT) != 0
+                    
+                    ORDER BY [开始充电时间] ${sortOrder === '升序' ? 'ASC' : 'DESC'}`;
 
                     // 执行统计查询
                     const statsResults = await executeLeanCloudSQL(statsSql);
@@ -24635,6 +24711,7 @@ function updateUnchargedTable() {
                                 <div><strong>本期未结算订单：</strong><span style="color: #dc3545; font-weight: 600;">${parseInt(statsData['未结算订单数'] || 0)}</span>笔</div>
                                 <div><strong>本期已结算订单：</strong><span style="color: #28a745; font-weight: 600;">${parseInt(statsData['已结算订单数'] || 0)}</span>笔</div>
                                 <div><strong>本期异常订单(不结算）：</strong><span style="color: #ffc107; font-weight: 600;">${parseInt(statsData['异常订单数'] || 0)}</span>笔</div>
+                                <div><strong>本期异常订单(电费为0)：</strong><span style="color: #fd7e14; font-weight: 600;">${parseInt(statsData['异常订单电费为0数'] || 0)}</span>笔</div>
                             </div>
                         `;
                     }
@@ -24808,14 +24885,16 @@ function updateUnchargedTable() {
                         '平台给商户的营销补贴': row['平台给商户的营销补贴'] || ''
                     }));
                 } else if (isDidiUnsettledCategory) {
-                    // 滴滴未结算订单：直接使用查询结果
+                    // 滴滴未结算订单：保留订单类型字段
                     processedData = results.map(row => ({
-                        '未结算订单': row['未结算订单'] || '',
+                        '订单ID': row['订单ID'] || '',
+                        '订单类型': row['订单类型'] || '',
                         '场站名称': row['场站名称'] || '',
                         '开始充电时间': row['开始充电时间'] || '',
                         '充电完成时间': row['充电完成时间'] || '',
                         '充电量（度）': row['充电量（度）'] || '',
                         '订单总额（元）': row['订单总额（元）'] || '',
+                        '充电电费（元）': row['充电电费（元）'] || '',
                         '手机号': row['手机号'] || '',
                         '车牌号': row['车牌号'] || ''
                     }));
@@ -24846,6 +24925,10 @@ function updateUnchargedTable() {
                 __otherPagination.totalPages = Math.ceil(processedData.length / __otherPagination.pageSize);
                 __otherPagination.currentPage = 1;
                 __otherPagination.categoryLabel = dataCategory || '数据类别';
+                // 如果是滴滴未结算订单，初始化订单类型选择
+                if (isDidiUnsettledCategory) {
+                    __otherPagination.selectedOrderType = '未结算订单';
+                }
                 
                 // 渲染分页和表格
                 renderOtherPagination();
@@ -24871,6 +24954,80 @@ function updateUnchargedTable() {
             const resultContent = document.getElementById('other-query-result-content');
             if (!resultContent || !__otherPagination.enabled) return;
             
+            const categoryLabel = __otherPagination.categoryLabel || '数据类别';
+            
+            // 对于滴滴未结算订单，使用特殊的过滤和分页逻辑
+            if (categoryLabel === '滴滴未结算订单') {
+                const selectedOrderType = __otherPagination.selectedOrderType || '未结算订单';
+                
+                // 过滤数据：根据选择的订单类型
+                const filteredData = __otherPagination.data.filter(row => row['订单类型'] === selectedOrderType);
+                
+                // 先添加下拉框选择器（始终显示）
+                let html = '<div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">';
+                html += '<label style="font-weight: 600; color: #333;">订单类型筛选：</label>';
+                html += '<select id="didi-order-type-selector" onchange="filterDidiOrderType()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; min-width: 200px;">';
+                html += `<option value="未结算订单" ${selectedOrderType === '未结算订单' ? 'selected' : ''}>未结算订单</option>`;
+                html += `<option value="已结算订单" ${selectedOrderType === '已结算订单' ? 'selected' : ''}>已结算订单</option>`;
+                html += `<option value="异常订单(不结算）" ${selectedOrderType === '异常订单(不结算）' ? 'selected' : ''}>异常订单(不结算）</option>`;
+                html += `<option value="异常订单(电费为0)" ${selectedOrderType === '异常订单(电费为0)' ? 'selected' : ''}>异常订单(电费为0)</option>`;
+                html += '</select>';
+                html += `<span style="color: #666; font-size: 13px;">共 ${filteredData.length} 条记录</span>`;
+                html += '</div>';
+                
+                // 如果没有数据，显示"暂无数据"提示
+                if (filteredData.length === 0) {
+                    html += '<div style="padding:20px; text-align:center; color:#666;">暂无数据</div>';
+                    resultContent.innerHTML = html;
+                    // 更新分页信息
+                    __otherPagination.total = 0;
+                    __otherPagination.totalPages = 0;
+                    renderOtherPagination();
+                    return;
+                }
+                
+                const filteredStart = (__otherPagination.currentPage - 1) * __otherPagination.pageSize;
+                const filteredEnd = filteredStart + __otherPagination.pageSize;
+                const filteredPageData = filteredData.slice(filteredStart, filteredEnd);
+                
+                // 更新分页信息
+                __otherPagination.total = filteredData.length;
+                __otherPagination.totalPages = Math.ceil(filteredData.length / __otherPagination.pageSize);
+                
+                // 添加表格
+                html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+                html += '<thead><tr style="background:#f8f9fa;">';
+                html += `<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">${selectedOrderType}</th>`;
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">场站名称</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">开始充电时间</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">充电完成时间</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电量（度）</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">订单总额（元）</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">手机号</th>';
+                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">车牌号</th>';
+                html += '</tr></thead><tbody>';
+                
+                filteredPageData.forEach((row, index) => {
+                    const bgColor = index % 2 === 0 ? '#fff' : '#f8f9fa';
+                    html += `<tr style="background:${bgColor};">`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['订单ID'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['场站名称'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['开始充电时间'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['充电完成时间'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电量（度）'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['订单总额（元）'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['手机号'] || ''}</td>`;
+                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['车牌号'] || ''}</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+                resultContent.innerHTML = html;
+                renderOtherPagination();
+                return;
+            }
+            
+            // 其他类别的原有逻辑
             const start = (__otherPagination.currentPage - 1) * __otherPagination.pageSize;
             const end = start + __otherPagination.pageSize;
             const pageData = __otherPagination.data.slice(start, end);
@@ -24880,7 +25037,6 @@ function updateUnchargedTable() {
                 return;
             }
             
-            const categoryLabel = __otherPagination.categoryLabel || '数据类别';
             let html = '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
             
             // 根据类别显示不同的表格结构
@@ -24912,33 +25068,6 @@ function updateUnchargedTable() {
                     html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['平台营销补贴'] || ''}</td>`;
                     html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['支出-合同技术服务费'] || ''}</td>`;
                     html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['平台给商户的营销补贴'] || ''}</td>`;
-                    html += '</tr>';
-                });
-                
-            } else if (categoryLabel === '滴滴未结算订单') {
-                // 滴滴未结算订单表格
-                html += '<thead><tr style="background:#f8f9fa;">';
-                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">未结算订单</th>';
-                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">场站名称</th>';
-                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">开始充电时间</th>';
-                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">充电完成时间</th>';
-                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">充电量（度）</th>';
-                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:right; font-weight:600;">订单总额（元）</th>';
-                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">手机号</th>';
-                html += '<th style="padding:12px; border:1px solid #dee2e6; text-align:left; font-weight:600;">车牌号</th>';
-                html += '</tr></thead><tbody>';
-                
-                pageData.forEach((row, index) => {
-                    const bgColor = index % 2 === 0 ? '#fff' : '#f8f9fa';
-                    html += `<tr style="background:${bgColor};">`;
-                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['未结算订单'] || ''}</td>`;
-                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['场站名称'] || ''}</td>`;
-                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['开始充电时间'] || ''}</td>`;
-                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['充电完成时间'] || ''}</td>`;
-                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['充电量（度）'] || ''}</td>`;
-                    html += `<td style="padding:12px; border:1px solid #dee2e6; text-align:right;">${row['订单总额（元）'] || ''}</td>`;
-                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['手机号'] || ''}</td>`;
-                    html += `<td style="padding:12px; border:1px solid #dee2e6;">${row['车牌号'] || ''}</td>`;
                     html += '</tr>';
                 });
                 
@@ -24981,6 +25110,20 @@ function updateUnchargedTable() {
             
             html += '</tbody></table>';
             resultContent.innerHTML = html;
+        }
+
+        // 处理滴滴订单类型下拉框切换
+        function filterDidiOrderType() {
+            const selector = document.getElementById('didi-order-type-selector');
+            if (!selector) return;
+            
+            const selectedType = selector.value;
+            __otherPagination.selectedOrderType = selectedType;
+            __otherPagination.currentPage = 1; // 重置到第一页
+            
+            // 重新渲染表格和分页
+            renderOtherDataTable();
+            renderOtherPagination();
         }
 
         // 渲染其它数据分页按钮
