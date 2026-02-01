@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -4320,7 +4320,7 @@
                     <div class="chart-container">
                         <div class="chart-title">
                             <i class="fas fa-chart-line"></i>
-                            充电数据总趋势 (2018-2025年)
+                            充电数据总趋势 (2018-2026年)
                         </div>
                         <div class="chart-wrapper">
                             <canvas id="charging-trend-chart"></canvas>
@@ -4410,7 +4410,7 @@
                     <div class="chart-container">
                         <div class="chart-title">
                             <i class="fas fa-chart-line"></i>
-                            年度总收入趋势 (2018-2025年)
+                            年度总收入趋势 (2018-2026年)
                         </div>
                         <div class="chart-wrapper">
                             <canvas id="annual-revenue-trend-chart"></canvas>
@@ -4565,13 +4565,13 @@
         
         <!-- 页脚 -->
         <footer>
-            © 2025 长沙飞狐电动汽车充电服务有限公司 | 新能源充电站数据管理平台
+            © 2026 长沙飞狐电动汽车充电服务有限公司 | 新能源充电站数据管理平台
         </footer>
     </div>
 
     <!-- 在body结束前添加版权信息 -->
     <div class="footer-copyright" id="login-footer-copyright">
-        <p>© 2018-2025 长沙飞狐电动汽车充电服务有限公司</p>
+        <p>© 2018-2026 长沙飞狐电动汽车充电服务有限公司</p>
     </div>
 
     <script>
@@ -7854,7 +7854,7 @@ revenueBySectorChart = new Chart(revenueBySectorCtx, {
                 borderColor: 'rgba(220, 53, 69, 1)',
                 borderWidth: 1
             }
-        ]
+                ]
     },
               options: {
         responsive: true,
@@ -15907,7 +15907,7 @@ function updateUnchargedTable() {
                             'south': '飞狐四方坪南区充电站'
                         };
                         const didiStationName = didiStationMap[group];
-                        const didiTimeField = (timeField === '充电开始时间') ? '开始充电时间' : '创建时间';
+                        const didiTimeField = (timeField === '充电开始时间') ? '开始充电时间' : '充电完成时间';
                         const whereClause = `WHERE [场站名称] = N'${didiStationName}' AND [${didiTimeField}] BETWEEN '${start}' AND '${end}'`;
                         const statsSql = `SELECT
                             COUNT(1) AS total,
@@ -16303,7 +16303,7 @@ function updateUnchargedTable() {
                     __pagination.selectCols = '*';
                     __currentDisplayColumns = ['卡号','充电桩名称','开始日期时间','结束日期时间','充电量','电费','服务费','消费金额','充电时长','开始SOC','结束SOC','车牌号','持卡人'];
                 } else if (device === '滴滴') {
-                    __pagination.selectCols = '[订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号]';
+                    __pagination.selectCols = '[订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [创建时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号]';
                     __currentDisplayColumns = DIDI_DISPLAY_COLUMNS.slice();
                 } else {
                     __pagination.selectCols = '[电站名称], [终端名称], [充电开始时间], [充电结束时间], [充电电量(度)], [充电电费(元)], [充电服务费(元)], [充电费用(元)], [充电时长(分钟)], [充电前soc], [充电后soc], [判定车牌号], [车辆所属客户]';
@@ -19607,8 +19607,8 @@ function updateUnchargedTable() {
                 
                 // 滴滴表查询：根据时间字段选择对应的滴滴表字段
                 // 滴滴表中车牌号格式为"湘A***053"（星号是实际字符），直接匹配
-                const didiTimeField = (timeField === '充电开始时间') ? '开始充电时间' : '创建时间';
-                sqlDidi = `SELECT TOP 10000 [订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号] FROM [滴滴] WHERE REPLACE([车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE N'%${escDidi}%' AND [${didiTimeField}] BETWEEN '${start}' AND '${end}' ORDER BY [${didiTimeField}] DESC`;
+                const didiTimeField = (timeField === '充电开始时间') ? '开始充电时间' : '充电完成时间';
+                sqlDidi = `SELECT TOP 10000 [订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [创建时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号] FROM [滴滴] WHERE REPLACE([车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE N'%${escDidi}%' AND [${didiTimeField}] BETWEEN '${start}' AND '${end}' ORDER BY [${didiTimeField}] DESC`;
                 
                 // 保留原有的sql字段用于兼容
                 sql = sqlTeld;
@@ -20635,8 +20635,8 @@ function updateUnchargedTable() {
             if (station === '四方坪站') {
                 const didiQuery = `SELECT SUM(CASE WHEN ISNUMERIC([充电电费（元）]) = 1 AND [充电电费（元）] IS NOT NULL AND [充电电费（元）] != '' THEN CAST([充电电费（元）] AS DECIMAL(18,4)) ELSE 0 END) AS total
                               FROM [滴滴]
-                              WHERE [创建时间] >= '${startDate}'
-                              AND [创建时间] < DATEADD(day, 1, '${endDate}')`;
+                              WHERE [充电完成时间] >= '${startDate}'
+                              AND [充电完成时间] < DATEADD(day, 1, '${endDate}')`;
 
                 const didiResults = await executeSQL(didiQuery, {
                     useCache: true,
@@ -20694,8 +20694,8 @@ function updateUnchargedTable() {
             if (station === '四方坪站') {
                 const didiQuery = `SELECT SUM(CASE WHEN ISNUMERIC([充电服务费（元）]) = 1 AND [充电服务费（元）] IS NOT NULL AND [充电服务费（元）] != '' THEN CAST([充电服务费（元）] AS DECIMAL(18,4)) ELSE 0 END) AS total
                               FROM [滴滴]
-                              WHERE [创建时间] >= '${startDate}'
-                              AND [创建时间] < DATEADD(day, 1, '${endDate}')`;
+                              WHERE [充电完成时间] >= '${startDate}'
+                              AND [充电完成时间] < DATEADD(day, 1, '${endDate}')`;
 
                 const didiResults = await executeSQL(didiQuery, {
                     useCache: true,
@@ -21457,8 +21457,8 @@ function updateUnchargedTable() {
             const terminalSql = `
                 SELECT COUNT(DISTINCT [场站名称] + N'&' + [充电枪ID]) AS terminals
                 FROM [滴滴]
-                WHERE [创建时间] >= '${startDateFormatted}'
-                AND [创建时间] < DATEADD(day, 1, '${endDateFormatted}')
+                WHERE [充电完成时间] >= '${startDateFormatted}'
+                AND [充电完成时间] < DATEADD(day, 1, '${endDateFormatted}')
             `;
             const terminalsRes = await executeLeanCloudSQL(terminalSql);
             const terminals = terminalsRes && terminalsRes[0] && terminalsRes[0].terminals ? parseInt(terminalsRes[0].terminals) : 0;
@@ -21470,8 +21470,8 @@ function updateUnchargedTable() {
                     SUM(CASE WHEN ISNUMERIC([充电服务费（元）]) = 1 AND [充电服务费（元）] IS NOT NULL AND [充电服务费（元）] != '' THEN CAST([充电服务费（元）] AS DECIMAL(18,4)) ELSE 0 END) AS totalServiceFee,
                     COUNT(1) AS totalSessions
                 FROM [滴滴]
-                WHERE [创建时间] >= '${startDateFormatted}'
-                AND [创建时间] < DATEADD(day, 1, '${endDateFormatted}')
+                WHERE [充电完成时间] >= '${startDateFormatted}'
+                AND [充电完成时间] < DATEADD(day, 1, '${endDateFormatted}')
             `;
             const sumRes = await executeLeanCloudSQL(sumSql);
             const totalDuration = sumRes && sumRes[0] && sumRes[0].totalDuration ? parseFloat(sumRes[0].totalDuration) : 0;
@@ -21481,11 +21481,11 @@ function updateUnchargedTable() {
 
             const dateRangeSql = `
                 SELECT
-                    MIN(CAST([创建时间] AS DATE)) AS minDate,
-                    MAX(CAST([创建时间] AS DATE)) AS maxDate
+                    MIN(CAST([充电完成时间] AS DATE)) AS minDate,
+                    MAX(CAST([充电完成时间] AS DATE)) AS maxDate
                 FROM [滴滴]
-                WHERE [创建时间] >= '${startDateFormatted}'
-                AND [创建时间] < DATEADD(day, 1, '${endDateFormatted}')
+                WHERE [充电完成时间] >= '${startDateFormatted}'
+                AND [充电完成时间] < DATEADD(day, 1, '${endDateFormatted}')
             `;
             const dateRangeRes = await executeLeanCloudSQL(dateRangeSql);
             const minDate = dateRangeRes && dateRangeRes[0] && dateRangeRes[0].minDate ? dateRangeRes[0].minDate : null;
