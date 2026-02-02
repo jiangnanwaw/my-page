@@ -4395,7 +4395,7 @@
                     <div class="chart-container">
                         <div class="chart-title">
                             <i class="fas fa-chart-bar"></i>
-                            各版块收入汇总 (2023-2025年)
+                            各版块收入汇总 (2023-2026年)
                         </div>
                         <div class="chart-wrapper">
                             <canvas id="revenue-by-sector-chart"></canvas>
@@ -7853,6 +7853,13 @@ revenueBySectorChart = new Chart(revenueBySectorCtx, {
                 backgroundColor: 'rgba(220, 53, 69, 0.7)',
                 borderColor: 'rgba(220, 53, 69, 1)',
                 borderWidth: 1
+            },
+            {
+                label: '2026年收入 (元)',
+                data: [],
+                backgroundColor: 'rgba(156, 39, 176, 0.7)',
+                borderColor: 'rgba(156, 39, 176, 1)',
+                borderWidth: 1
             }
                 ]
     },
@@ -8438,8 +8445,8 @@ function initYearSelect() {
     // 将可用年份列表存储到元素上
     yearSelect.dataset.availableYears = JSON.stringify(sortedYears);
     
-    // 设置默认选中当前年份(2025年)
-    const currentYear = 2025;
+    // 设置默认选中当前年份
+    const currentYear = new Date().getFullYear();
     let initialYear = currentYear;
     if (!sortedYears.includes(currentYear) && sortedYears.length > 0) {
         initialYear = sortedYears[sortedYears.length - 1]; // 如果没有当前年份，选择最后一个
@@ -8918,17 +8925,19 @@ if (workbook.SheetNames.includes('bksr')) {
     if (revenueBySectorChart) {
         // 获取所有唯一的版块名称
         const sectors = [...new Set(bksrJson.slice(1).map(row => row[0]))];
-        
+
         // 为每个年份创建数据数组
         const year2023Data = sectors.map(sector => sectorDataByYear[2023]?.[sector] || 0);
         const year2024Data = sectors.map(sector => sectorDataByYear[2024]?.[sector] || 0);
         const year2025Data = sectors.map(sector => sectorDataByYear[2025]?.[sector] || 0);
-        
+        const year2026Data = sectors.map(sector => sectorDataByYear[2026]?.[sector] || 0);
+
         // 更新图表数据
         revenueBySectorChart.data.labels = sectors;
         revenueBySectorChart.data.datasets[0].data = year2023Data;
         revenueBySectorChart.data.datasets[1].data = year2024Data;
         revenueBySectorChart.data.datasets[2].data = year2025Data;
+        revenueBySectorChart.data.datasets[3].data = year2026Data;
         revenueBySectorChart.update();
     }
 }
