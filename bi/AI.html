@@ -404,50 +404,145 @@
                 return false;
             }
         }, true);
+
+        // CDN加载状态跟踪
+        window.LeanCloudLoader = {
+            loaded: false,
+            sources: [
+                'https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js',
+                'https://unpkg.com/leancloud-storage@4.15.0/dist/av-min.js',
+                'https://lf1-cdn-tos.bytecdntp.com/cdn/expire-1-M/leancloud-storage/4.15.0/av-min.js'
+            ],
+            currentIndex: 0
+        };
+
+        window.XLSXLoader = {
+            loaded: false,
+            sources: [
+                'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+                'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+            ],
+            currentIndex: 0
+        };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js" 
-            onerror="loadLeanCloudFallback()"></script>
+
+    <!-- 首先加载XLSX（可选，失败不影响主要功能） -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
-            onerror="loadXLSXFallback()"></script>
+            onerror="loadXLSXFallback()"
+            onload="window.XLSXLoader.loaded=true"></script>
+
+    <!-- LeanCloud脚本加载逻辑 -->
     <script>
-        // 备用CDN加载函数
-        function loadLeanCloudFallback() {
-            console.log('主CDN加载失败，尝试备用CDN...');
+        function loadLeanCloudScript() {
+            const loader = window.LeanCloudLoader;
+            const src = loader.sources[loader.currentIndex];
+            console.log(`尝试加载LeanCloud CDN (${loader.currentIndex + 1}/${loader.sources.length}):`, src);
+
             const script = document.createElement('script');
-            script.src = 'https://unpkg.com/leancloud-storage@4.15.0/dist/av-min.js';
-            script.onerror = function() {
-                console.error('所有LeanCloud CDN源加载失败，请检查网络连接');
-                alert('无法加载LeanCloud库，请检查网络连接或刷新页面重试');
+            script.src = src;
+            script.async = true;
+
+            script.onload = function() {
+                console.log('LeanCloud脚本加载成功！');
+                loader.loaded = true;
             };
+
+            script.onerror = function() {
+                console.warn(`CDN源 ${loader.currentIndex + 1} 加载失败:`, src);
+                loader.currentIndex++;
+
+                if (loader.currentIndex < loader.sources.length) {
+                    // 尝试下一个CDN
+                    setTimeout(loadLeanCloudScript, 500);
+                } else {
+                    console.error('所有LeanCloud CDN源加载失败！');
+                    showErrorDialog('无法加载LeanCloud库。\n\n可能原因：\n1. 网络连接问题\n2. CDN被防火墙阻止\n3. 代理设置问题\n\n建议：\n- 检查网络连接\n- 尝试使用不同的网络环境\n- 或使用代理访问');
+                }
+            };
+
             document.head.appendChild(script);
         }
 
         function loadXLSXFallback() {
+            const loader = window.XLSXLoader;
             console.log('主CDN加载失败，尝试备用CDN...');
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
-            script.onerror = function() {
-                console.warn('XLSX库加载失败，Excel导出功能将不可用');
-            };
-            document.head.appendChild(script);
+            loader.currentIndex++;
+
+            if (loader.currentIndex < loader.sources.length) {
+                const script = document.createElement('script');
+                script.src = loader.sources[loader.currentIndex];
+                script.onload = function() {
+                    console.log('XLSX备用CDN加载成功');
+                    loader.loaded = true;
+                };
+                script.onerror = function() {
+                    console.warn('XLSX备用CDN也加载失败');
+                };
+                document.head.appendChild(script);
+            } else {
+                console.warn('所有XLSX CDN源加载失败，Excel导出功能将不可用');
+            }
         }
+
+        function showErrorDialog(message) {
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+                z-index: 10000;
+                max-width: 400px;
+                text-align: center;
+                font-family: -apple-system, sans-serif;
+            `;
+
+            dialog.innerHTML = `
+                <div style="font-size: 40px; margin-bottom: 15px;">⚠️</div>
+                <h3 style="margin: 0 0 15px 0; color: #333;">加载失败</h3>
+                <p style="margin: 0 0 20px 0; color: #666; white-space: pre-line;">${message}</p>
+                <button onclick="location.reload()" style="
+                    padding: 10px 25px;
+                    background: #007AFF;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">刷新页面</button>
+            `;
+
+            document.body.appendChild(dialog);
+        }
+
+        // 开始加载LeanCloud
+        loadLeanCloudScript();
 
         // 等待DOM和LeanCloud脚本都加载完成
         let initAttempts = 0;
-        const MAX_INIT_ATTEMPTS = 300; // 最多等待30秒（300 * 100ms）
+        const MAX_INIT_ATTEMPTS = 600; // 最多等待60秒（600 * 100ms）
 
         function initApp() {
             initAttempts++;
-            
+
             // 检查是否超时
             if (initAttempts > MAX_INIT_ATTEMPTS) {
                 console.error('初始化超时：LeanCloud脚本加载失败');
-                alert('应用初始化失败：无法加载必要的库文件。\n\n请检查：\n1. 网络连接是否正常\n2. 是否被防火墙或代理阻止\n3. 尝试刷新页面重试');
+                showErrorDialog('应用初始化超时：无法加载必要的库文件。\n\n请检查：\n1. 网络连接是否正常\n2. 是否被防火墙或代理阻止\n3. 尝试刷新页面重试');
                 return;
             }
 
-            // 检查AV是否已加载
+            // 检查AV是否已加载（优先检查加载器状态）
             if (typeof AV === 'undefined') {
+                // 检查是否所有CDN源都失败了
+                if (window.LeanCloudLoader && window.LeanCloudLoader.currentIndex >= window.LeanCloudLoader.sources.length) {
+                    console.error('所有CDN源加载失败，停止初始化');
+                    return;
+                }
                 if (initAttempts % 10 === 0) { // 每1秒输出一次日志
                     console.log('等待LeanCloud脚本加载... (' + initAttempts + '/' + MAX_INIT_ATTEMPTS + ')');
                 }
