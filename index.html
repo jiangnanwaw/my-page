@@ -16312,7 +16312,7 @@ function updateUnchargedTable() {
                     __pagination.selectCols = '*';
                     __currentDisplayColumns = ['卡号','充电桩名称','开始日期时间','结束日期时间','充电量','电费','服务费','消费金额','充电时长','开始SOC','结束SOC','车牌号','持卡人'];
                 } else if (device === '滴滴') {
-                    __pagination.selectCols = '[订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [创建时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号]';
+                    __pagination.selectCols = '[订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号]';
                     __currentDisplayColumns = DIDI_DISPLAY_COLUMNS.slice();
                 } else {
                     __pagination.selectCols = '[电站名称], [终端名称], [充电开始时间], [充电结束时间], [充电电量(度)], [充电电费(元)], [充电服务费(元)], [充电费用(元)], [充电时长(分钟)], [充电前soc], [充电后soc], [判定车牌号], [车辆所属客户]';
@@ -16376,11 +16376,11 @@ function updateUnchargedTable() {
                 } else if (device === '滴滴') {
                     const statsSql = `SELECT
                         COUNT(1) AS total,
-                        SUM(CAST([充电电费（元）] AS DECIMAL(18,4))) AS fee_elec,
-                        SUM(CAST([充电服务费（元）] AS DECIMAL(18,4))) AS fee_service,
-                        SUM(CAST([订单总额（元）] AS DECIMAL(18,4))) AS fee_total,
-                        SUM(CAST([充电量（度）] AS DECIMAL(18,4))) AS kwh_total,
-                        SUM(CAST([充电时长（分钟）] AS DECIMAL(18,4))) AS minutes_total
+                        SUM(CASE WHEN ISNUMERIC([充电电费（元）]) = 1 AND [充电电费（元）] IS NOT NULL AND [充电电费（元）] != '' THEN CAST([充电电费（元）] AS DECIMAL(18,4)) ELSE 0 END) AS fee_elec,
+                        SUM(CASE WHEN ISNUMERIC([充电服务费（元）]) = 1 AND [充电服务费（元）] IS NOT NULL AND [充电服务费（元）] != '' THEN CAST([充电服务费（元）] AS DECIMAL(18,4)) ELSE 0 END) AS fee_service,
+                        SUM(CASE WHEN ISNUMERIC([订单总额（元）]) = 1 AND [订单总额（元）] IS NOT NULL AND [订单总额（元）] != '' THEN CAST([订单总额（元）] AS DECIMAL(18,4)) ELSE 0 END) AS fee_total,
+                        SUM(CASE WHEN ISNUMERIC([充电量（度）]) = 1 AND [充电量（度）] IS NOT NULL AND [充电量（度）] != '' THEN CAST([充电量（度）] AS DECIMAL(18,4)) ELSE 0 END) AS kwh_total,
+                        SUM(CASE WHEN ISNUMERIC([充电时长（分钟）]) = 1 AND [充电时长（分钟）] IS NOT NULL AND [充电时长（分钟）] != '' THEN CAST([充电时长（分钟）] AS DECIMAL(18,4)) ELSE 0 END) AS minutes_total
                         FROM ${tableName} ${whereClause}`;
 
                     callSqlWithRetry(statsSql, 3, 800).then(statsRes => {
@@ -17209,7 +17209,7 @@ function updateUnchargedTable() {
                         SUM(CASE WHEN ISNUMERIC([充电量（度）]) = 1 AND [充电量（度）] IS NOT NULL AND [充电量（度）] != '' THEN CAST([充电量（度）] AS FLOAT) ELSE 0 END) AS totalPower,
                         SUM(CASE WHEN ISNUMERIC([充电电费（元）]) = 1 AND [充电电费（元）] IS NOT NULL AND [充电电费（元）] != '' THEN CAST([充电电费（元）] AS FLOAT) ELSE 0 END) AS totalFee
                     FROM [滴滴]
-                    WHERE [创建时间] >= '${startDate}' AND [创建时间] < '${endDate}'`;
+                    WHERE [充电完成时间] >= '${startDate}' AND [充电完成时间] < '${endDate}'`;
                     
                     promises.push(
                         fetch('https://0rrqt8vr.lc-cn-n1-shared.com/1.1/functions/executeSQLQuery', {
@@ -19617,7 +19617,7 @@ function updateUnchargedTable() {
                 // 滴滴表查询：根据时间字段选择对应的滴滴表字段
                 // 滴滴表中车牌号格式为"湘A***053"（星号是实际字符），直接匹配
                 const didiTimeField = (timeField === '充电开始时间') ? '开始充电时间' : '充电完成时间';
-                sqlDidi = `SELECT TOP 10000 [订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [创建时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号] FROM [滴滴] WHERE REPLACE([车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE N'%${escDidi}%' AND [${didiTimeField}] BETWEEN '${start}' AND '${end}' ORDER BY [${didiTimeField}] DESC`;
+                sqlDidi = `SELECT TOP 10000 [订单ID], [用户类型], [场站名称], [充电桩ID], [充电枪ID], [开始充电时间], [充电完成时间], [充电时长（分钟）], CAST([充电量（度）] AS DECIMAL(18,2)) AS [充电量（度）], [订单总额（元）], [充电电费（元）], [充电服务费（元）], [车牌号] FROM [滴滴] WHERE REPLACE([车牌号], ' ', '') COLLATE Chinese_PRC_CI_AS LIKE N'%${escDidi}%' AND [${didiTimeField}] BETWEEN '${start}' AND '${end}' ORDER BY [${didiTimeField}] DESC`;
                 
                 // 保留原有的sql字段用于兼容
                 sql = sqlTeld;
@@ -20261,20 +20261,30 @@ function updateUnchargedTable() {
 
             // 情况2：查询时间完全在2026年1月及之后
             if (queryStartDate >= cutoffDate) {
-                console.log('   查询时间段完全在2026年1月之后，使用新逻辑：15%滴滴服务费');
-                // 查询滴滴服务费
-                const didiQuery = `SELECT SUM(CASE WHEN ISNUMERIC([充电服务费（元）]) = 1 AND [充电服务费（元）] IS NOT NULL AND [充电服务费（元）] != '' THEN CAST([充电服务费（元）] AS DECIMAL(18,4)) ELSE 0 END) AS total
-                              FROM [滴滴]
-                              WHERE [创建时间] >= '${startDate}'
-                              AND [创建时间] < DATEADD(day, 1, '${endDate}')`;
+                console.log('   查询时间段完全在2026年1月之后，使用新逻辑：查询滴滴账单表中的支出-合同技术服务费');
+                // 格式化时间（转换为 yyyy-mm-dd hh:mm:ss 格式）
+                const formattedStartTime = toSqlDateTime(startDate, false);
+                const formattedEndTime = toSqlDateTime(endDate, true);
+                
+                // 查询滴滴账单表中的"支出-合同技术服务费"
+                // 滴滴账单表中的"充电完成时间"字段格式为：yyyy/mm/dd hh:mm
+                // 需要将格式转换为标准格式进行比较
+                const didiBillQuery = `SELECT 
+                    SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([支出-合同技术服务费], '0')) = 1 THEN ISNULL([支出-合同技术服务费], '0') ELSE '0' END AS FLOAT)) AS total
+                FROM [滴滴账单]
+                WHERE [充电完成时间] IS NOT NULL
+                AND LEN([充电完成时间]) > 0
+                AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END IS NOT NULL
+                AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END >= '${formattedStartTime}'
+                AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END <= '${formattedEndTime}'`;
 
-                const didiResults = await executeSQL(didiQuery, {
+                const didiBillResults = await executeSQL(didiBillQuery, {
                     useCache: true,
                     cacheTTL: 5 * 60 * 1000,
-                    params: { station, startDate, endDate, type: 'platformServiceFee', table: 'didi' }
+                    params: { station, startDate, endDate, type: 'platformServiceFee', table: 'didiBill' }
                 });
-                const didiServiceFee = didiResults.length > 0 && didiResults[0].total ? parseFloat(didiResults[0].total) : 0;
-                return didiServiceFee * 0.15;
+                const contractServiceFee = didiBillResults.length > 0 && didiBillResults[0].total ? parseFloat(didiBillResults[0].total) : 0;
+                return contractServiceFee;
             }
 
             // 情况3：查询时间跨越2026年1月
@@ -20316,26 +20326,35 @@ function updateUnchargedTable() {
 
             console.log(`   2026年1月之前服务费: ${totalServiceFeeBefore}, 平台服务费(4%): ${platformFeeBefore}`);
 
-            // 计算2026年1月之后的部分（使用新逻辑：15%滴滴服务费）
+            // 计算2026年1月之后的部分（使用新逻辑：查询滴滴账单表中的支出-合同技术服务费）
             const afterCutoffStart = '2026-01-01';
+            // 格式化时间（转换为 yyyy-mm-dd hh:mm:ss 格式）
+            const formattedAfterStartTime = toSqlDateTime(afterCutoffStart, false);
+            const formattedEndTime = toSqlDateTime(endDate, true);
 
-            const didiQueryAfter = `SELECT SUM(CASE WHEN ISNUMERIC([充电服务费（元）]) = 1 AND [充电服务费（元）] IS NOT NULL AND [充电服务费（元）] != '' THEN CAST([充电服务费（元）] AS DECIMAL(18,4)) ELSE 0 END) AS total
-                          FROM [滴滴]
-                          WHERE [创建时间] >= '${afterCutoffStart}'
-                          AND [创建时间] < DATEADD(day, 1, '${endDate}')`;
+            // 查询滴滴账单表中的"支出-合同技术服务费"
+            // 滴滴账单表中的"充电完成时间"字段格式为：yyyy/mm/dd hh:mm
+            // 需要将格式转换为标准格式进行比较
+            const didiBillQueryAfter = `SELECT 
+                SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([支出-合同技术服务费], '0')) = 1 THEN ISNULL([支出-合同技术服务费], '0') ELSE '0' END AS FLOAT)) AS total
+            FROM [滴滴账单]
+            WHERE [充电完成时间] IS NOT NULL
+            AND LEN([充电完成时间]) > 0
+            AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END IS NOT NULL
+            AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END >= '${formattedAfterStartTime}'
+            AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END <= '${formattedEndTime}'`;
 
-            const didiResultsAfter = await executeSQL(didiQueryAfter, {
+            const didiBillResultsAfter = await executeSQL(didiBillQueryAfter, {
                 useCache: true,
                 cacheTTL: 5 * 60 * 1000,
-                params: { station, startDate: afterCutoffStart, endDate, type: 'platformServiceFeeAfter', table: 'didi' }
+                params: { station, startDate: afterCutoffStart, endDate, type: 'platformServiceFeeAfter', table: 'didiBill' }
             });
 
-            const didiServiceFeeAfter = didiResultsAfter.length > 0 && didiResultsAfter[0].total ? parseFloat(didiResultsAfter[0].total) : 0;
-            const platformFeeAfter = didiServiceFeeAfter * 0.15;
+            const contractServiceFeeAfter = didiBillResultsAfter.length > 0 && didiBillResultsAfter[0].total ? parseFloat(didiBillResultsAfter[0].total) : 0;
 
-            console.log(`   2026年1月之后滴滴服务费: ${didiServiceFeeAfter}, 平台服务费(15%): ${platformFeeAfter}`);
+            console.log(`   2026年1月之后支出-合同技术服务费: ${contractServiceFeeAfter}`);
 
-            return platformFeeBefore + platformFeeAfter;
+            return platformFeeBefore + contractServiceFeeAfter;
         }
 
         // 查询滴滴账单表中的商家承担营销费用（用于2026年1月之后的活动优惠券）
@@ -24477,7 +24496,7 @@ function updateUnchargedTable() {
                 if (isDidiBillCategory) {
                     // 查询滴滴账单表
                     tableName = '[滴滴账单]';
-                    timeFieldName = '充电开始时间';
+                    timeFieldName = '充电完成时间';
 
                     // 滴滴账单表中的"充电开始时间"字段格式为：yyyy/mm/dd hh:mm
                     // 需要将格式转换为标准格式进行比较
@@ -24554,7 +24573,7 @@ function updateUnchargedTable() {
                 } else if (isDidiUnsettledCategory) {
                     // 查询滴滴未结算订单
                     tableName = '[滴滴]';
-                    timeFieldName = '创建时间';
+                    timeFieldName = '充电完成时间';
 
                     // 先查询统计信息
                     const statsSql = `SELECT
