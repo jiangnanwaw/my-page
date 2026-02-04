@@ -20453,23 +20453,9 @@ function updateUnchargedTable() {
                 
                 return beforeTotal + afterTotal;
             } else {
-                // 非四方坪站，保持原有逻辑
-                // 情况1：查询时间完全在2026年1月及之后，不计算优惠券
-                if (queryStartDate >= cutoffDate) {
-                    console.log('   查询时间段完全在2026年1月之后，不计算活动优惠券');
-                    return 0;
-                }
-
-                // 情况2：查询时间完全在2026年1月之前，正常计算
-                if (queryEndDate < cutoffDate) {
-                    console.log('   查询时间段完全在2026年1月之前，正常计算活动优惠券');
-                    return await queryCouponCost(station, startDate, endDate);
-                }
-
-                // 情况3：查询时间跨越2026年1月，只计算2026年1月之前的部分
-                console.log('   查询时间段跨越2026年1月，只计算2026年1月之前的活动优惠券');
-                const beforeCutoffEnd = '2025-12-31';
-                return await queryCouponCost(station, startDate, beforeCutoffEnd);
+                // 非四方坪站（高岭站），不区分时间，统一使用活动优惠券表查询
+                console.log('   高岭站：统一使用活动优惠券表查询，不区分时间');
+                return await queryCouponCost(station, startDate, endDate);
             }
         }
 
@@ -20481,6 +20467,13 @@ function updateUnchargedTable() {
             const queryStartDate = startDate; // YYYY-MM格式
             const queryEndDate = endDate; // YYYY-MM格式
 
+            // 如果是高岭站，不区分时间，统一按0.6%计算
+            if (station === '高岭站') {
+                console.log('   高岭站：统一按0.6%计算交易手续费，不区分时间');
+                return parseFloat(chargingTotalIncome || 0) * 0.006;
+            }
+
+            // 四方坪站的逻辑保持不变
             // 情况1：查询时间完全在2026年1月及之后，不计算交易手续费
             if (queryStartDate >= cutoffDate) {
                 console.log('   查询时间段完全在2026年1月及之后，不计算交易手续费');
