@@ -20521,6 +20521,59 @@ function updateUnchargedTable() {
             }
         }
 
+        // 查询转售折扣（仅当站点为"四方坪站"且时间>=2026年时计算）
+        async function queryResaleDiscount(station, startDate, endDate) {
+            // 只有当站点选择"四方坪站"，时间选择大于或等于2026年时，才计算
+            if (station !== '四方坪站') {
+                return 0;
+            }
+
+            // 检查时间是否大于或等于2026年
+            const [startYear] = startDate.split('-');
+            if (parseInt(startYear) < 2026) {
+                return 0;
+            }
+
+            console.log('   查询转售折扣...');
+            
+            // 格式化日期
+            const startDateFormatted = startDate + '-01';
+            const endDateParts = endDate.split('-');
+            const lastDay = new Date(parseInt(endDateParts[0]), parseInt(endDateParts[1]), 0).getDate();
+            const endDateFormatted = endDate + '-' + lastDay;
+            
+            // 格式化时间（转换为 yyyy-mm-dd hh:mm:ss 格式）
+            const formattedStartTime = toSqlDateTime(startDateFormatted, false);
+            const formattedEndTime = toSqlDateTime(endDateFormatted, true);
+
+            try {
+                // 查询滴滴账单表中的"转售折扣"字段
+                // 滴滴账单表中的"充电完成时间"字段格式为：yyyy/mm/dd hh:mm
+                // 需要将格式转换为标准格式进行比较
+                // "转售折扣"字段是nvarchar类型，需要先转换为数值类型
+                const didiBillQuery = `SELECT 
+                    SUM(CAST(CASE WHEN ISNUMERIC(ISNULL([转售折扣], '0')) = 1 THEN ISNULL([转售折扣], '0') ELSE '0' END AS FLOAT)) AS total
+                FROM [滴滴账单]
+                WHERE [充电完成时间] IS NOT NULL
+                AND LEN([充电完成时间]) > 0
+                AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END IS NOT NULL
+                AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END >= '${formattedStartTime}'
+                AND CASE WHEN ISDATE(REPLACE([充电完成时间], '/', '-') + ':00') = 1 THEN CONVERT(DATETIME, REPLACE([充电完成时间], '/', '-') + ':00', 120) ELSE NULL END <= '${formattedEndTime}'`;
+
+                const didiBillResults = await executeSQL(didiBillQuery, {
+                    useCache: true,
+                    cacheTTL: 5 * 60 * 1000,
+                    params: { station, startDate: startDateFormatted, endDate: endDateFormatted, type: 'resaleDiscount', table: 'didiBill' }
+                });
+                const resaleDiscount = didiBillResults.length > 0 && didiBillResults[0].total ? parseFloat(didiBillResults[0].total) : 0;
+                console.log(`   转售折扣: ${resaleDiscount}`);
+                return resaleDiscount;
+            } catch (error) {
+                console.error('   查询转售折扣失败:', error);
+                return 0;
+            }
+        }
+
         // 查询单个站点的数据
         async function queryStationData(station, startDate, endDate) {
             console.log(`\n========== 开始查询 ${station} 数据 ==========`);
@@ -20535,6 +20588,7 @@ function updateUnchargedTable() {
                 electricityCost: 0,
                 platformServiceFee: 0,
                 couponCost: 0,
+                resaleDiscount: 0,
                 otherCost: 0
             };
 
@@ -20603,8 +20657,12 @@ function updateUnchargedTable() {
                 stationData.couponCost = await queryCouponCostWithDateCheck(station, startDateFormatted, endDateFormatted);
                 console.log(`   结果: ${stationData.couponCost}`);
 
-                // 8. 其他成本
-                console.log('7. 其他成本（暂无）');
+                // 8. 查询转售折扣
+                stationData.resaleDiscount = await queryResaleDiscount(station, startDate, endDate);
+                console.log(`   结果: ${stationData.resaleDiscount}`);
+
+                // 9. 其他成本
+                console.log('8. 其他成本（暂无）');
                 stationData.otherCost = 0;
 
                 console.log(`========== ${station} 查询完成 ==========\n`);
@@ -21012,7 +21070,7 @@ function updateUnchargedTable() {
             // 计算交易手续费（带日期检查）：2026年1月之前按0.6%计算，2026年1月及之后不计算
             const transactionFee = await calculateTransactionFee(stationData.chargingTotalIncome, startDate, endDate, station);
             const totalCost = parseFloat(stationData.electricityCost || 0) + parseFloat(stationData.platformServiceFee || 0) +
-                            parseFloat(stationData.couponCost || 0) + transactionFee + parseFloat(stationData.otherCost || 0);
+                            parseFloat(stationData.couponCost || 0) + transactionFee + parseFloat(stationData.resaleDiscount || 0) + parseFloat(stationData.otherCost || 0);
             const grossProfit = totalRevenue - totalCost;
             const grossMargin = totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(2) : '0.00';
 
@@ -21046,7 +21104,12 @@ function updateUnchargedTable() {
                                 <td style="padding:8px 12px; border:1px solid #dee2e6;"></td>
                             </tr>
                             <tr>
-                                <td style="padding:8px 12px 8px 30px; border:1px solid #dee2e6;">5、其他成本</td>
+                                <td style="padding:8px 12px 8px 30px; border:1px solid #dee2e6;">5、转售折扣</td>
+                                <td style="padding:8px 12px; border:1px solid #dee2e6; text-align:right;">${formatMoney(stationData.resaleDiscount)}</td>
+                                <td style="padding:8px 12px; border:1px solid #dee2e6;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px 12px 8px 30px; border:1px solid #dee2e6;">6、其他成本</td>
                                 <td style="padding:8px 12px; border:1px solid #dee2e6; text-align:right;">${formatMoney(stationData.otherCost)}</td>
                                 <td style="padding:8px 12px; border:1px solid #dee2e6;"></td>
                             </tr>
